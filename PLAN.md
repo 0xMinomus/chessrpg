@@ -128,6 +128,12 @@ Catatan: `npm run verify` PASS (95 domain, 26 campaign, 11 skill boss, 8 parity,
 Design read: layar operasi campaign untuk game strategi single-player pixel-art; ENERGY 2 / RHYTHM 2 / MOTION 1. Peta mobile memakai rasio 1:1 yang sesuai dengan aset sumber; lima lantai berjajar pada desktop agar tombol mulai tetap terlihat, lalu menumpuk pada ponsel; marker minimum 44×44 menjaga target sentuh. Palet pixel navy/plum/krem/coral dipertahankan dari prototipe.
 Permintaan lanjutan: efek cast di atas papan untuk 12 skill/ultimate hero dengan motif visual unik per aksi dan lima keluarga efek kartu menurut `CardKind`. Untuk keterbacaan, cast kini membentangkan sigil hampir selebar papan, menambah dua beam silang dan stroke bercahaya, berdurasi total 780ms; gerak hanya berjalan setelah resolusi berhasil, dengan fade 120ms saat `prefers-reduced-motion`. Pemeriksaan: `npm run verify:combat-fx` lulus 4 pemeriksaan; `npm run verify:browser` lulus, termasuk 101 walkthrough flow, reduced motion, build, dan 11 viewport.
 
+Permintaan lanjutan: Beranda diatur sebagai hub campaign—baris atas memprioritaskan peta + ringkasan chapter dan hero, baris bawah memisahkan progres lantai, catatan perjalanan, dan lantai terakhir. Marker dan aset peta lokal serta kelas/aset portrait hero tetap sama. Panel chapter menampilkan state dan aturan lantai yang dipilih; kontrol lantai terkunci menonaktifkan CTA, sedangkan progres memakai role `progressbar` dengan nilai campaign aktual.
+
+Walkthrough visual/interaksi: screenshot desktop 1568×882 dan ponsel 390×844 ditinjau; peta ponsel tetap persegi, marker 44×44, lima lantai dan CTA terlihat setelah scroll, tanpa overflow horizontal. Memilih lantai terkunci memperbarui detail dan menonaktifkan mulai; CTA chapter dan hero membuka layar masing-masing; browser console tanpa error. Tes render tidak lagi mengikat CTA ke class visual dan menghapus pemeriksaan salinan fakta lama.
+
+Verifikasi perubahan: `npm run verify:browser` melewati typecheck, 95 domain, 26 campaign, 11 skill boss, 4 combat FX, 8 parity, 54 render, build/dist, dan pemeriksaan portrait. `verify:layout` gagal pada layar dungeon untuk 320×780, 360×740, 390×844, dan 430×932: marker/floor assertion tidak muat; screenshot menunjukkan shell memakai kolom 190px + 151px pada ponsel. Saya tidak mengubah layout dungeon karena ruang lingkup permintaan hanya Beranda. Viewport 768px ke atas pada pemeriksaan tersebut lolos. `npm run verify:flow` dijalankan terpisah dan lulus 105/105.
+
 
 ## Keputusan implementasi untuk agent
 

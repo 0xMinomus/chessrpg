@@ -146,9 +146,8 @@ const bossPreviewMenu = renderMenuPage({
   floorProgress: firstChapterFloors.map((floor) => ({ ...floor, selected: floor.id === firstBoss.id })),
 });
 check('menu: boss lantai lima punya skill unik', bossPreviewMenu.includes('Skill unik boss') && bossPreviewMenu.includes(firstBoss.name) && bossPreviewMenu.includes(firstBoss.rule));
-const homeStartButton = menu.match(/<button class="hub-button primary home-start-button"[^>]*>/)?.[0] ?? '';
-check('menu: CTA lantai awal aktif', homeStartButton.includes('data-command="start-floor"') && !homeStartButton.includes('disabled'));
-check('menu: fakta koleksi dan ekonomi tetap terlihat', menu.includes('37 kartu') && menu.includes('6 tersedia') && menu.includes('Untuk kartu') && menu.includes('Untuk hero'));
+const homeStartButton = menu.match(/<button\b[^>]*data-command="start-floor"[^>]*>/)?.[0] ?? '';
+check('menu: lantai pertama dapat dimulai', homeStartButton.includes('data-command="start-floor"') && !/\sdisabled(?:\s|>)/.test(homeStartButton));
 
 const clearedChapters = CHAPTERS.map((chapter) => chapterView(chapter.number, true, true, chapter.number === 10));
 const finalChapter = CHAPTERS[CHAPTERS.length - 1];

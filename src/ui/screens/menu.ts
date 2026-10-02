@@ -98,10 +98,8 @@ export function renderMenuPage(view: MenuView): string {
   const campaignFacts = [
     { mark: '♜', label: 'Campaign', value: '10 chapter', note: '50 lantai berurutan' },
     { mark: '♙', label: 'Hero', value: view.heroCount + ' tersedia', note: 'Semua terbuka untuk diuji' },
-    { mark: '✦', label: 'Kartu', value: view.cardCount + ' kartu', note: 'Koleksi skill dungeon' },
-    { mark: 'M', label: 'Mana', value: 'Untuk kartu', note: 'Pulih setelah langkah putih' },
-    { mark: 'EN', label: 'Energi', value: 'Untuk hero', note: 'Skill dan ultimate' },
-    { mark: '◈', label: 'Hadiah lantai', value: selectedFloor.reward + ' koin', note: 'Clear pertama' },
+    { mark: '▤', label: 'Kartu', value: view.cardCount + ' kartu', note: 'Koleksi slot dungeon' },
+    { mark: 'M', label: 'Resource', value: 'Untuk kartu', note: 'Mana pulih setelah langkah putih' },
   ]
     .map(function (fact) {
       return (
@@ -117,6 +115,8 @@ export function renderMenuPage(view: MenuView): string {
       );
     })
     .join('');
+  const completionPercent =
+    view.totalFloors > 0 ? Math.max(0, Math.min(100, Math.round((view.clearedCount / view.totalFloors) * 100))) : 0;
   const startCommand = deckReady ? 'start-floor' : 'open-deck';
   const startLabel = !selectedFloor.unlocked
     ? 'Selesaikan prasyarat'
@@ -139,12 +139,15 @@ export function renderMenuPage(view: MenuView): string {
     ' · Lantai ' +
     String(view.nextFloor.floorNumber).padStart(2, '0') +
     '.</p></div></div>' +
-    '<div class="home-dashboard">' +
-    '<section class="home-world-panel hub-frame" aria-label="Peta dunia dan chapter terpilih"><div class="home-world-map">' +
-    '<img class="home-world-image" src="/assets/broken-crescent-pixel-map.png" alt="Peta pixel-art Broken Crescent dengan pulau dan jalur antardaerah." width="1254" height="1254" />' +
+    '<div class="home-dashboard"><div class="home-top-row">' +
+    '<div class="home-world-panel"><section class="home-map-panel hub-frame" aria-labelledby="home-map-title"><div class="home-map-heading"><span class="eyebrow" id="home-map-title">Peta Dunia</span>' +
+    '<div class="home-map-legend" role="group" aria-label="Status chapter pada peta"><span><i class="home-map-key selected" aria-hidden="true"></i>Chapter terpilih</span>' +
+    '<span><i class="home-map-key locked" aria-hidden="true"></i>Chapter terkunci</span><span><i class="home-map-key cleared" aria-hidden="true"></i>Chapter selesai</span></div></div>' +
+    '<div class="home-world-map"><img class="home-world-image" src="/assets/broken-crescent-pixel-map.png" alt="Peta pixel-art Broken Crescent dengan pulau dan jalur antardaerah." width="1254" height="1254" />' +
     '<div class="dungeon-map-markers" role="group" aria-label="Pilih chapter pada peta">' +
     renderChapterMapMarkers(view.chapters) +
-    '</div></div><article class="home-selected-boss"><div class="home-selected-heading"><span class="eyebrow">Chapter terpilih</span><span class="home-boss-state">' +
+    '</div></div></section>' +
+    '<article class="home-selected-boss hub-frame" aria-labelledby="home-selected-chapter-title"><div class="home-selected-heading"><span class="eyebrow">Chapter terpilih</span><span class="home-boss-state">' +
     (selectedChapter.cleared ? 'Selesai' : selectedChapter.unlocked ? 'Terbuka' : 'Terkunci') +
     '</span></div><div class="home-selected-identity"><span class="home-selected-glyph" aria-hidden="true">' +
     String(selectedChapter.number).padStart(2, '0') +
@@ -152,9 +155,9 @@ export function renderMenuPage(view: MenuView): string {
     String(selectedChapter.number).padStart(2, '0') +
     ' · ' +
     selectedChapter.areaLabel +
-    '</small><h3>' +
+    '</small><h3 id="home-selected-chapter-title">' +
     selectedChapter.name +
-    '</h3></div></div><p class="home-selected-description">Pilihan: lantai ' +
+    '</h3></div></div><p class="home-selected-description">Pilihan lantai ' +
     String(selectedFloor.floorNumber).padStart(2, '0') +
     ' / 05 · ' +
     selectedFloor.name +
@@ -162,9 +165,14 @@ export function renderMenuPage(view: MenuView): string {
     (selectedFloor.isBoss ? 'Skill unik boss' : 'Tantangan') +
     '</span><p>' +
     selectedFloor.rule +
-    '</p></div><div class="home-selected-reward"><span>Hadiah clear pertama</span><strong>' +
+    '</p></div><p class="home-selected-story">' +
+    selectedFloor.description +
+    '</p><div class="home-selected-facts" aria-label="Ringkasan chapter"><div><span class="home-selected-fact-mark" aria-hidden="true">♜</span><span><strong>5 lantai</strong><small>per chapter</small></span></div>' +
+    '<div><span class="home-selected-fact-mark" aria-hidden="true">♞</span><span><strong>' +
+    (selectedFloor.isBoss ? 'Boss' : 'Standar') +
+    '</strong><small>jenis lantai</small></span></div><div><span class="home-selected-fact-mark coins" aria-hidden="true"></span><span><strong>' +
     selectedFloor.reward +
-    ' koin</strong></div><button class="hub-button primary" type="button" data-command="nav" data-screen="dungeon">Buka peta chapter</button></article></section>' +
+    ' koin</strong><small>hadiah clear pertama</small></span></div></div><button class="hub-button primary" type="button" data-command="nav" data-screen="dungeon">Buka peta chapter</button></article></div>' +
     '<section class="home-hero-panel hub-frame" aria-labelledby="home-hero-title"><div class="home-panel-heading"><span class="eyebrow" id="home-hero-title">Hero terpilih</span></div>' +
     '<div class="home-hero-identity"><span class="hero-face home-hero-face" data-portrait="' +
     view.activeHero.portrait +
@@ -183,20 +191,30 @@ export function renderMenuPage(view: MenuView): string {
     view.activeHero.ultimateName +
     '</strong><p>' +
     view.activeHero.ultimateDescription +
-    '</p></div></div></div><div class="home-hero-traits"><div><small>Kekuatan</small><p>' +
+    '</p></div></div><div class="home-hero-traits"><div><small>Kekuatan</small><p>' +
     view.activeHero.strength +
     '</p></div><div><small>Kelemahan</small><p>' +
     view.activeHero.weakness +
-    '</p></div></section>' +
+    '</p></div></div></section></div><div class="home-bottom-row">' +
     '<section class="home-floor-progress hub-frame" aria-labelledby="home-floor-progress-title"><div class="home-floor-progress-heading"><span class="eyebrow" id="home-floor-progress-title">Progres Chapter ' +
     String(selectedChapter.number).padStart(2, '0') +
     '</span><strong>' +
     view.clearedCount +
     ' dari ' +
     view.totalFloors +
-    ' lantai campaign selesai</strong></div><div class="home-floor-list" role="group" aria-label="Lima lantai chapter terpilih">' +
+    ' lantai campaign selesai</strong></div><div class="home-progress-track" role="progressbar" aria-label="Progres lantai campaign" aria-valuemin="0" aria-valuemax="' +
+    view.totalFloors +
+    '" aria-valuenow="' +
+    view.clearedCount +
+    '" aria-valuetext="' +
+    view.clearedCount +
+    ' dari ' +
+    view.totalFloors +
+    ' lantai selesai" style="--home-progress:' +
+    completionPercent +
+    '%"><span></span></div><div class="home-floor-list" role="group" aria-label="Lima lantai chapter terpilih">' +
     floorProgress +
-    '</div><button class="hub-button primary home-start-button" type="button" data-command="' +
+    '</div><button class="hub-button home-start-button" type="button" data-command="' +
     startCommand +
     '" data-floor-id="' +
     selectedFloor.id +
@@ -214,6 +232,6 @@ export function renderMenuPage(view: MenuView): string {
     '</div></section>' +
     '<section class="home-last-run hub-frame" aria-labelledby="home-last-run-title"><div class="home-panel-heading"><span class="eyebrow" id="home-last-run-title">Lantai terakhir</span></div>' +
     lastRun +
-    '<button class="hub-button" type="button" data-command="nav" data-screen="dungeon">Lihat progres campaign</button></section></div></section>'
+    '<button class="hub-button" type="button" data-command="nav" data-screen="dungeon">Lihat progres campaign</button></section></div></div></section>'
   );
 }
