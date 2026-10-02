@@ -363,6 +363,8 @@ for (let move = 0; move < 3; move += 1) {
   await page.waitForTimeout(1200);
 }
 
+let pendingTargetCardCast = null;
+
 const enabledSlots = [];
 for (let i = 0; i < 3; i += 1) {
   if (!(await cardSlots.nth(i).isDisabled())) enabledSlots.push(i);
@@ -390,10 +392,31 @@ if (enabledSlots.length === 0) {
     check('kartu mengikuti posisi kursor dengan tilt ringan', false, 'kartu tidak terlihat');
   }
   const chosenCost = Number.parseInt(await page.locator('.skill-card').nth(chosenSlot).locator('.card-cost').textContent(), 10);
+  const chosenCardId = await chosenCard.getAttribute('data-card-id');
+  const chosenKind = (await chosenCard.getAttribute('class'))
+    .split(/\s+/)
+    .find((name) => name.startsWith('kind-'))
+    ?.slice('kind-'.length);
   await cardSlots.nth(chosenSlot).click();
   await page.waitForTimeout(120);
   const targeting = (await page.locator('.board.is-targeting').count()) > 0;
   check('kartu bisa dimainkan', true);
+  if (targeting) {
+    pendingTargetCardCast = { slot: chosenSlot, id: chosenCardId, kind: chosenKind };
+  } else {
+    const cardFx = page.locator('.combat-cast-fx[data-effect="card-' + chosenKind + '"]');
+    const cardFxCount = await cardFx.count();
+    const cardMotion = cardFxCount
+      ? await cardFx.locator('i').first().evaluate((element) => ({
+          name: getComputedStyle(element).animationName,
+          duration: getComputedStyle(element).animationDuration,
+        }))
+      : null;
+    check(
+      'cast kartu menampilkan animasi keluarga ' + chosenKind,
+      cardFxCount === 1 && cardMotion?.name !== 'none' && cardMotion?.duration === '0.236s',
+    );
+  }
   if (targeting) {
     const manaPaid = await page.locator('.card-mana-hud strong').textContent();
     await page.keyboard.press('Escape');
@@ -432,6 +455,114 @@ if (skillTargeting) {
   check('cancel skill tanpa EN', (await page.locator('.energy-number').first().textContent()) === enBefore);
   check('status cancel hero tampil', (await page.locator('.board-status').textContent()).includes('dibatalkan'));
 }
+// Konfirmasi target skill untuk memastikan animasi muncul setelah cast, bukan saat batal.
+await page.locator('[data-command="hero-skill"]').click();
+const phaseTarget = await page.locator('.square').evaluateAll((squares) => {
+  const target = squares.find(
+    (square) => square.querySelector('.piece.white') && !square.getAttribute('aria-label')?.includes('raja'),
+  );
+  return target ? { row: target.dataset.row, col: target.dataset.col } : null;
+});
+const phaseTargeting = (await page.locator('[data-command="hero-skill"].is-targeting').count()) > 0;
+check('skill Arunika masuk mode target', phaseTargeting);
+check('skill Arunika menemukan bidak putih non-raja', Boolean(phaseTarget));
+if (phaseTargeting && phaseTarget) {
+  await page.locator(`.square[data-row="${phaseTarget.row}"][data-col="${phaseTarget.col}"]`).click();
+  const phaseFx = page.locator('.combat-cast-fx[data-effect="hero-phase"]');
+  const phaseFxCount = await phaseFx.count();
+  const phaseMotion = phaseFxCount
+    ? await phaseFx.locator('i').first().evaluate((element) => ({
+        name: getComputedStyle(element).animationName,
+        duration: getComputedStyle(element).animationDuration,
+      }))
+    : null;
+  check(
+    'cast skill menampilkan efek fase dengan animasi',
+    phaseFxCount === 1 && phaseMotion?.name === 'cast-orbit' && phaseMotion.duration === '0.236s',
+  );
+}
+await page.waitForTimeout(320);
+await page.emulateMedia({ reducedMotion: 'reduce' });
+await page.locator('[data-command="hero-skill"]').click();
+const reducedPhaseTarget = await page.locator('.square').evaluateAll((squares) => {
+  const target = squares.find(
+    (square) => square.querySelector('.piece.white') && !square.getAttribute('aria-label')?.includes('raja'),
+  );
+  return target ? { row: target.dataset.row, col: target.dataset.col } : null;
+});
+if (reducedPhaseTarget) {
+  await page.locator(`.square[data-row="${reducedPhaseTarget.row}"][data-col="${reducedPhaseTarget.col}"]`).click();
+}
+const reducedPhaseFx = page.locator('.combat-cast-fx[data-effect="hero-phase"]');
+const reducedPhaseMotion = (await reducedPhaseFx.count())
+  ? await reducedPhaseFx.locator('i').first().evaluate((element) => ({
+      name: getComputedStyle(element).animationName,
+      duration: getComputedStyle(element).animationDuration,
+    }))
+  : null;
+check(
+  'reduced-motion mengubah cast menjadi fade 120ms',
+  Boolean(reducedPhaseTarget) && reducedPhaseMotion?.name === 'cast-fx-life' &&
+    reducedPhaseMotion.duration === '0.12s',
+);
+await page.emulateMedia({ reducedMotion: 'no-preference' });
+await page.waitForTimeout(320);
+
+if (pendingTargetCardCast) {
+  const whiteNonKing = '.square:has(.piece.white):not([aria-label*="raja"])';
+  const whitePawn = '.square[aria-label*="putih pion"]';
+  const blackNonKing = '.square:has(.piece.black):not([aria-label*="raja"])';
+  const blackPawn = '.square[aria-label*="hitam pion"]';
+  const cardTargets = {
+    lancer: whiteNonKing,
+    ward: whiteNonKing,
+    pawnstep: whitePawn,
+    mark: blackNonKing,
+    phase: whiteNonKing,
+    prism: '.square[aria-label*="putih gajah"], .square[aria-label*="putih benteng"]',
+    pawnraid: whitePawn,
+    rookbend: '.square[aria-label*="putih benteng"]',
+    stagger: blackNonKing,
+    snare: blackNonKing,
+    sacrifice: whitePawn,
+    blockade: '.square[aria-label*="kosong"]',
+    relay: whiteNonKing,
+    pawnGuard: whitePawn,
+    pawnMark: blackPawn,
+    pawnStagger: blackPawn,
+    fold: whiteNonKing,
+    edict: '.square:has(.piece.black):not([aria-label*="raja"]):not([aria-label*="ratu"])',
+    phoenix: '.square[aria-label*="kosong"][data-row="6"], .square[aria-label*="kosong"][data-row="7"]',
+  };
+  await cardSlots.nth(pendingTargetCardCast.slot).click();
+  const cardTargeting = (await page.locator('.board.is-targeting').count()) > 0;
+  if (cardTargeting && pendingTargetCardCast.id === 'relay') {
+    const targets = page.locator(whiteNonKing);
+    if (await targets.count() >= 2) {
+      await targets.nth(0).click();
+      await targets.nth(1).click();
+    }
+  } else if (cardTargeting) {
+    const target = page.locator(cardTargets[pendingTargetCardCast.id] ?? '').first();
+    if (await target.count()) await target.click();
+  }
+  const cardFx = page.locator('.combat-cast-fx[data-effect="card-' + pendingTargetCardCast.kind + '"]');
+  const cardFxCount = await cardFx.count();
+  const cardMotion = cardFxCount
+    ? await cardFx.locator('i').first().evaluate((element) => ({
+        name: getComputedStyle(element).animationName,
+        duration: getComputedStyle(element).animationDuration,
+      }))
+    : null;
+  check(
+    'resolusi kartu target menampilkan animasi keluarga ' + pendingTargetCardCast.kind,
+    cardFxCount === 1 && cardMotion?.name !== 'none' && cardMotion?.duration === '0.236s',
+  );
+  if (pendingTargetCardCast.id === 'sacrifice' || pendingTargetCardCast.id === 'relay') {
+    await page.waitForFunction(() => (document.querySelector('.turn-flag')?.textContent ?? '').toLowerCase().includes('putih'));
+  }
+}
+
 
 // 8. Restart
 // 9. Restart

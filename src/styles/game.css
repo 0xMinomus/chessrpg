@@ -1786,3 +1786,148 @@ h1 {
   .hero-loadout-link button { width: 100%; }
   .deck-slot-count { align-items: flex-start; flex-direction: column; }
 }
+.board-stage { position: relative; }
+.combat-cast-fx {
+  position: absolute; inset: 0; z-index: 8; display: grid; place-items: center;
+  overflow: hidden; pointer-events: none; contain: paint;
+  animation: cast-fx-life 280ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+.combat-cast-fx > i {
+  position: absolute; top: 50%; left: 50%; display: block; opacity: 0;
+  transform: translate(-50%, -50%);
+}
+.combat-cast-fx > i:nth-child(1) {
+  width: clamp(72px, 42cqh, 224px); aspect-ratio: 1;
+  border: 2px solid var(--cast-ink); border-radius: var(--cast-ring, 50%);
+  box-shadow: 0 0 0 1px var(--cast-accent); clip-path: var(--cast-shell, none);
+  animation: var(--cast-a) 236ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+.combat-cast-fx > i:nth-child(2) {
+  width: clamp(52px, 29cqh, 168px); aspect-ratio: 1;
+  border: 2px dashed var(--cast-accent); border-radius: var(--cast-orbit, 50%);
+  animation: var(--cast-b) 228ms cubic-bezier(0.23, 1, 0.32, 1) 16ms both;
+}
+.combat-cast-fx > i:nth-child(3) {
+  width: clamp(18px, 10cqh, 62px); aspect-ratio: 1;
+  background: var(--cast-accent); clip-path: var(--cast-core, polygon(50% 0, 100% 50%, 50% 100%, 0 50%));
+  animation: var(--cast-c) 220ms cubic-bezier(0.23, 1, 0.32, 1) 28ms both;
+}
+
+.combat-cast-fx[data-effect="hero-phase"] {
+  --cast-ink: #a9d9f2; --cast-accent: #d5b7e5; --cast-a: cast-orbit; --cast-b: cast-expand; --cast-c: cast-spark;
+  --cast-shell: circle(48%); --cast-ring: 50%; --cast-orbit: 50%;
+  --cast-core: polygon(50% 0, 88% 50%, 50% 100%, 12% 50%);
+}
+.combat-cast-fx[data-effect="hero-fold"] {
+  --cast-ink: #d4b1ed; --cast-accent: #f2d88b; --cast-a: cast-gate; --cast-b: cast-orbit; --cast-c: cast-split;
+  --cast-shell: circle(44%); --cast-ring: 50%; --cast-orbit: 12%;
+  --cast-core: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+.combat-cast-fx[data-effect="hero-focus"] {
+  --cast-ink: #ff9e73; --cast-accent: #f1cf70; --cast-a: cast-rise; --cast-b: cast-hop; --cast-c: cast-flare;
+  --cast-shell: polygon(50% 0, 78% 31%, 100% 58%, 72% 52%, 50% 100%, 27% 66%, 0 57%, 30% 34%);
+  --cast-ring: 42% 58% 35% 65%; --cast-orbit: 50%;
+  --cast-core: polygon(50% 0, 63% 36%, 100% 50%, 63% 64%, 50% 100%, 37% 64%, 0 50%, 37% 36%);
+}
+.combat-cast-fx[data-effect="hero-smite"] {
+  --cast-ink: #ff816d; --cast-accent: #ffe29a; --cast-a: cast-drop; --cast-b: cast-slash; --cast-c: cast-split;
+  --cast-shell: polygon(43% 0, 63% 34%, 92% 26%, 59% 54%, 77% 100%, 38% 68%, 9% 80%, 34% 49%);
+  --cast-ring: 8%; --cast-orbit: 10%;
+  --cast-core: polygon(50% 0, 61% 35%, 100% 50%, 61% 65%, 50% 100%, 39% 65%, 0 50%, 39% 35%);
+}
+.combat-cast-fx[data-effect="hero-ward"] {
+  --cast-ink: #b6d9f2; --cast-accent: #8cafd1; --cast-a: cast-lock; --cast-b: cast-wave; --cast-c: cast-pulse;
+  --cast-shell: polygon(50% 0, 88% 15%, 80% 68%, 50% 100%, 20% 68%, 12% 15%);
+  --cast-ring: 20% 20% 42% 42%; --cast-orbit: 50%;
+  --cast-core: polygon(50% 0, 88% 15%, 80% 68%, 50% 100%, 20% 68%, 12% 15%);
+}
+.combat-cast-fx[data-effect="hero-aegis"] {
+  --cast-ink: #aee8ed; --cast-accent: #e4f4cb; --cast-a: cast-wave; --cast-b: cast-expand; --cast-c: cast-bloom;
+  --cast-shell: circle(48%); --cast-ring: 50%; --cast-orbit: 50%;
+  --cast-core: polygon(50% 0, 58% 39%, 100% 50%, 58% 61%, 50% 100%, 42% 61%, 0 50%, 42% 39%);
+}
+.combat-cast-fx[data-effect="hero-pawnstep"] {
+  --cast-ink: #d6d27f; --cast-accent: #9bc58e; --cast-a: cast-hop; --cast-b: cast-rush; --cast-c: cast-spark;
+  --cast-shell: polygon(50% 0, 96% 92%, 50% 72%, 4% 92%);
+  --cast-ring: 12%; --cast-orbit: 50%;
+  --cast-core: polygon(50% 0, 100% 70%, 50% 100%, 0 70%);
+}
+.combat-cast-fx[data-effect="hero-pawnrush"] {
+  --cast-ink: #e6c675; --cast-accent: #9acb9d; --cast-a: cast-rush; --cast-b: cast-lunge; --cast-c: cast-split;
+  --cast-shell: polygon(0 36%, 67% 36%, 67% 12%, 100% 50%, 67% 88%, 67% 64%, 0 64%);
+  --cast-ring: 8%; --cast-orbit: 8%;
+  --cast-core: polygon(0 0, 100% 50%, 0 100%, 23% 50%);
+}
+.combat-cast-fx[data-effect="hero-snare"] {
+  --cast-ink: #d1b6df; --cast-accent: #e98b9d; --cast-a: cast-lock; --cast-b: cast-freeze; --cast-c: cast-slash;
+  --cast-shell: circle(48%); --cast-ring: 50%; --cast-orbit: 20%;
+  --cast-core: polygon(0 38%, 38% 38%, 38% 0, 62% 0, 62% 38%, 100% 38%, 100% 62%, 62% 62%, 62% 100%, 38% 100%, 38% 62%, 0 62%);
+}
+.combat-cast-fx[data-effect="hero-skip"] {
+  --cast-ink: #e3edf4; --cast-accent: #9dc4e4; --cast-a: cast-freeze; --cast-b: cast-orbit; --cast-c: cast-wave;
+  --cast-shell: polygon(50% 0, 83% 17%, 100% 50%, 83% 83%, 50% 100%, 17% 83%, 0 50%, 17% 17%);
+  --cast-ring: 22%; --cast-orbit: 50%;
+  --cast-core: polygon(50% 0, 61% 38%, 100% 50%, 61% 62%, 50% 100%, 39% 62%, 0 50%, 39% 38%);
+}
+.combat-cast-fx[data-effect="hero-blockade"] {
+  --cast-ink: #ee8e9e; --cast-accent: #f1cf70; --cast-a: cast-square; --cast-b: cast-cross; --cast-c: cast-pulse;
+  --cast-shell: inset(8%); --cast-ring: 0; --cast-orbit: 0;
+  --cast-core: polygon(0 35%, 35% 35%, 35% 0, 65% 0, 65% 35%, 100% 35%, 100% 65%, 65% 65%, 65% 100%, 35% 100%, 35% 65%, 0 65%);
+}
+.combat-cast-fx[data-effect="hero-citadel"] {
+  --cast-ink: #d2b2e6; --cast-accent: #f0d17e; --cast-a: cast-cross; --cast-b: cast-gate; --cast-c: cast-bloom;
+  --cast-shell: polygon(38% 0, 62% 0, 62% 38%, 100% 38%, 100% 62%, 62% 62%, 62% 100%, 38% 100%, 38% 62%, 0 62%, 0 38%, 38% 38%);
+  --cast-ring: 10%; --cast-orbit: 50%;
+  --cast-core: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+.combat-cast-fx[data-effect="card-offense"] {
+  --cast-ink: #ff8390; --cast-accent: #f1cf70; --cast-a: cast-slash; --cast-b: cast-rush; --cast-c: cast-spark;
+  --cast-shell: polygon(0 0, 100% 25%, 80% 50%, 100% 75%, 0 100%, 19% 51%);
+  --cast-ring: 2%; --cast-orbit: 15%;
+}
+.combat-cast-fx[data-effect="card-defense"] {
+  --cast-ink: #c6a8d8; --cast-accent: #9dc4e4; --cast-a: cast-lock; --cast-b: cast-wave; --cast-c: cast-pulse;
+  --cast-shell: polygon(50% 0, 88% 15%, 80% 68%, 50% 100%, 20% 68%, 12% 15%);
+  --cast-ring: 18% 18% 42% 42%; --cast-orbit: 50%;
+}
+.combat-cast-fx[data-effect="card-spell"] {
+  --cast-ink: #a9d9f2; --cast-accent: #c6a8d8; --cast-a: cast-orbit; --cast-b: cast-gate; --cast-c: cast-spark;
+  --cast-shell: polygon(50% 0, 86% 25%, 100% 50%, 50% 100%, 0 50%, 14% 25%);
+  --cast-ring: 4%; --cast-orbit: 50%;
+}
+.combat-cast-fx[data-effect="card-consumable"] {
+  --cast-ink: #e6b8d1; --cast-accent: #ffe1a0; --cast-a: cast-bloom; --cast-b: cast-wave; --cast-c: cast-flare;
+  --cast-shell: circle(45%); --cast-ring: 50%; --cast-orbit: 40%;
+}
+.combat-cast-fx[data-effect="card-joker"] {
+  --cast-ink: #f1cf70; --cast-accent: #e6b8d1; --cast-a: cast-split; --cast-b: cast-orbit; --cast-c: cast-spark;
+  --cast-shell: polygon(50% 0, 64% 35%, 100% 50%, 64% 65%, 50% 100%, 36% 65%, 0 50%, 36% 35%);
+  --cast-ring: 8%; --cast-orbit: 50%;
+  --cast-core: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+@keyframes cast-fx-life { 0%, 64% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes cast-expand { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.52); } 25% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.42); } }
+@keyframes cast-orbit { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(-58deg) scale(.58); } 25% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(112deg) scale(1.16); } }
+@keyframes cast-gate { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(-42deg) scale(.55); } 28% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(38deg) scale(1.08); } }
+@keyframes cast-rise { 0% { opacity: 0; transform: translate(-50%, -30%) scale(.72); } 26% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -66%) scale(1.13); } }
+@keyframes cast-drop { 0% { opacity: 0; transform: translate(-50%, -82%) scale(.64); } 26% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -44%) scale(1.12); } }
+@keyframes cast-lock { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(-18deg) scale(1.22); } 28% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(0) scale(.78); } }
+@keyframes cast-wave { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.34); } 22% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.54); } }
+@keyframes cast-hop { 0% { opacity: 0; transform: translate(-50%, -38%) scale(.78); } 34% { opacity: 1; transform: translate(-50%, -59%) scale(1.08); } 100% { opacity: 0; transform: translate(-50%, -46%) scale(.9); } }
+@keyframes cast-rush { 0% { opacity: 0; transform: translate(-78%, -50%) scaleX(.38); } 24% { opacity: 1; } 100% { opacity: 0; transform: translate(-22%, -50%) scaleX(1.18); } }
+@keyframes cast-lunge { 0% { opacity: 0; transform: translate(-70%, -50%) scale(.72); } 27% { opacity: 1; } 100% { opacity: 0; transform: translate(-30%, -50%) scale(1.12); } }
+@keyframes cast-freeze { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(-24deg) scale(1.14); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(12deg) scale(.82); } }
+@keyframes cast-square { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(0) scale(.48); } 26% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(90deg) scale(1.12); } }
+@keyframes cast-cross { 0% { opacity: 0; transform: translate(-50%, -50%) scaleX(.08); } 22% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) scaleX(1.42); } }
+@keyframes cast-slash { 0% { opacity: 0; transform: translate(-70%, -62%) rotate(-24deg) scale(.72); } 22% { opacity: 1; } 100% { opacity: 0; transform: translate(-30%, -38%) rotate(-24deg) scale(1.14); } }
+@keyframes cast-bloom { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(-38deg) scale(.24); } 28% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(42deg) scale(1.34); } }
+@keyframes cast-split { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(45deg) scale(.28); } 24% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(-45deg) scale(1.18); } }
+@keyframes cast-flare { 0% { opacity: 0; transform: translate(-50%, -42%) scale(.62); } 24% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -58%) scale(1.24); } }
+@keyframes cast-pulse { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.74); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); } }
+@keyframes cast-spark { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(0) scale(.35); } 24% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(135deg) scale(1.22); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .combat-cast-fx { animation: cast-fx-life 120ms ease-out both !important; }
+  .combat-cast-fx > i { animation: cast-fx-life 120ms ease-out both !important; }
+}

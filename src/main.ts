@@ -14,6 +14,7 @@ import type { DeckFilter, HeroMenuTab, HeroesPageView } from './ui/screens/heroe
 import type { BattlePageView, LedgerEntryView } from './ui/screens/battle.ts';
 import type { ResultView } from './ui/screens/result.ts';
 import type { ChapterMapItem, FloorListItem } from './ui/dungeon/dungeon.ts';
+import { playCardCastFx, playHeroCastFx } from './ui/combat-fx.ts';
 
 import { CARDS, cardById } from './content/cards.ts';
 import { EN_CAP, HEROES, heroById as contentHeroById } from './content/heroes.ts';
@@ -1173,10 +1174,16 @@ function main(): void {
         }
         state.focusSquare = [row, col];
         if (!battle.pendingPromotion) {
-          if (battle.activeSkill && (battle.activeSkill ?? '').indexOf('hero:') === 0) {
-            applyResult(resolveHeroTargetFlow(battle, deps, row, col, audio, alreadyCleared));
-          } else if (battle.activeSkill) {
-            applyResult(resolveCardTargetFlow(battle, deps, row, col, audio, alreadyCleared));
+          const activeSkill = battle.activeSkill;
+          if (activeSkill && activeSkill.indexOf('hero:') === 0) {
+            const result = resolveHeroTargetFlow(battle, deps, row, col, audio, alreadyCleared);
+            applyResult(result);
+            if (result.ok) playHeroCastFx(root, activeSkill.slice(activeSkill.lastIndexOf(':') + 1));
+          } else if (activeSkill) {
+            const card = cardById[activeSkill];
+            const result = resolveCardTargetFlow(battle, deps, row, col, audio, alreadyCleared);
+            applyResult(result);
+            if (result.ok && card) playCardCastFx(root, card.kind);
           } else {
             applyResult(tapSquareFlow(battle, deps, row, col, audio, alreadyCleared));
           }
@@ -1188,15 +1195,32 @@ function main(): void {
       }
       case 'card': {
         const slot = Number(target.dataset['slot']);
-        if (Number.isInteger(slot)) applyResult(playCardFlow(battle, deps, slot, audio));
+        if (Number.isInteger(slot)) {
+          const cardId = battle.hand[slot];
+          const card = cardId ? cardById[cardId] : undefined;
+          const wasTargeting = battle.activeSkill !== null && battle.activeSlot === slot;
+          const result = playCardFlow(battle, deps, slot, audio);
+          applyResult(result);
+          if (result.ok && !wasTargeting && result.state.activeSkill === null && card) {
+            playCardCastFx(root, card.kind);
+          }
+        }
         return;
       }
       case 'hero-skill': {
-        applyResult(useHeroSkillFlow(battle, deps, audio));
+        const wasTargeting = (battle.activeSkill ?? '').indexOf('hero:skill:') === 0;
+        const action = activeHeroOf(state).skillAction;
+        const result = useHeroSkillFlow(battle, deps, audio);
+        applyResult(result);
+        if (result.ok && !wasTargeting && result.state.activeSkill === null) playHeroCastFx(root, action);
         return;
       }
       case 'hero-ultimate': {
-        applyResult(useHeroUltimateFlow(battle, deps, audio));
+        const wasTargeting = (battle.activeSkill ?? '').indexOf('hero:ultimate:') === 0;
+        const action = activeHeroOf(state).ultimateAction;
+        const result = useHeroUltimateFlow(battle, deps, audio);
+        applyResult(result);
+        if (result.ok && !wasTargeting && result.state.activeSkill === null) playHeroCastFx(root, action);
         return;
       }
       case 'reroll': {
