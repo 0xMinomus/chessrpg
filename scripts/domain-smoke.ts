@@ -5,14 +5,15 @@
 // (Node 22+; bila experimental-strip-types tidak tersedia, gunakan Vite/vitest.)
 
 import { CARDS, HEROES, BOSSES } from '../src/content/index.ts';
+import { DUNGEON_FLOORS, FLOOR_IDS, LEGACY_BOSS_IDS } from '../src/content/dungeon.ts';
 import { chessRulesAdapter } from '../src/adapters/chess-rules.ts';
 import { SeededRandom } from '../src/adapters/random.ts';
 import { tapSquare, canUndo, restartBattle, cancelTarget } from '../src/domain/battle/commands.ts';
 import { battleLegalMovesFrom, advanceBossReplyEffects } from '../src/domain/battle/effects.ts';
 import {
   chooseHero,
-  isBossUnlocked,
-  nextBossId,
+  isFloorUnlocked,
+  nextFloorId,
   defaultCampaign,
   deckSelectionStatus,
   normalizeCampaign,
@@ -52,10 +53,13 @@ const deps: BattleDeps = {
       },
     ]),
   ),
-  bosses: Object.fromEntries(BOSSES.map((b) => [b.id, { id: b.id, ruleKey: b.ruleKey, reward: b.reward }])),
+  opponents: Object.fromEntries(
+    DUNGEON_FLOORS.map((floor) => [
+      floor.id,
+      { id: floor.id, ruleKey: floor.ruleKey, reward: floor.reward, isBoss: floor.isBoss },
+    ]),
+  ),
 };
-
-const BOSS_IDS = BOSSES.map((b) => b.id);
 const HERO_IDS = HEROES.map((h) => h.id);
 const DECK_CATALOG = {
   regularCardIds: CARDS.filter((card) => card.kind !== 'joker').map((card) => card.id),
@@ -112,7 +116,7 @@ function main(): void {
   // 1. Konten
   check('konten: 37 kartu', CARDS.length === 37, String(CARDS.length));
   check('konten: 6 hero', HEROES.length === 6);
-  check('konten: 3 boss', BOSSES.length === 3);
+  check('konten: 10 boss chapter', BOSSES.length === 10);
   check('konten: Joker berbobot 0.2', CARDS.filter((c) => c.kind === 'joker').every((c) => c.weight === 0.2));
   check('konten: biaya Joker dasar 5', CARDS.filter((c) => c.kind === 'joker').every((c) => c.cost === 5));
 
@@ -123,17 +127,24 @@ function main(): void {
   check('kampanye: hero awal arunika', fresh.selectedHero === 'arunika');
   check('deck: default berisi 10 kartu biasa + 1 Joker', fresh.deckCardIds.length === 11 && deckSelectionStatus(fresh.deckCardIds, DECK_CATALOG).complete);
   check('deck: pilihan default hanya dari koleksi kartu', fresh.deckCardIds.every((id) => CARDS.some((card) => card.id === id)));
-  check('kampanye: boss 2 terkunci', !isBossUnlocked(BOSS_IDS, fresh, 'ash'));
-  const corrupted = normalizeCampaign('{bukan json', HERO_IDS, BOSS_IDS, DECK_CATALOG);
+  check('kampanye: lantai 2 terkunci', !isFloorUnlocked(FLOOR_IDS, fresh, FLOOR_IDS[1]));
+  const corrupted = normalizeCampaign('{bukan json', HERO_IDS, FLOOR_IDS, LEGACY_BOSS_IDS, DECK_CATALOG);
   check('save rusak: fallback default', corrupted.coins === 30 && corrupted.selectedHero === 'arunika');
-  const partial = normalizeCampaign({ coins: -5, defeatedBosses: ['ash', 'tidak-ada'] }, HERO_IDS, BOSS_IDS, DECK_CATALOG);
+  const partial = normalizeCampaign(
+    { coins: -5, clearedFloorIds: [FLOOR_IDS[0], 'tidak-ada'] },
+    HERO_IDS,
+    FLOOR_IDS,
+    LEGACY_BOSS_IDS,
+    DECK_CATALOG,
+  );
   check('save parsial: koin di-clamp', partial.coins === 0);
-  check('save parsial: boss tak dikenal dibuang', partial.defeatedBosses.join() === 'ash');
+  check('save parsial: ID lantai tak dikenal dibuang', partial.clearedFloorIds.join() === FLOOR_IDS[0]);
   check('save lama: deck default ditambahkan', deckSelectionStatus(partial.deckCardIds, DECK_CATALOG).complete);
   const invalidDeck = normalizeCampaign(
     { deckCardIds: DECK_CATALOG.regularCardIds.concat(DECK_CATALOG.jokerCardIds) },
     HERO_IDS,
-    BOSS_IDS,
+    FLOOR_IDS,
+    LEGACY_BOSS_IDS,
     DECK_CATALOG,
   );
   check('save: loadout dibatasi menjadi 10 kartu biasa + 1 Joker', invalidDeck.deckCardIds.length === 11 && deckSelectionStatus(invalidDeck.deckCardIds, DECK_CATALOG).complete);
@@ -145,15 +156,17 @@ function main(): void {
   check('deck: Joker tidak melewati batas', toggleDeckCard(fresh.deckCardIds, DECK_CATALOG.jokerCardIds[1], DECK_CATALOG).length === 11);
   const incompleteStart = startBattle(
     deps,
-    BOSS_IDS,
+    FLOOR_IDS,
     { ...fresh, deckCardIds: incompleteDeck },
     'arunika',
-    'bastion',
+    FLOOR_IDS[0],
   );
   check('duel: deck tidak lengkap ditolak', !incompleteStart.ok && incompleteStart.battle === null);
+  const lockedStart = startBattle(deps, FLOOR_IDS, fresh, 'arunika', FLOOR_IDS[1]);
+  check('duel: startBattle menolak lantai terkunci', !lockedStart.ok && lockedStart.battle === null);
 
   // 3. Mulai duel
-  const started = startBattle(deps, BOSS_IDS, fresh, 'arunika', 'bastion');
+  const started = startBattle(deps, FLOOR_IDS, fresh, 'arunika', FLOOR_IDS[0]);
   check('duel: dimulai', started.ok && started.battle !== null);
   let battle = started.battle as BattleState;
   check('duel: EN awal hero 4', battle.energy === 4, String(battle.energy));
@@ -245,7 +258,7 @@ function main(): void {
   // 9. Hero skill 2 EN / ultimate 5 EN + cancel tanpa bayar
   for (const hero of HEROES) {
     const campaign: Campaign = chooseHero(fresh, hero.id, HERO_IDS);
-    const duel = startBattle(deps, BOSS_IDS, campaign, hero.id, 'bastion');
+    const duel = startBattle(deps, FLOOR_IDS, campaign, hero.id, FLOOR_IDS[0]);
     check('hero ' + hero.id + ': duel dimulai', duel.ok && duel.battle !== null);
     if (!duel.ok || !duel.battle) continue;
     const before = duel.battle.energy;
@@ -273,7 +286,7 @@ function main(): void {
   }
 
   // 10. Fr-23: durasi efek boss-reply = 2 (ward/snare/blockade) dan 1 (aegis/skip)
-  const nila = startBattle(deps, BOSS_IDS, fresh, 'nila', 'bastion');
+  const nila = startBattle(deps, FLOOR_IDS, fresh, 'nila', FLOOR_IDS[0]);
   if (nila.ok && nila.battle) {
     const withWard = { ...nila.battle, playerWardPieceId: nila.battle.board[7][4]?.id ?? null, playerWardTurns: 2 };
     const stepped = advanceBossReplyEffects(withWard);
@@ -282,10 +295,12 @@ function main(): void {
     check('FR-23: ward habis setelah 2 balasan', stepped2.playerWardTurns === 0);
   }
 
-  // 11. Hadiah first-clear sekali saja + buka lantai berikutnya
-  let campaign: Campaign = defaultCampaign(HERO_IDS, DECK_CATALOG);
+  let campaign: Campaign = {
+    ...defaultCampaign(HERO_IDS, DECK_CATALOG),
+    clearedFloorIds: FLOOR_IDS.slice(0, 4),
+  };
   const winBattle: BattleState = {
-    ...(startBattle(deps, BOSS_IDS, campaign, 'arunika', 'bastion').battle as BattleState),
+    ...(startBattle(deps, FLOOR_IDS, campaign, 'arunika', 'bastion').battle as BattleState),
     gameOver: true,
     winner: 'w',
     dungeonRewarded: true,
@@ -297,12 +312,12 @@ function main(): void {
       return true;
     },
   };
-  const first = claimBattleRewardFlow(campaign, winBattle, deps.bosses['bastion'], store, { play() {} });
+  const first = claimBattleRewardFlow(campaign, winBattle, deps.opponents['bastion'], FLOOR_IDS, store, { play() {} });
   check('hadiah: first-clear menambah koin', first.campaign.coins === 45, String(first.campaign.coins));
-  check('hadiah: boss tercatat', first.campaign.defeatedBosses.join() === 'bastion');
-  check('hadiah: lantai 2 terbuka', isBossUnlocked(BOSS_IDS, first.campaign, 'ash'));
-  check('hadiah: nextBossId = ash', nextBossId(BOSS_IDS, first.campaign) === 'ash');
-  const again = claimBattleRewardFlow(first.campaign, winBattle, deps.bosses['bastion'], store, { play() {} });
+  check('hadiah: boss chapter tercatat sebagai lantai kelima', first.campaign.clearedFloorIds.length === 5 && first.campaign.clearedFloorIds[4] === 'bastion');
+  check('hadiah: boss membuka lantai pertama chapter berikutnya', isFloorUnlocked(FLOOR_IDS, first.campaign, FLOOR_IDS[5]));
+  check('hadiah: nextFloorId menuju chapter berikutnya', nextFloorId(FLOOR_IDS, first.campaign) === FLOOR_IDS[5]);
+  const again = claimBattleRewardFlow(first.campaign, winBattle, deps.opponents['bastion'], FLOOR_IDS, store, { play() {} });
   check('hadiah: tidak double', again.firstClear === false && again.campaign.coins === 45);
 
   // 12. Menjalankan banyak duel penuh: tidak boleh error/exception
@@ -312,7 +327,8 @@ function main(): void {
       const hero = HEROES[i % HEROES.length];
       const boss = BOSSES[i % BOSSES.length];
       // Semua boss bisa dipilih langsung di build uji; engine duel tetap sama.
-      const duel = startBattle(deps, [boss.id], fresh, hero.id, boss.id);
+      const chapterProgress = FLOOR_IDS.slice(0, FLOOR_IDS.indexOf(boss.id));
+      const duel = startBattle(deps, FLOOR_IDS, { ...fresh, clearedFloorIds: chapterProgress }, hero.id, boss.id);
       if (!duel.ok || !duel.battle) {
         crashes += 1;
         failures.push('loop duel ' + i + ': startBattle menolak ' + hero.id + ' vs ' + boss.id);
@@ -327,7 +343,14 @@ function main(): void {
         state = runWhiteTurn(state);
         if (state.thinking) state = advanceBlackReplyFlow(state, deps).battle;
         if (state.gameOver && state.winner === 'w') {
-          const claim = claimBattleRewardFlow(campaign, state, deps.bosses[state.bossId], store, { play() {} });
+          const claim = claimBattleRewardFlow(
+            { ...fresh, clearedFloorIds: FLOOR_IDS.slice(0, FLOOR_IDS.indexOf(state.floorId)) },
+            state,
+            deps.opponents[state.floorId],
+            FLOOR_IDS,
+            store,
+            { play() {} },
+          );
           campaign = claim.campaign;
         }
       }
@@ -341,7 +364,7 @@ function main(): void {
 
   // 13. AI hanya langkah legal + uniformly random hanya lewat RandomSource
   {
-    const duel = startBattle(deps, ['bastion'], fresh, 'arunika', 'bastion');
+    const duel = startBattle(deps, FLOOR_IDS, fresh, 'arunika', FLOOR_IDS[0]);
     const b = duel.battle as BattleState;
     const boardBefore = JSON.stringify(b.board);
     const blackMoves = battleLegalMovesFrom(b, deps, 1, 4);

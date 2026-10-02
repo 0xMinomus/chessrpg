@@ -1,18 +1,17 @@
 // Hasil pertandingan: skakmat menang/kalah, remis, dan hadiah first-clear.
 //
-// checkOutcome murni terhadap BattleState; mutasi kampanye (koin +
-// defeatedBosses) dilakukan claimBattleReward agar game core tidak
-// menyentuh penyimpanan. Kombinasinya setara updateOutcome prototipe.
+// checkOutcome murni terhadap BattleState; klaim progres dilakukan
+// claimBattleReward agar game core tidak menyentuh penyimpanan.
 
 import {
   type BattleDeps,
   type BattleState,
-  type BossDef,
+  type OpponentDef,
   type Color,
 } from './state.ts';
 import { battleLegalMoves } from './effects.ts';
 import {
-  claimReward,
+  claimFloorReward,
   type Campaign,
   type RewardClaim,
 } from '../campaign/progress.ts';
@@ -22,7 +21,7 @@ export interface OutcomeCheck {
   ended: boolean;
   /** True bila kemenangan ini kemenangan pertama atas boss tersebut. */
   firstClear: boolean;
-  alreadyDefeated: boolean;
+  alreadyCleared: boolean;
 }
 
 /**
@@ -35,15 +34,15 @@ export function checkOutcome(
   state: BattleState,
   deps: BattleDeps,
   side: Color,
-  boss: BossDef,
-  alreadyDefeated: boolean,
+  opponent: OpponentDef,
+  alreadyCleared: boolean,
 ): OutcomeCheck {
   const moves = battleLegalMoves(state, deps, side);
   const checked = deps.chess.isInCheck(state.board, side);
   if (moves.length > 0) {
-    if (!checked) return { state, ended: false, firstClear: false, alreadyDefeated };
+    if (!checked) return { state, ended: false, firstClear: false, alreadyCleared };
     const status = side === 'w' ? 'Skak. Lindungi raja putih.' : 'Skak. Raja lawan terancam.';
-    return { state: { ...state, status }, ended: false, firstClear: false, alreadyDefeated };
+    return { state: { ...state, status }, ended: false, firstClear: false, alreadyCleared };
   }
   let next: BattleState = {
     ...state,
@@ -58,15 +57,15 @@ export function checkOutcome(
   let firstClear = false;
   if (next.winner === 'w' && !next.dungeonRewarded) {
     next = { ...next, dungeonRewarded: true };
-    firstClear = !alreadyDefeated;
+    firstClear = !alreadyCleared;
     next = {
       ...next,
       status: firstClear
-        ? next.status + ' +' + boss.reward + ' koin.'
-        : next.status + ' Boss ini sudah ditaklukkan sebelumnya.',
+        ? next.status + ' +' + opponent.reward + ' koin.'
+        : next.status + ' Lantai ini sudah ditaklukkan sebelumnya.',
     };
   }
-  return { state: next, ended: true, firstClear, alreadyDefeated };
+  return { state: next, ended: true, firstClear, alreadyCleared };
 }
 
 /**
@@ -77,10 +76,11 @@ export function checkOutcome(
 export function claimBattleReward(
   campaign: Campaign,
   battle: BattleState,
-  boss: BossDef,
+  opponent: OpponentDef,
+  floorOrder: readonly string[],
 ): RewardClaim {
   if (battle.winner !== 'w' || !battle.dungeonRewarded) {
     return { campaign, firstClear: false };
   }
-  return claimReward(campaign, boss.id, boss.reward);
+  return claimFloorReward(campaign, battle.floorId, opponent.reward, floorOrder);
 }

@@ -9,15 +9,15 @@ import type { CaptureFx, LegalMoveRef } from './ui/board/board.ts';
 import type { CardMeta, CardSlotView, RerollView } from './ui/cards/cards.ts';
 import { HERO_MANA_CAP, HERO_SKILL_COST, HERO_ULTIMATE_COST } from './ui/hero/hero.ts';
 import type { MenuView } from './ui/screens/menu.ts';
-import type { DungeonPageView } from './ui/screens/dungeon.ts';
+import type { DungeonPageView } from './ui/dungeon/dungeon.ts';
 import type { DeckFilter, HeroMenuTab, HeroesPageView } from './ui/screens/heroes.ts';
 import type { BattlePageView, LedgerEntryView } from './ui/screens/battle.ts';
 import type { ResultView } from './ui/screens/result.ts';
-import type { BossListItem } from './ui/dungeon/dungeon.ts';
+import type { ChapterMapItem, FloorListItem } from './ui/dungeon/dungeon.ts';
 
 import { CARDS, cardById } from './content/cards.ts';
 import { EN_CAP, HEROES, heroById as contentHeroById } from './content/heroes.ts';
-import { BOSSES, bossById as contentBossById } from './content/bosses.ts';
+import { CHAPTERS, DUNGEON_FLOORS, DUNGEON_FLOOR_BY_ID, FLOOR_IDS, LEGACY_BOSS_IDS } from './content/dungeon.ts';
 
 import type { BattleDeps, BattleState, CommandResult } from './domain/battle/state.ts';
 import { canUndo } from './domain/battle/commands.ts';
@@ -26,8 +26,8 @@ import { canPlayCard, currentCardCost, rerollCost, rerollLimit } from './domain/
 import { describeEnemyPlan } from './domain/battle/ai.ts';
 import {
   chooseHero as chooseHeroProgress,
-  isBossUnlocked,
-  nextBossId as nextBossProgress,
+  isFloorUnlocked,
+  nextFloorId,
   DECK_JOKER_LIMIT,
   DECK_REGULAR_LIMIT,
   deckSelectionStatus,
@@ -62,9 +62,14 @@ import { chessRulesAdapter } from './adapters/chess-rules.ts';
 const HERO_IDS = HEROES.map(function (hero) {
   return hero.id;
 });
-const BOSS_IDS = BOSSES.map(function (boss) {
-  return boss.id;
-});
+const AREA_LABELS: Record<string, string> = {
+  west: 'Barat',
+  north: 'Utara',
+  east: 'Timur',
+  central: 'Tengah',
+  'inner-east': 'Timur dalam',
+  south: 'Selatan',
+};
 const DECK_CATALOG: DeckCatalog = {
   regularCardIds: CARDS.filter(function (card) {
     return card.kind !== 'joker';
@@ -104,14 +109,17 @@ const deps: BattleDeps = {
       ];
     }),
   ),
-  bosses: Object.fromEntries(
-    BOSSES.map(function (boss) {
-      return [boss.id, { id: boss.id, ruleKey: boss.ruleKey, reward: boss.reward }];
+  opponents: Object.fromEntries(
+    DUNGEON_FLOORS.map(function (floor) {
+      return [
+        floor.id,
+        { id: floor.id, ruleKey: floor.ruleKey, reward: floor.reward, isBoss: floor.isBoss },
+      ];
     }),
   ),
 };
 
-const store = createCampaignStore(createLocalStorageBacking());
+const store = createCampaignStore(createLocalStorageBacking(), LEGACY_BOSS_IDS);
 const audio = createBrowserAudio(createLocalStorageBacking());
 
 // ---------- State aplikasi ----------
@@ -123,7 +131,8 @@ interface AppState {
   heroesTab: HeroMenuTab;
   deckFilter: DeckFilter;
   deckNotice: string | null;
-  selectedBossId: string;
+  selectedChapterId: string;
+  selectedFloorId: string;
   battle: BattleState | null;
   focusSquare: [number, number];
   soundEnabled: boolean;
@@ -180,47 +189,79 @@ function activeHeroOf(state: AppState) {
   return contentHeroById(state.campaign.selectedHero);
 }
 
-function bossOf(battle: BattleState) {
-  return contentBossById(battle.bossId);
+function floorView(state: AppState, floorId: string): FloorListItem {
+  const floor = DUNGEON_FLOOR_BY_ID[floorId] ?? DUNGEON_FLOORS[0];
+  const floorIndex = FLOOR_IDS.indexOf(floor.id);
+  const previous = floorIndex > 0 ? DUNGEON_FLOOR_BY_ID[FLOOR_IDS[floorIndex - 1]] : null;
+  const unlocked = isFloorUnlocked(FLOOR_IDS, state.campaign, floor.id);
+  const lockReason = unlocked || !previous
+    ? ''
+    : previous.isBoss
+      ? 'Kalahkan boss Chapter ' + pad2(previous.chapterNumber) + ' untuk membuka chapter ini.'
+      : 'Selesaikan Lantai ' + pad2(previous.floorNumber) + ' sebelumnya.';
+  return {
+    id: floor.id,
+    chapterNumber: floor.chapterNumber,
+    floorNumber: floor.floorNumber,
+    name: floor.name,
+    glyph: floor.glyph,
+    subtitle: floor.subtitle,
+    reward: floor.reward,
+    unlocked,
+    cleared: state.campaign.clearedFloorIds.indexOf(floor.id) !== -1,
+    selected: state.selectedFloorId === floor.id,
+    description: floor.description,
+    rule: floor.rule,
+    isBoss: floor.isBoss,
+    lockReason,
+  };
 }
 
-// ---------- Pembangun view per layar ----------
+function chapterView(state: AppState, chapterId: string): ChapterMapItem {
+  const chapter = CHAPTERS.find((item) => item.id === chapterId) ?? CHAPTERS[0];
+  const chapterFloors = DUNGEON_FLOORS.filter((floor) => floor.chapterId === chapter.id);
+  const clearedFloorCount = chapterFloors.filter(
+    (floor) => state.campaign.clearedFloorIds.indexOf(floor.id) !== -1,
+  ).length;
+  return {
+    id: chapter.id,
+    number: chapter.number,
+    name: chapter.name,
+    areaLabel: AREA_LABELS[chapter.area],
+    x: chapter.mapPosition.x,
+    y: chapter.mapPosition.y,
+    unlocked: isFloorUnlocked(FLOOR_IDS, state.campaign, chapterFloors[0].id),
+    cleared: clearedFloorCount === chapterFloors.length,
+    clearedFloorCount,
+    selected: state.selectedChapterId === chapter.id,
+  };
+}
 
 function buildMenuView(state: AppState): MenuView {
   const hero = activeHeroOf(state);
-  const allCleared = state.campaign.defeatedBosses.length >= BOSSES.length;
-  const next = contentBossById(nextBossProgress(BOSS_IDS, state.campaign));
-  const floorProgress = BOSSES.map(function (boss) {
-    return {
-      id: boss.id,
-      name: boss.name,
-      glyph: boss.glyph,
-      subtitle: boss.subtitle,
-      reward: boss.reward,
-      unlocked: isBossUnlocked(BOSS_IDS, state.campaign, boss.id),
-      defeated: state.campaign.defeatedBosses.indexOf(boss.id) !== -1,
-      selected: boss.id === state.selectedBossId,
-      description: boss.description,
-      rule: boss.rule,
-    };
-  });
-  const selectedBoss = floorProgress.find(function (boss) {
-    return boss.selected;
-  }) ?? floorProgress[0];
-  const lastClearedId = state.campaign.defeatedBosses[state.campaign.defeatedBosses.length - 1];
-  const lastClearedBoss = lastClearedId
-    ? floorProgress.find(function (boss) {
-        return boss.id === lastClearedId;
-      }) ?? null
-    : null;
+  const chapters = CHAPTERS.map((chapter) => chapterView(state, chapter.id));
+  const selectedChapter = chapters.find((chapter) => chapter.selected) ?? chapters[0];
+  const chapterFloors = DUNGEON_FLOORS.filter(
+    (floor) => floor.chapterId === selectedChapter.id,
+  );
+  const floorProgress = chapterFloors.map((floor) => floorView(state, floor.id));
+  const selectedFloor =
+    floorProgress.find((floor) => floor.selected) ??
+    floorProgress.find((floor) => floor.unlocked) ??
+    floorProgress[0];
+  const nextFloor = floorView(state, nextFloorId(FLOOR_IDS, state.campaign));
+  const lastClearedId = state.campaign.clearedFloorIds[state.campaign.clearedFloorIds.length - 1];
+  const lastClearedFloor = lastClearedId ? floorView(state, lastClearedId) : null;
   return {
     coins: state.campaign.coins,
-    clearedCount: state.campaign.defeatedBosses.length,
-    totalFloors: BOSSES.length,
-    allCleared,
-    nextBoss: { name: next.name, description: next.description, rule: next.rule },
-    selectedBoss,
-    lastClearedBoss,
+    clearedCount: state.campaign.clearedFloorIds.length,
+    totalFloors: DUNGEON_FLOORS.length,
+    allCleared: state.campaign.clearedFloorIds.length === DUNGEON_FLOORS.length,
+    chapters,
+    selectedChapter,
+    nextFloor,
+    selectedFloor,
+    lastClearedFloor,
     floorProgress,
     activeHero: {
       id: hero.id,
@@ -241,36 +282,21 @@ function buildMenuView(state: AppState): MenuView {
 }
 
 function buildDungeonView(state: AppState): DungeonPageView {
-  const items: BossListItem[] = BOSSES.map(function (boss) {
-    return {
-      id: boss.id,
-      name: boss.name,
-      glyph: boss.glyph,
-      subtitle: boss.subtitle,
-      reward: boss.reward,
-      unlocked: isBossUnlocked(BOSS_IDS, state.campaign, boss.id),
-      defeated: state.campaign.defeatedBosses.indexOf(boss.id) !== -1,
-      selected: boss.id === state.selectedBossId,
-    };
-  });
-  const detail = contentBossById(state.selectedBossId);
-  const unlocked = isBossUnlocked(BOSS_IDS, state.campaign, detail.id);
-  const defeated = state.campaign.defeatedBosses.indexOf(detail.id) !== -1;
+  const chapters = CHAPTERS.map((chapter) => chapterView(state, chapter.id));
+  const selectedChapter = chapters.find((chapter) => chapter.selected) ?? chapters[0];
+  const floors = DUNGEON_FLOORS
+    .filter((floor) => floor.chapterId === selectedChapter.id)
+    .map((floor) => floorView(state, floor.id));
+  const detail =
+    floors.find((floor) => floor.selected) ??
+    floors.find((floor) => floor.unlocked) ??
+    floors[0];
   return {
-    items,
+    chapters,
+    selectedChapter,
+    floors,
+    detail,
     deckReady: deckSelectionStatus(state.campaign.deckCardIds, DECK_CATALOG).complete,
-    detail: {
-      id: detail.id,
-      name: detail.name,
-      glyph: detail.glyph,
-      subtitle: detail.subtitle,
-      reward: detail.reward,
-      unlocked,
-      defeated,
-      selected: true,
-      description: detail.description,
-      rule: detail.rule,
-    },
   };
 }
 
@@ -534,6 +560,10 @@ function effectChips(battle: BattleState): { text: string; enemy: boolean }[] {
   if (battle.bossSealedSquare) {
     add('Retakan ' + coord(battle.bossSealedSquare[0], battle.bossSealedSquare[1]) + ' • petak tersegel', true);
   }
+  if (battle.bossSnareId) add('Jerat boss • bidak putih ini tidak dapat bergerak', true);
+  if (battle.bossCardSilence) add('Segel boss • kartu skill dibungkam sampai langkah berikutnya', true);
+  if (battle.bossHeroSilence) add('Senyap boss • skill hero dibungkam sampai langkah berikutnya', true);
+  if (battle.bossBlightArmed) add('Hawar boss • langkah berikutnya tidak menghasilkan mana', true);
   if (battle.enemyDrainArmed) add('Gangguan • langkahmu berikutnya −1 EN', true);
   if (battle.enemySurcharge > 0) add('Pajak mantra • skill lawan +' + battle.enemySurcharge + ' EN', true);
   if (battle.reserveArmed) add('Fokus cadangan • kartu berikutnya −1 mana');
@@ -570,10 +600,8 @@ function legalMovesFor(battle: BattleState): LegalMoveRef[] {
 function buildBattleView(state: AppState): BattlePageView | null {
   const battle = state.battle;
   if (!battle) return null;
-  const boss = bossOf(battle);
-  const bossIndex = BOSSES.findIndex(function (item) {
-    return item.id === boss.id;
-  });
+  const floor = DUNGEON_FLOOR_BY_ID[battle.floorId] ?? DUNGEON_FLOORS[0];
+  const chapter = CHAPTERS.find((item) => item.id === floor.chapterId) ?? CHAPTERS[0];
   const hero = activeHeroOf(state);
   const busy = battle.thinking || battle.gameOver || battle.turn !== 'w';
   const skillTargeting = (battle.activeSkill ?? '').indexOf('hero:skill:') === 0;
@@ -585,11 +613,12 @@ function buildBattleView(state: AppState): BattlePageView | null {
   const blackInCheck = deps.chess.isInCheck(battle.board, 'b');
   return {
     chrome: {
-      floorLabel: pad2(bossIndex + 1) + ' / Menara',
+      floorLabel: 'Chapter ' + pad2(floor.chapterNumber) + ' · ' + pad2(floor.floorNumber) + '/05',
       turnLabel: pad2(battle.turnNo),
-      bossName: boss.name,
-      bossRule: boss.rule,
-      stageLabel: boss.subtitle,
+      opponentName: floor.name,
+      opponentRule: floor.rule,
+      opponentType: floor.isBoss ? 'BOSS / CPU' : 'LAWAN / CPU',
+      stageLabel: chapter.name + ' · ' + floor.subtitle,
       turnFlag: battle.gameOver
         ? battle.winner === 'w'
           ? 'Putih menang'
@@ -614,7 +643,9 @@ function buildBattleView(state: AppState): BattlePageView | null {
       captureCount: pad2(battle.captures.w),
       enemyKingState: blackInCheck ? 'SKAK' : 'AMAN',
       kingState: whiteInCheck ? 'Raja sedang diskak.' : 'Raja belum terancam.',
-      runNote: 'Buka jalur, jaga raja, lalu pakai skill untuk merebut tempo.',
+      runNote: floor.isBoss
+        ? 'Skill boss: ' + floor.rule
+        : 'Lantai standar. Buka jalur, jaga raja, dan gunakan skill untuk merebut tempo.',
       enemyEnergyNumber: pad2(battle.enemyEnergy) + ' / 05',
       enemyEnergyPips: battle.enemyEnergy,
       enemyEnergyNote: battle.enemyPreparedSkill
@@ -627,7 +658,9 @@ function buildBattleView(state: AppState): BattlePageView | null {
           : battle.winner === 'b'
             ? 'Hitam menang / mulai ulang untuk bermain lagi'
             : 'Remis / mulai ulang untuk bermain lagi'
-        : 'Papan standar / lawan sederhana',
+        : floor.isBoss
+          ? 'Boss chapter / pertarungan catur'
+          : 'Lantai standar / pertarungan catur',
       undoDisabled: !canUndo(battle),
       soundOn: state.soundEnabled,
       canInteract: !busy,
@@ -653,6 +686,7 @@ function buildBattleView(state: AppState): BattlePageView | null {
       heroBlockadeTurns: battle.heroBlockadeTurns,
       heroBlockadeName: battle.heroBlockadeName,
       bossSealedSquare: battle.bossSealedSquare,
+      bossSnareId: battle.bossSnareId,
       targeting: battle.activeSkill !== null,
       disabled: busy,
     },
@@ -671,15 +705,24 @@ function buildBattleView(state: AppState): BattlePageView | null {
       ultimateTargeting,
       skillDisabled:
         busy ||
+        battle.bossHeroSilence ||
         (battle.energy < HERO_SKILL_COST && !skillTargeting) ||
         (battle.activeSkill !== null && !skillTargeting),
       ultimateDisabled:
         busy ||
+        battle.bossHeroSilence ||
         (battle.energy < HERO_ULTIMATE_COST && !ultimateTargeting) ||
         (battle.activeSkill !== null && !ultimateTargeting),
-      skillHint: battle.energy < HERO_SKILL_COST ? 'Butuh ' + HERO_SKILL_COST + ' EN.' : 'Siap dipakai.',
-      ultimateHint:
-        battle.energy < HERO_ULTIMATE_COST ? 'Butuh ' + HERO_ULTIMATE_COST + ' EN.' : 'Siap dipakai.',
+      skillHint: battle.bossHeroSilence
+        ? 'Boss membungkam skill hero hingga langkah berikutnya.'
+        : battle.energy < HERO_SKILL_COST
+          ? 'Butuh ' + HERO_SKILL_COST + ' EN.'
+          : 'Siap dipakai.',
+      ultimateHint: battle.bossHeroSilence
+        ? 'Boss membungkam ultimate hingga langkah berikutnya.'
+        : battle.energy < HERO_ULTIMATE_COST
+          ? 'Butuh ' + HERO_ULTIMATE_COST + ' EN.'
+          : 'Siap dipakai.',
       freeSkillState: battle.freeSkillUsedThisTurn ? 'TERPAKAI' : 'SIAP',
     },
     slots: cardSlots(battle, hero),
@@ -700,21 +743,31 @@ function buildBattleView(state: AppState): BattlePageView | null {
 function buildResultView(state: AppState): ResultView | null {
   const battle = state.battle;
   if (!battle || !battle.gameOver) return null;
-  const boss = bossOf(battle);
+  const floor = DUNGEON_FLOOR_BY_ID[battle.floorId] ?? DUNGEON_FLOORS[0];
   const progress =
-    state.campaign.defeatedBosses.length + ' dari ' + BOSSES.length + ' lantai ditaklukkan';
+    state.campaign.clearedFloorIds.length + ' dari ' + DUNGEON_FLOORS.length + ' lantai ditaklukkan';
   const heading =
     battle.winner === 'w'
       ? 'Skakmat. Raja hitam tumbang.'
       : battle.winner === 'b'
         ? 'Skakmat. Raja putih tumbang.'
         : 'Remis. Tidak ada langkah legal.';
+  const opponentLabel = (floor.isBoss ? 'boss ' : 'lawan ') + floor.name;
   const summary =
     battle.winner === 'w'
-      ? 'Kemenangan atas ' + boss.name + ' (' + boss.subtitle + ').'
+      ? 'Kemenangan atas ' + opponentLabel + ' · Chapter ' + pad2(floor.chapterNumber) + ', lantai ' + pad2(floor.floorNumber) + '.'
       : battle.winner === 'b'
-        ? 'Kekalahan dari ' + boss.name + '. Pelajari polannya lalu coba lagi.'
-        : 'Duel melawan ' + boss.name + ' berakhir tanpa pemenang.';
+        ? 'Kekalahan dari ' + opponentLabel + '. Pelajari polanya lalu coba lagi.'
+        : 'Duel melawan ' + opponentLabel + ' berakhir tanpa pemenang.';
+  const nextId = nextFloorId(FLOOR_IDS, state.campaign);
+  const nextFloor = DUNGEON_FLOOR_BY_ID[nextId];
+  const continueFloorId =
+    battle.winner === 'w' && nextFloor && nextFloor.id !== battle.floorId && isFloorUnlocked(FLOOR_IDS, state.campaign, nextFloor.id)
+      ? nextFloor.id
+      : null;
+  const continueLabel = continueFloorId && nextFloor
+    ? 'Lanjut ke ' + (nextFloor.isBoss ? 'boss ' : 'lantai ') + nextFloor.name
+    : null;
   return {
     title: 'Hasil duel',
     heading,
@@ -722,6 +775,8 @@ function buildResultView(state: AppState): ResultView | null {
     rewardText: state.rewardText,
     progressText: progress,
     canReplay: true,
+    continueFloorId,
+    continueLabel,
     undoDisabled: !canUndo(battle),
   };
 }
@@ -730,7 +785,7 @@ function statusFor(state: AppState): string {
   if (state.battle && (state.screen === 'battle' || state.screen === 'result')) return state.battle.status;
   if (state.screen === 'dungeon') {
     return (
-      'Peta dungeon. ' + state.campaign.defeatedBosses.length + ' dari ' + BOSSES.length + ' lantai ditaklukkan.'
+      'Peta campaign. ' + state.campaign.clearedFloorIds.length + ' dari ' + DUNGEON_FLOORS.length + ' lantai ditaklukkan.'
     );
   }
   if (state.screen === 'heroes') {
@@ -740,7 +795,7 @@ function statusFor(state: AppState): string {
     }
     return 'Daftar hero. Hero aktif: ' + activeHeroOf(state).name + '.';
   }
-  return 'Menu utama. ' + state.campaign.defeatedBosses.length + ' dari ' + BOSSES.length + ' lantai ditaklukkan.';
+  return 'Menu utama. ' + state.campaign.clearedFloorIds.length + ' dari ' + DUNGEON_FLOORS.length + ' lantai ditaklukkan.';
 }
 
 function buildShell(state: AppState): AppShellView {
@@ -761,7 +816,8 @@ function buildShell(state: AppState): AppShellView {
 function main(): void {
   const root = document.getElementById('app');
   if (!root) return;
-  const campaign = store.load(HERO_IDS, BOSS_IDS, DECK_CATALOG);
+  const campaign = store.load(HERO_IDS, FLOOR_IDS, DECK_CATALOG);
+  const nextFloor = DUNGEON_FLOOR_BY_ID[nextFloorId(FLOOR_IDS, campaign)] ?? DUNGEON_FLOORS[0];
   const state: AppState = {
     screen: 'menu',
     campaign,
@@ -769,7 +825,8 @@ function main(): void {
     heroesTab: 'roster',
     deckFilter: 'all',
     deckNotice: null,
-    selectedBossId: nextBossProgress(BOSS_IDS, campaign),
+    selectedChapterId: nextFloor.chapterId,
+    selectedFloorId: nextFloor.id,
     battle: null,
     focusSquare: [7, 0],
     soundEnabled: audio.isEnabled(),
@@ -840,8 +897,8 @@ function main(): void {
       state.blackTimer = null;
       const battle = state.battle;
       if (!battle || !battle.thinking || battle.gameOver) return;
-      const alreadyDefeated = state.campaign.defeatedBosses.indexOf(battle.bossId) !== -1;
-      state.battle = advanceBlackReplyFlow(battle, deps, audio, alreadyDefeated).battle;
+      const alreadyCleared = state.campaign.clearedFloorIds.indexOf(battle.floorId) !== -1;
+      state.battle = advanceBlackReplyFlow(battle, deps, audio, alreadyCleared).battle;
       settle();
     }, 520);
   }
@@ -858,12 +915,17 @@ function main(): void {
     if (battle.gameOver) {
       clearBlackTimer();
       if (battle.winner === 'w' && battle.dungeonRewarded && state.rewardText === null) {
-        const flow = claimBattleRewardFlow(state.campaign, battle, bossOf(battle), store, audio);
+        const floor = DUNGEON_FLOOR_BY_ID[battle.floorId] ?? DUNGEON_FLOORS[0];
+        const flow = claimBattleRewardFlow(state.campaign, battle, floor, FLOOR_IDS, store, audio);
         state.campaign = flow.campaign;
         state.rewardText = flow.firstClear
-          ? 'Hadiah ' + bossOf(battle).reward + ' koin masuk ke dompet.'
-          : 'Boss ini pernah ditaklukkan sebelumnya. Tidak ada koin baru.';
-        if (flow.firstClear) state.selectedBossId = nextBossProgress(BOSS_IDS, state.campaign);
+          ? 'Hadiah ' + floor.reward + ' koin masuk ke dompet.'
+          : 'Lantai ini pernah diselesaikan. Tidak ada koin baru.';
+        if (flow.firstClear) {
+          const next = DUNGEON_FLOOR_BY_ID[nextFloorId(FLOOR_IDS, state.campaign)] ?? DUNGEON_FLOORS[0];
+          state.selectedChapterId = next.chapterId;
+          state.selectedFloorId = next.id;
+        }
       }
       state.screen = 'result';
       clearCaptureFx();
@@ -887,7 +949,7 @@ function main(): void {
     if (el instanceof HTMLElement) el.focus();
   }
 
-  function startDuel(bossId: string): void {
+  function startDuel(floorId: string): void {
     if (!deckSelectionStatus(state.campaign.deckCardIds, DECK_CATALOG).complete) {
       state.screen = 'heroes';
       state.heroesTab = 'deck';
@@ -898,12 +960,14 @@ function main(): void {
     }
     clearBlackTimer();
     state.rewardText = null;
-    const result = startBattle(deps, BOSS_IDS, state.campaign, state.campaign.selectedHero, bossId);
+    const result = startBattle(deps, FLOOR_IDS, state.campaign, state.campaign.selectedHero, floorId);
     if (!result.ok || !result.battle) {
       render();
       return;
     }
-    state.selectedBossId = bossId;
+    const floor = DUNGEON_FLOOR_BY_ID[floorId];
+    state.selectedChapterId = floor.chapterId;
+    state.selectedFloorId = floorId;
     state.battle = result.battle;
     state.focusSquare = [7, 0];
     state.screen = 'battle';
@@ -1006,23 +1070,39 @@ function main(): void {
         render();
         return true;
       }
-      case 'select-boss': {
-        const id = target.dataset['bossId'];
-        if (id && isBossUnlocked(BOSS_IDS, state.campaign, id)) {
+      case 'select-chapter': {
+        const id = target.dataset['chapterId'];
+        const chapter = CHAPTERS.find((item) => item.id === id);
+        if (chapter) {
+          const floors = DUNGEON_FLOORS.filter((floor) => floor.chapterId === chapter.id);
+          const next = floors.find((floor) => state.campaign.clearedFloorIds.indexOf(floor.id) === -1) ?? floors[floors.length - 1];
+          state.selectedChapterId = chapter.id;
+          state.selectedFloorId = next.id;
           audio.play('select');
-          state.selectedBossId = id;
           render();
         }
         return true;
       }
-      case 'start-boss': {
-        startDuel(state.selectedBossId);
+      case 'select-floor': {
+        const id = target.dataset['floorId'];
+        const floor = id ? DUNGEON_FLOOR_BY_ID[id] : undefined;
+        if (floor) {
+          state.selectedChapterId = floor.chapterId;
+          state.selectedFloorId = floor.id;
+          audio.play('select');
+          render();
+        }
         return true;
       }
-      case 'replay': {
-        if (state.battle) startDuel(state.battle.bossId);
+      case 'start-floor':
+        startDuel(target.dataset['floorId'] ?? state.selectedFloorId);
         return true;
-      }
+      case 'continue-floor':
+        if (target.dataset['floorId']) startDuel(target.dataset['floorId']);
+        return true;
+      case 'replay':
+        if (state.battle) startDuel(state.battle.floorId);
+        return true;
       case 'sound': {
         audio.setEnabled(!state.soundEnabled);
         state.soundEnabled = audio.isEnabled();
@@ -1081,7 +1161,7 @@ function main(): void {
       render();
       return;
     }
-    const alreadyDefeated = state.campaign.defeatedBosses.indexOf(battle.bossId) !== -1;
+    const alreadyCleared = state.campaign.clearedFloorIds.indexOf(battle.floorId) !== -1;
 
     switch (command) {
       case 'square': {
@@ -1094,11 +1174,11 @@ function main(): void {
         state.focusSquare = [row, col];
         if (!battle.pendingPromotion) {
           if (battle.activeSkill && (battle.activeSkill ?? '').indexOf('hero:') === 0) {
-            applyResult(resolveHeroTargetFlow(battle, deps, row, col, audio, alreadyDefeated));
+            applyResult(resolveHeroTargetFlow(battle, deps, row, col, audio, alreadyCleared));
           } else if (battle.activeSkill) {
-            applyResult(resolveCardTargetFlow(battle, deps, row, col, audio, alreadyDefeated));
+            applyResult(resolveCardTargetFlow(battle, deps, row, col, audio, alreadyCleared));
           } else {
-            applyResult(tapSquareFlow(battle, deps, row, col, audio, alreadyDefeated));
+            applyResult(tapSquareFlow(battle, deps, row, col, audio, alreadyCleared));
           }
         } else {
           render();
@@ -1130,7 +1210,7 @@ function main(): void {
       case 'promotion': {
         const choice = target.dataset['promotion'];
         if (choice === 'q' || choice === 'r' || choice === 'b' || choice === 'n') {
-          applyResult(choosePromotionFlow(battle, deps, choice, audio, alreadyDefeated));
+          applyResult(choosePromotionFlow(battle, deps, choice, audio, alreadyCleared));
         }
         return;
       }

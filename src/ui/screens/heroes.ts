@@ -248,7 +248,7 @@ function renderDeckCard(card: DeckCardItem): string {
     '</strong><span class="deck-card-description">' +
     escapeHtml(card.desc) +
     '</span></span><span class="deck-card-action" aria-hidden="true">' +
-    (card.selected ? '✓' : card.disabled ? '—' : '+') +
+    (card.selected ? '✓' : card.disabled ? '×' : '+') +
     '</span><span class="deck-card-status">' +
     status +
     '</span></button>'

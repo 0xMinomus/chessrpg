@@ -2,10 +2,10 @@
 
 export {
   chooseHero,
-  claimReward,
+  claimFloorReward,
   defaultCampaign,
-  isBossUnlocked,
-  nextBossId,
+  isFloorUnlocked,
+  nextFloorId,
   normalizeCampaign,
 } from './progress.ts';
 export type { Campaign, RewardClaim } from './progress.ts';

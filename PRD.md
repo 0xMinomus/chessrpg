@@ -17,7 +17,7 @@ Crown & Catalyst adalah game strategi single-player yang menggabungkan catur, ka
 - Multiplayer, invite link, matchmaking, ranking, chat, akun, dan sinkronisasi cloud.
 - Pembayaran nyata, iklan, analitik online, atau layanan backend.
 - Mengganti art direction pixel/retro navy, plum/lavender, krem, dengan aksen merah muda dan biru lembut.
-- Menambah hero, kartu, boss, atau fitur gameplay baru tanpa brief terpisah.
+- Menambah hero, kartu, atau fitur gameplay di luar permintaan eksplisit. Campaign sepuluh boss ini mengikuti permintaan terbaru.
 
 ## Pengguna utama
 
@@ -26,22 +26,23 @@ Pemain kasual yang menyukai catur, kombinasi taktis, dan progres RPG; ingin dapa
 ## Alur utama
 
 1. Pemain membuka menu utama dan melihat progres dungeon serta hero aktif.
-2. Pemain membuka peta dungeon atau daftar hero.
-3. Pemain memilih boss yang terbuka dan memulai duel dengan hero aktif.
+2. Pemain memilih chapter di peta dunia, lalu memilih lantai yang terbuka.
+3. Empat lantai standar diikuti boss pada lantai kelima; boss memiliki skill unik yang ditampilkan sebelum duel.
 4. Pemain menggerakkan bidak, memainkan kartu yang terjangkau, serta memakai skill/ultimate ketika EN mencukupi.
 5. Pemain menang dengan skakmat. Hasil seri dan kalah ditampilkan dengan opsi ulang atau kembali ke menu.
-6. Kemenangan memberi hadiah, membuka lantai berikutnya, dan menyimpan progres lokal.
+6. Kemenangan first-clear memberi hadiah dan membuka lantai berikutnya; chapter berikutnya menunggu boss chapter sebelumnya dikalahkan.
 
 ## Persyaratan fungsional
 
 ### Menu, dungeon, dan hero
 
 - **FR-01:** Tampilkan layar utama dengan progres lantai, ringkasan boss berikutnya, hero aktif, dan navigasi ke dungeon/hero.
-- **FR-02:** Tampilkan tiga boss yang sudah ada. Boss terkunci sampai syarat progres sebelumnya tercapai. Aturan boss terlihat sebelum duel.
+- **FR-02:** Tampilkan sepuluh boss campaign pada detail lantai kelima masing-masing. Skill unik boss terlihat sebelum duel dan dijalankan melalui aturan battle.
 - **FR-03:** Tampilkan enam hero, termasuk Liora si Penjaga Benteng, dengan potret, peran, skill, ultimate, kelebihan, dan kelemahan.
 - **FR-04:** Semua hero tetap dapat dipilih pada build pengembangan ini; jangan mengembalikan lock/pembelian yang menghambat pengujian tanpa permintaan eksplisit. Sistem koin dan reward yang sudah ada tetap dapat ditampilkan sesuai perilaku prototipe.
-- **FR-05:** Pertahankan progres kampanye, hero pilihan, koin, dan boss yang ditaklukkan setelah reload melalui penyimpanan lokal.
+- **FR-05:** Pertahankan progres lantai campaign, hero pilihan, dan koin setelah reload melalui penyimpanan lokal. Migrasikan save boss lama tanpa menghilangkan progres/koin.
 - **FR-24:** Dari menu Hero, pemain dapat menyusun loadout berisi tepat 10 kartu non-Joker pilihan dan 1 kartu Joker pilihan. Loadout disimpan lokal, divalidasi saat memuat save lama/rusak, dan menjadi satu-satunya pool kartu untuk tangan, penggantian kartu, dan putar ulang sepanjang duel. Aturan tangan 3 kartu unik serta bobot tarik Joker yang sudah ada tetap berlaku.
+- **FR-25:** Campaign memiliki 10 chapter × 5 lantai. Lantai 1–4 berisi pertarungan standar; lantai 5 melawan boss dengan skill unik. Lantai dan chapter terkunci sampai prasyarat sebelumnya selesai, khususnya chapter selanjutnya baru terbuka setelah boss dikalahkan. Tampilkan 10 lokasi di enam region daratan; tidak ada marker di air.
 
 ### Pertarungan
 
@@ -88,12 +89,14 @@ Biaya target tahap ini: skill hero 2 EN, ultimate hero 5 EN, dan Joker 5 mana se
 ## Kriteria penerimaan
 
 1. Aplikasi baru terbuka ke menu dan menyelesaikan satu run dungeon tanpa server.
-2. Enam hero, tiga boss, seluruh kartu aktif yang sudah ada, serta art portrait tetap terhubung ke data yang benar.
+2. Enam hero, sepuluh boss dengan skill unik, seluruh kartu aktif, dan art portrait terhubung ke sumber data yang benar.
 3. Pemain dapat melakukan langkah legal, menggunakan resource yang benar, menyelesaikan target kartu/hero, promosi pilihan, pembatalan, undo, restart, dan melihat akhir pertandingan.
 4. Reload mempertahankan progres kampanye; save tidak valid jatuh ke progres awal yang dapat dimainkan.
 5. Tampilan tetap mengikuti prototipe aktif dan dapat digunakan dengan mouse, keyboard, dan layar sentuh.
 6. `chess-rpg.html` dan `chess-rpg-dungeon.html` tetap tersedia sebagai referensi selama migrasi.
 7. Hero roster dan deck builder memakai data konten yang ada; pemain dapat memilih 10 kartu biasa + 1 Joker, menyimpan pilihan setelah reload, dan hanya melihat kartu loadout itu saat duel.
+
+8. Campaign berisi 50 lantai berurutan; boss kelima membuka chapter berikutnya, semua marker berada di darat, dan tidak ada marker di air.
 
 ## Ukuran keberhasilan tahap
 

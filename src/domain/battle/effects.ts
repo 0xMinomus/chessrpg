@@ -53,6 +53,7 @@ export function battleLegalMoves(state: BattleState, deps: BattleDeps, color: Co
     if (!moving) return false;
     const captured = chess.captureAt(state.board, state.enPassant, move);
     if (color === 'w') {
+      if (state.bossSnareId === moving.id) return false;
       if (
         state.bossSealedSquare &&
         move.to[0] === state.bossSealedSquare[0] &&
@@ -133,6 +134,7 @@ export function clearPieceEffects(state: BattleState, piece: Piece): BattleState
     next.snareId = null;
     next.snareTurns = 0;
   }
+  if (piece.id === next.bossSnareId) next.bossSnareId = null;
   return next;
 }
 
@@ -267,7 +269,14 @@ export function applyWhiteMoveTriggers(
   }
   const lastWhiteMove = next.history[next.history.length - 1];
   const movedPawn = Boolean(lastWhiteMove && lastWhiteMove.piece === 'p' && !lastWhiteMove.note);
-  if (movedPiece) next = { ...next, heroMana: Math.min(HERO_MANA_CAP, next.heroMana + 1) };
+  if (movedPiece && !next.bossBlightArmed) next = { ...next, heroMana: Math.min(HERO_MANA_CAP, next.heroMana + 1) };
+  next = {
+    ...next,
+    bossBlightArmed: false,
+    bossSnareId: null,
+    bossCardSilence: false,
+    bossHeroSilence: false,
+  };
   if (hero.id === 'saka' && movedPawn) next = gainEnergy(next, 1);
   if (next.pawnBreathArmed) {
     if (movedPawn && !captured) {

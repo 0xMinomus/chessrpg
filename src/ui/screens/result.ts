@@ -7,7 +7,8 @@ export interface ResultView {
   rewardText: string | null;
   progressText: string;
   canReplay: boolean;
-  /** Batalkan satu giliran penuh masih dimungkinkan saat posisi cocok (parity prototipe). */
+  continueFloorId: string | null;
+  continueLabel: string | null;
   undoDisabled: boolean;
 }
 
@@ -26,6 +27,13 @@ export function renderResultPage(view: ResultView): string {
     view.progressText +
     '</p>' +
     '<div class="result-actions">' +
+    (view.continueFloorId && view.continueLabel
+      ? '<button class="hub-button primary" type="button" data-command="continue-floor" data-floor-id="' +
+        view.continueFloorId +
+        '">' +
+        view.continueLabel +
+        '</button>'
+      : '') +
     '<button class="hub-button primary" type="button" data-command="replay"' +
     (view.canReplay ? '' : ' disabled') +
     '>Ulangi duel</button>' +

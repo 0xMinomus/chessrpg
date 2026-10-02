@@ -44,6 +44,7 @@ export interface BoardViewState {
   staggerId: string | null;
   snareId: string | null;
   snareTurns: number;
+  bossSnareId: string | null;
   blockadeSquare: [number, number] | null;
   blockadeTurns: number;
   heroBlockadeSquares: [number, number][];
@@ -121,6 +122,7 @@ export function renderBoard(state: BoardViewState): string {
       const marked = piece !== null && piece.id === state.markedEnemyId;
       const staggered = piece !== null && piece.id === state.staggerId;
       const snared = piece !== null && piece.id === state.snareId;
+      const bossSnared = piece !== null && piece.id === state.bossSnareId;
       const bossSealed = sameSquare(state.bossSealedSquare, row, col);
       const cardBlocked = sameSquare(state.blockadeSquare, row, col);
       const heroBlocked = inList(state.heroBlockadeSquares, row, col);
@@ -141,17 +143,19 @@ export function renderBoard(state: BoardViewState): string {
       if (marked) classes.push('marked-piece');
       if (staggered) classes.push('staggered-piece');
       if (snared) classes.push('snared-piece');
+      if (bossSnared) classes.push('boss-snared-piece');
       if (blocked) classes.push('blocked-target');
       if (captureOrigin) classes.push('capture-origin');
       if (captureImpact) classes.push('capture-impact');
       if (isHint && !isCaptureHint) classes.push('move-hint');
       if (isHint && isCaptureHint) classes.push('capture-hint');
-      const marker = enemyProtected || playerProtected ? 'shield' : marked ? 'mark' : staggered ? 'stagger' : snared ? 'snare' : blocked ? 'block' : null;
+      const marker = enemyProtected || playerProtected ? 'shield' : marked ? 'mark' : staggered ? 'stagger' : snared || bossSnared ? 'snare' : blocked ? 'block' : null;
       const labels: string[] = [];
       if (enemyProtected || playerProtected) labels.push('terlindungi perisai');
       if (marked) labels.push('ditandai untuk diburu');
       if (staggered) labels.push('tak dapat menangkap pada balasan lawan');
       if (snared) labels.push('terjerat, tak dapat bergerak selama ' + state.snareTurns + ' balasan boss');
+      if (bossSnared) labels.push('terjerat boss, tidak dapat bergerak pada giliran ini');
       if (cardBlocked) labels.push('petak diblokade selama ' + state.blockadeTurns + ' balasan boss');
       if (heroBlocked) labels.push(state.heroBlockadeName + ' diblokade selama ' + state.heroBlockadeTurns + ' balasan boss');
       if (bossSealed) labels.push('petak disegel boss untuk langkah berikutnya');

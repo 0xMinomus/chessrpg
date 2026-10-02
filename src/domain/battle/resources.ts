@@ -34,6 +34,9 @@ export function canPlayCard(
   card: CardDef,
   hero: HeroDef,
 ): CardPlayability {
+  if (state.bossCardSilence) {
+    return { ok: false, reason: 'Kartu skill terkunci untuk giliran putih ini.' };
+  }
   if (card.cost === 0 && state.freeSkillUsedThisTurn) {
     return { ok: false, reason: 'Jatah satu kartu 0 mana per giliran sudah dipakai.' };
   }

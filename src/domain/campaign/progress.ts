@@ -1,4 +1,4 @@
-// Progres kampanye dungeon: koin, hero, boss yang ditaklukkan.
+// Progres kampanye dungeon: koin, hero, dan lantai yang ditaklukkan.
 // Murni (tanpa DOM/storage); adapter browser menyimpan hasil normalisasi.
 
 import { defaultDeckSelection, normalizeDeckSelection, type DeckCatalog } from './deck.ts';
@@ -7,7 +7,7 @@ export interface Campaign {
   coins: number;
   ownedHeroes: string[];
   selectedHero: string;
-  defeatedBosses: string[];
+  clearedFloorIds: string[];
   deckCardIds: string[];
 }
 
@@ -20,33 +20,33 @@ export function defaultCampaign(heroIds: string[], deckCatalog: DeckCatalog): Ca
     coins: 30,
     ownedHeroes: heroIds.slice(),
     selectedHero: heroIds.indexOf('arunika') !== -1 ? 'arunika' : (heroIds[0] ?? 'arunika'),
-    defeatedBosses: [],
+    clearedFloorIds: [],
     deckCardIds: defaultDeckSelection(deckCatalog),
   };
 }
 
 /**
- * Normalisasi save mentah → kampanye yang dapat dimainkan.
- * Cerminan loadCampaign prototipe: JSON rusak / field hilang / nilai invalid
- * jatuh ke default; ownedHeroes selalu daftar penuh (build pengujian);
- * defeatedBosses disaring ke id boss yang dikenal.
+ * Normalisasi save mentah → kampanye yang dapat dimainkan. Save boss lama
+ * dipetakan ke chapter lengkap; progres baru dipotong pada prefix berurutan.
  */
 export function normalizeCampaign(
   raw: unknown,
   heroIds: string[],
-  bossIds: string[],
+  floorIds: readonly string[],
+  legacyBossIds: readonly string[],
   deckCatalog: DeckCatalog,
 ): Campaign {
   const fallback = defaultCampaign(heroIds, deckCatalog);
   if (!raw || typeof raw !== 'object') {
-    return { ...fallback, ownedHeroes: heroIds.slice(), defeatedBosses: [] };
+    return { ...fallback, ownedHeroes: heroIds.slice(), clearedFloorIds: [] };
   }
   const stored = raw as Record<string, unknown>;
-  const defeatedBosses = Array.isArray(stored.defeatedBosses)
-    ? (stored.defeatedBosses as unknown[]).filter(function (id): id is string {
-        return typeof id === 'string' && bossIds.indexOf(id) !== -1;
-      })
-    : [];
+  const clearedFloorIds = normalizeClearedFloorIds(
+    stored.clearedFloorIds,
+    stored.defeatedBosses,
+    floorIds,
+    legacyBossIds,
+  );
   const selectedHero =
     typeof stored.selectedHero === 'string' && heroIds.indexOf(stored.selectedHero) !== -1
       ? stored.selectedHero
@@ -58,28 +58,62 @@ export function normalizeCampaign(
         : fallback.coins,
     ownedHeroes: heroIds.slice(),
     selectedHero,
-    defeatedBosses,
+    clearedFloorIds,
     deckCardIds: normalizeDeckSelection(stored.deckCardIds, deckCatalog),
   };
 }
 
-/** Boss terbuka bila boss sebelumnya sudah dikalahkan (lantai 1 selalu buka). */
-export function isBossUnlocked(
-  bossIds: string[],
-  campaign: Campaign,
-  bossId: string,
-): boolean {
-  const index = bossIds.indexOf(bossId);
-  if (index <= 0) return index === 0;
-  return campaign.defeatedBosses.indexOf(bossIds[index - 1]) !== -1;
+function normalizeClearedFloorIds(
+  currentValue: unknown,
+  legacyValue: unknown,
+  floorIds: readonly string[],
+  legacyBossIds: readonly string[],
+): string[] {
+  const requested = new Set<string>();
+  if (Array.isArray(currentValue)) {
+    for (const id of currentValue) {
+      if (typeof id === 'string' && floorIds.indexOf(id) !== -1) requested.add(id);
+    }
+  } else {
+    const legacyClears = new Set<string>();
+    if (Array.isArray(legacyValue)) {
+      for (const id of legacyValue) {
+        if (typeof id === 'string') legacyClears.add(id);
+      }
+    }
+    let clearedThrough = -1;
+    for (const bossId of legacyBossIds) {
+      if (!legacyClears.has(bossId)) break;
+      const bossFloorIndex = floorIds.indexOf(bossId);
+      if (bossFloorIndex < 0) break;
+      clearedThrough = bossFloorIndex;
+    }
+    for (const id of floorIds.slice(0, clearedThrough + 1)) requested.add(id);
+  }
+
+  const ordered: string[] = [];
+  for (const id of floorIds) {
+    if (!requested.has(id)) break;
+    ordered.push(id);
+  }
+  return ordered;
 }
 
-/** Boss terbuka berikutnya yang belum dikalahkan; terakhir bila semua selesai. */
-export function nextBossId(bossIds: string[], campaign: Campaign): string {
-  const next = bossIds.find(function (id) {
-    return isBossUnlocked(bossIds, campaign, id) && campaign.defeatedBosses.indexOf(id) === -1;
-  });
-  return next ?? bossIds[bossIds.length - 1];
+/** Lantai pertama terbuka; selanjutnya menunggu clear pada lantai sebelumnya. */
+export function isFloorUnlocked(
+  floorIds: readonly string[],
+  campaign: Campaign,
+  floorId: string,
+): boolean {
+  const index = floorIds.indexOf(floorId);
+  if (index < 0) return false;
+  return index === 0 || campaign.clearedFloorIds.indexOf(floorIds[index - 1]) !== -1;
+}
+
+/** Lantai clear berurutan berikutnya; setelah tamat, pilih lantai terakhir. */
+export function nextFloorId(floorIds: readonly string[], campaign: Campaign): string {
+  const next = floorIds.find((id) => campaign.clearedFloorIds.indexOf(id) === -1);
+  return next ?? floorIds[floorIds.length - 1] ?? '';
 }
 
 export interface RewardClaim {
@@ -87,27 +121,29 @@ export interface RewardClaim {
   firstClear: boolean;
 }
 
-/**
- * Klaim hadiah kemenangan: kemenangan pertama atas boss menambah defeatedBosses
- * + koin; pengulangan tidak memberi apa-apa.
- */
-export function claimReward(
+/** Hadiah hanya diberikan sekali dan hanya untuk lantai yang sedang terbuka. */
+export function claimFloorReward(
   campaign: Campaign,
-  bossId: string,
+  floorId: string,
   reward: number,
+  floorIds: readonly string[],
 ): RewardClaim {
-  if (campaign.defeatedBosses.indexOf(bossId) !== -1) {
+  if (
+    campaign.clearedFloorIds.indexOf(floorId) !== -1 ||
+    !isFloorUnlocked(floorIds, campaign, floorId)
+  ) {
     return { campaign, firstClear: false };
   }
   return {
     campaign: {
       ...campaign,
-      defeatedBosses: campaign.defeatedBosses.concat([bossId]),
+      clearedFloorIds: campaign.clearedFloorIds.concat([floorId]),
       coins: campaign.coins + reward,
     },
     firstClear: true,
   };
 }
+
 
 /** Pilih hero aktif (harus ada di daftar hero yang dikenal). */
 export function chooseHero(campaign: Campaign, heroId: string, heroIds: string[]): Campaign {

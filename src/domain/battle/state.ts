@@ -62,11 +62,25 @@ export interface HeroDef {
   captureEnergy?: number;
 }
 
-/** Bentuk minimal definisi boss; dipenuhi src/content/bosses.ts. */
-export interface BossDef {
+/** Lawan dan aturan khusus untuk satu lantai dungeon. */
+export type OpponentRuleKey =
+  | 'none'
+  | 'shield'
+  | 'drain'
+  | 'seal'
+  | 'mana-tax'
+  | 'capture-leech'
+  | 'snare'
+  | 'card-silence'
+  | 'hero-silence'
+  | 'blight'
+  | 'rally';
+
+export interface OpponentDef {
   id: string;
-  ruleKey: 'shield' | 'drain' | 'seal';
+  ruleKey: OpponentRuleKey;
   reward: number;
+  isBoss: boolean;
 }
 
 /**
@@ -159,7 +173,7 @@ export interface BattleDeps {
   rng: RandomSource;
   cards: Record<string, CardDef>;
   heroes: Record<string, HeroDef>;
-  bosses: Record<string, BossDef>;
+  opponents: Record<string, OpponentDef>;
 }
 
 export interface BattleState {
@@ -236,7 +250,7 @@ export interface BattleState {
   gameOver: boolean;
   winner: Color | null;
   status: string;
-  bossId: string;
+  floorId: string;
   heroId: string;
   dungeonRewarded: boolean;
   heroSkipEnemyTurn: boolean;
@@ -244,6 +258,10 @@ export interface BattleState {
   heroAegisActive: boolean;
   nilaDrainBlocked: boolean;
   bossSealedSquare: Square | null;
+  bossSnareId: string | null;
+  bossCardSilence: boolean;
+  bossHeroSilence: boolean;
+  bossBlightArmed: boolean;
   /**
    * Riwayat snapshot awal ronde untuk undo satu putaran penuh.
    * Dikelola command undoTurn/restartBattle; dikecualikan dari snapshot
@@ -376,7 +394,7 @@ export function snapshotBattle(state: BattleState): BattleSnapshot {
     gameOver: state.gameOver,
     winner: state.winner,
     status: state.status,
-    bossId: state.bossId,
+    floorId: state.floorId,
     heroId: state.heroId,
     dungeonRewarded: state.dungeonRewarded,
     heroSkipEnemyTurn: state.heroSkipEnemyTurn,
@@ -384,6 +402,10 @@ export function snapshotBattle(state: BattleState): BattleSnapshot {
     heroAegisActive: state.heroAegisActive,
     nilaDrainBlocked: state.nilaDrainBlocked,
     bossSealedSquare: cloneSquare(state.bossSealedSquare),
+    bossSnareId: state.bossSnareId,
+    bossCardSilence: state.bossCardSilence,
+    bossHeroSilence: state.bossHeroSilence,
+    bossBlightArmed: state.bossBlightArmed,
   };
   return snapshot;
 }
@@ -401,8 +423,8 @@ export function restoreBattleSnapshot(state: BattleState, snapshot: BattleSnapsh
 
 export interface InitialBattleInput {
   hero: HeroDef;
-  boss: BossDef;
   board: Board;
+  opponent: OpponentDef;
   hand: [string, string, string];
   deckCardIds: string[];
 }
@@ -482,7 +504,7 @@ export function createInitialBattle(input: InitialBattleInput): BattleState {
     gameOver: false,
     winner: null,
     status: 'Pilih bidak putih untuk melihat langkah legal.',
-    bossId: input.boss.id,
+    floorId: input.opponent.id,
     heroId: input.hero.id,
     dungeonRewarded: false,
     heroSkipEnemyTurn: false,
@@ -490,6 +512,10 @@ export function createInitialBattle(input: InitialBattleInput): BattleState {
     heroAegisActive: false,
     nilaDrainBlocked: false,
     bossSealedSquare: null,
+    bossSnareId: null,
+    bossCardSilence: false,
+    bossHeroSilence: false,
+    bossBlightArmed: false,
     past: [],
     anchor: null,
   };

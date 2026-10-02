@@ -99,10 +99,10 @@ Catatan: `src/adapters/browser-storage.ts` memakai key yang sama dengan prototip
 
 Catatan: seluruh gate hijau dan dapat diulang.
 
-- `npm run verify` — tsc, `npm run smoke` 81 pemeriksaan perilaku domain/application, `npm run parity` 8 pemeriksaan kesetaraan adapter catur (langkah legal di 64 petak, simulasi, tangkapan, en passant), `npm run render` 44 pemeriksaan markup (layar hub/hasil + struktur kartu dan ikon), build, verifikasi dist tanpa `fetch`/URL remote.
-- `npm run verify:layout` — sweep 10 viewport (390×844 sampai 1920×1080): 64/64 petak dapat diklik, papan muat di panel, tidak ada tumpang tindih label, 0 console error. Kolom `scroll` menunjukkan apakah halaman perlu digulir: untuk PC (≥1001px landscape) semuanya `tidak` (satu layar penuh), untuk ponsel/tablet masih `YA` sesuai permintaan pengguna.
-- `npm run verify:flow` — 41 pemeriksaan alur di build statis: menu, 6 hero + potret termuat, pilih hero tersimpan, peta dungeon + kunci boss, duel, langkah legal + mana +1, undo satu putaran penuh, kartu (biaya mana, target, batal Escape, batal klik ulang), skill hero + batal tanpa EN, restart, preferensi suara, navigasi keyboard + focus-visible, save bertahan setelah reload, save rusak jatuh ke default, nol request eksternal dan nol response 4xx/5xx.
-- `npm run shots:card` — tangkapan layar tangan kartu pada status siap / terkunjuk / target untuk pemeriksaan visual.
+- `npm run verify`: tsc, domain smoke 95, campaign 26, boss skills 11, chess parity 8, render 55, build, dan `verify:dist`; pola request jaringan tidak ditemukan.
+- `npm run verify:layout`: 11 viewport dari 320×780 hingga 1920×1080: 64/64 petak dapat diklik, 10 marker dan lima lantai muat, tanpa overflow horizontal, tumpang tindih label, atau error console. Ponsel/tablet menggulir vertikal.
+- `npm run verify:flow`: PASS 91 pada run terakhir; jumlah assertion mengikuti cabang opsional. Uji mencakup 10 marker darat yang dapat dipilih, peta beranda pada 320px, urutan lantai/chapter terkunci, deck/hero, langkah/kartu/skill, serta save/migrasi; tanpa request eksternal, response 4xx/5xx, atau error console. Simulasi duel 60 langkah tidak mencapai hasil alami dan dicatat sebagai CATATAN, bukan gagal.
+- `npm run shots:card`: tangkapan layar tangan kartu pada status siap / terkunjuk / target untuk pemeriksaan visual.
 
 Bug yang ditemukan dan diperbaiki pada tahap ini: papan terpotong/tidak bisa diklik di landscape dan ponsel (container query tak terisi + rail bertumpuk), panel hero menimpa label EN/mana di rail sempit, favicon 404, teks pembatalan ultimate salah menyebut skill, catatan deck salah menyebut kartu gratis, navigasi panah memakai state roving alih-alih petak yang difokuskan, dan potret baris atlas atas ikut bergeser.
 
@@ -110,7 +110,22 @@ Tambahan lanjutan (permintaan pengguna): seluruh teks yang ter-double-encode aki
 
 Perbedaan yang disengaja: piece id battle memakai string dengan registri adapter ke id number mesin catur; polyfill preload Vite dimatikan agar tidak ada request jaringan saat gameplay; `target-cancel` adalah tombol batal eksplisit tambahan untuk target hero (prototipe hanya Escape).
 
-Permintaan lanjutan: battle screen PC muat satu layar tanpa scroll. Panel hero pindah ke rail kiri (sesuai prototipe) sehingga rel bawah hanya kartu; ukuran kartu memakai `clamp(...vh)`; papan memakai sisa baris `1fr`. Hasil PC: 1920×1080 papan 520px, 1440×900 papan 392px, 1280×720 papan 233px, tanpa scroll. Tampilan ponsel/tablet dibiarkan apa adanya untuk dikerjakan belakangan.
+Permintaan lanjutan: battle PC muat satu layar tanpa scroll. Panel hero pindah ke rail kiri sesuai prototipe; kartu memakai `clamp(...vh)`, papan memakai sisa baris `1fr`. Pemeriksaan terbaru: frame papan 512px pada 1920×1080, 384px pada 1440×900, dan 243px pada 1280×720; seluruh ukuran lolos. Ponsel/tablet tetap memakai scroll vertikal dan kini diuji mulai 320px.
+
+### 7. Campaign 10 chapter
+
+- [x] Susun 10 chapter berurutan, masing-masing lima lantai; lantai kelima menjadi boss.
+- [x] Kunci urutan lantai dan chapter berikutnya sampai boss chapter sebelumnya dikalahkan.
+- [x] Beri sepuluh boss aturan unik yang benar-benar diresolusikan battle engine.
+- [x] Sebarkan marker ke enam area peta; uji warna piksel di lokasi marker agar tidak berada di laut.
+- [x] Simpan clear lantai secara berurutan dan migrasikan progres save lama tanpa menghapus koin atau progres chapter.
+- [x] Perbarui PRD, arsitektur, pemeriksaan browser, dan catatan implementasi.
+
+**Selesai bila:** 50 lantai dapat diakses sesuai urutan, tiap boss memiliki skill unik, chapter baru terkunci sampai boss sebelumnya clear, dan seluruh marker berada di daratan.
+
+Catatan: `npm run verify` PASS (95 domain, 26 campaign, 11 skill boss, 8 parity, 55 render); `npm run verify:flow` PASS 91 pada run terakhir (assertion cabang opsional); `npm run verify:layout` PASS 11 viewport. Walkthrough memeriksa marker di home, chapter terkunci/terbuka, serta migrasi save boss lama; hasil duel penuh memakai uji domain karena walkthrough acak 60 langkah tidak menghasilkan terminal state.
+
+Design read: layar operasi campaign untuk game strategi single-player pixel-art; ENERGY 2 / RHYTHM 2 / MOTION 1. Peta mobile memakai rasio 1:1 yang sesuai dengan aset sumber; lima lantai berjajar pada desktop agar tombol mulai tetap terlihat, lalu menumpuk pada ponsel; marker minimum 44×44 menjaga target sentuh. Palet pixel navy/plum/krem/coral dipertahankan dari prototipe.
 
 ## Keputusan implementasi untuk agent
 

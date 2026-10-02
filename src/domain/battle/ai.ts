@@ -11,12 +11,13 @@ import {
   PIECE_VALUES,
   type BattleDeps,
   type BattleState,
-  type BossDef,
+  type OpponentDef,
   type Move,
   type Piece,
   type Square,
 } from './state.ts';
 import { battleLegalMoves } from './effects.ts';
+import { gainEnemyEnergy } from './resources.ts';
 
 /**
  * Pilih langkah hitam. Cerminan chooseComputerMove: bobot tangkapan
@@ -161,42 +162,84 @@ export function resolveEnemySkill(
  * shield = ward ke bidak hitam terkuat; drain = drain dipersenjatai;
  * seal = satu petak tengah kosong disegel untuk langkah putih berikutnya.
  */
-export function applyBossRule(state: BattleState, deps: BattleDeps, boss: BossDef): BattleState {
-  if (boss.ruleKey === 'shield') {
-    const targets = state.board
-      .flat()
-      .filter(function (piece): piece is Piece {
-        return piece != null && piece.color === 'b' && piece.type !== 'k';
-      })
-      .sort(function (a, b) {
-        return PIECE_VALUES[b.type] - PIECE_VALUES[a.type];
-      });
-    return { ...state, enemyWardPieceId: targets.length > 0 ? targets[0].id : null };
-  }
-  if (boss.ruleKey === 'drain') {
-    return { ...state, enemyDrainArmed: true };
-  }
-  const legal = battleLegalMoves(state, deps, 'w');
-  const candidates: Square[] = [];
-  for (let row = 2; row <= 5; row += 1) {
-    for (let col = 2; col <= 5; col += 1) {
-      if (state.board[row][col]) continue;
-      if (
-        legal.some(function (move) {
-          return move.to[0] !== row || move.to[1] !== col;
+export function applyBossRule(state: BattleState, deps: BattleDeps, opponent: OpponentDef): BattleState {
+  if (!opponent.isBoss) return state;
+  switch (opponent.ruleKey) {
+    case 'shield': {
+      const targets = state.board
+        .flat()
+        .filter(function (piece): piece is Piece {
+          return piece != null && piece.color === 'b' && piece.type !== 'k';
         })
-      ) {
-        candidates.push([row, col]);
-      }
+        .sort(function (a, b) {
+          return PIECE_VALUES[b.type] - PIECE_VALUES[a.type];
+        });
+      return { ...state, enemyWardPieceId: targets.length > 0 ? targets[0].id : null };
     }
+    case 'drain':
+      return { ...state, enemyDrainArmed: true };
+    case 'seal': {
+      const legal = battleLegalMoves(state, deps, 'w');
+      const candidates: Square[] = [];
+      for (let row = 2; row <= 5; row += 1) {
+        for (let col = 2; col <= 5; col += 1) {
+          if (state.board[row][col]) continue;
+          if (
+            legal.some(function (move) {
+              return move.to[0] !== row || move.to[1] !== col;
+            })
+          ) {
+            candidates.push([row, col]);
+          }
+        }
+      }
+      return {
+        ...state,
+        bossSealedSquare:
+          candidates.length > 0
+            ? candidates[Math.floor(deps.rng.next() * candidates.length)]
+            : null,
+      };
+    }
+    case 'mana-tax':
+      return {
+        ...state,
+        heroMana: Math.max(0, state.heroMana - 1),
+        status: 'Pajak bara menguras 1 mana.',
+      };
+    case 'snare': {
+      const legal = battleLegalMoves(state, deps, 'w');
+      const candidates: Piece[] = [];
+      for (const move of legal) {
+        const piece = state.board[move.from[0]][move.from[1]];
+        if (!piece || piece.color !== 'w' || piece.type === 'k') continue;
+        if (
+          legal.some(function (other) {
+            return other.from[0] !== move.from[0] || other.from[1] !== move.from[1];
+          }) &&
+          !candidates.some(function (candidate) {
+            return candidate.id === piece.id;
+          })
+        ) {
+          candidates.push(piece);
+        }
+      }
+      if (candidates.length === 0) return { ...state, bossSnareId: null };
+      const target = candidates[Math.floor(deps.rng.next() * candidates.length)];
+      return { ...state, bossSnareId: target.id };
+    }
+    case 'card-silence':
+      return { ...state, bossCardSilence: true };
+    case 'hero-silence':
+      return { ...state, bossHeroSilence: true };
+    case 'blight':
+      return { ...state, bossBlightArmed: true };
+    case 'rally':
+      return gainEnemyEnergy(state, 1);
+    case 'capture-leech':
+    case 'none':
+      return state;
   }
-  return {
-    ...state,
-    bossSealedSquare:
-      candidates.length > 0
-        ? candidates[Math.floor(deps.rng.next() * candidates.length)]
-        : null,
-  };
 }
 
 export type EnemyPlanKind = 'ward-active' | 'drain-active' | 'siphon-telegraph' | 'ward-telegraph' | 'disrupted';

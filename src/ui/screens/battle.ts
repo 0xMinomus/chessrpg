@@ -29,8 +29,9 @@ export interface LedgerView {
 export interface BattleChromeView {
   floorLabel: string;
   turnLabel: string;
-  bossName: string;
-  bossRule: string;
+  opponentName: string;
+  opponentRule: string;
+  opponentType: string;
   stageLabel: string;
   turnFlag: string;
   turnFlagClass: string;
@@ -136,10 +137,12 @@ export function renderBattlePage(view: BattlePageView): string {
     '<main class="game-layout">' +
     '<aside class="enemy-skill-profile" aria-label="Profil lawan dan energi hitam">' +
     '<div class="enemy-profile-heading"><span class="enemy-profile-avatar" aria-hidden="true">♚</span>' +
-    '<span class="enemy-profile-copy"><span class="eyebrow">BOSS / CPU</span><strong>' +
-    chrome.bossName +
+    '<span class="enemy-profile-copy"><span class="eyebrow">' +
+    chrome.opponentType +
+    '</span><strong>' +
+    chrome.opponentName +
     '</strong><small>' +
-    chrome.bossRule +
+    chrome.opponentRule +
     '</small></span></div>' +
     '<section class="enemy-energy" aria-label="Energi lawan"><div class="enemy-energy-head">' +
     '<span class="micro-label">Energi hitam</span><strong>' +

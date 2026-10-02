@@ -4,7 +4,7 @@
 import { renderMenuPage } from './screens/menu.ts';
 import type { MenuView } from './screens/menu.ts';
 import { renderDungeonPage } from './screens/dungeon.ts';
-import type { DungeonPageView } from './screens/dungeon.ts';
+import type { DungeonPageView } from './dungeon/dungeon.ts';
 import { renderHeroesPage } from './screens/heroes.ts';
 import type { HeroesPageView } from './screens/heroes.ts';
 import { renderBattlePage } from './screens/battle.ts';

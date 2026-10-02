@@ -11,6 +11,8 @@ import { renderHand, renderReroll } from '../src/ui/cards/cards.ts';
 import { renderCardIconDefs, CARD_ICON_SYMBOLS, REROLL_ICON } from '../src/ui/cards/icons.ts';
 import { renderBoard } from '../src/ui/board/board.ts';
 import type { BoardGrid } from '../src/ui/board/board.ts';
+import { CHAPTERS, DUNGEON_FLOORS } from '../src/content/dungeon.ts';
+import type { ChapterMapItem, FloorListItem } from '../src/ui/dungeon/dungeon.ts';
 
 let passed = 0;
 const failures: string[] = [];
@@ -19,22 +21,22 @@ function check(name: string, ok: boolean, detail = ''): void {
   else failures.push(name + (detail ? ' :: ' + detail : ''));
 }
 
-// 1. Layar hasil: menang dengan hadiah, kalah, remis
+// 1. Layar hasil: kemenangan membuka tantangan berikutnya; kekalahan tidak.
 const win = renderResultPage({
   title: 'Hasil duel',
   heading: 'Skakmat. Raja hitam tumbang.',
-  summary: 'Kemenangan atas Pengawal Bastion (Lantai 01 / Penjaga).',
-  rewardText: 'Hadiah 15 koin masuk ke dompet.',
-  progressText: '1 dari 3 lantai ditaklukkan',
+  summary: 'Kemenangan atas Pengawal Bastion · Chapter 01, lantai 01.',
+  rewardText: 'Hadiah 5 koin masuk ke dompet.',
+  progressText: '1 dari 50 lantai ditaklukkan',
   canReplay: true,
+  continueFloorId: 'chapter-01-floor-02',
+  continueLabel: 'Lanjut ke lantai Patroli',
   undoDisabled: true,
 });
-check('hasil: judul hasil', win.includes('Hasil duel'));
-check('hasil: heading skakmat', win.includes('Raja hitam tumbang'));
-check('hasil: hadiah tampil', win.includes('Hadiah 15 koin'));
-check('hasil: progres tampil', win.includes('1 dari 3 lantai'));
-check('hasil: tombol ulangi ada', win.includes('data-command="replay"'));
-check('hasil: undo nonaktif', win.includes('data-command="undo"') && win.includes('disabled'));
+check('hasil: judul dan skakmat tampil', win.includes('Hasil duel') && win.includes('Raja hitam tumbang'));
+check('hasil: hadiah dan progres campaign tampil', win.includes('Hadiah 5 koin') && win.includes('1 dari 50 lantai'));
+check('hasil: lanjut ke lantai terbuka', win.includes('data-command="continue-floor" data-floor-id="chapter-01-floor-02"'));
+check('hasil: tombol ulangi dan undo nonaktif', win.includes('data-command="replay"') && win.includes('data-command="undo" disabled'));
 check('hasil: ada role status', win.includes('role="status"'));
 
 const lose = renderResultPage({
@@ -42,30 +44,78 @@ const lose = renderResultPage({
   heading: 'Skakmat. Raja putih tumbang.',
   summary: 'Kekalahan dari Pengawal Bastion.',
   rewardText: null,
-  progressText: '0 dari 3 lantai ditaklukkan',
+  progressText: '0 dari 50 lantai ditaklukkan',
   canReplay: true,
+  continueFloorId: null,
+  continueLabel: null,
   undoDisabled: false,
 });
-check('hasil kalah: tidak ada hadiah', !lose.includes('result-reward'));
+check('hasil kalah: tanpa hadiah dan tanpa lanjut', !lose.includes('result-reward') && !lose.includes('data-command="continue-floor"'));
 check('hasil kalah: undo aktif', lose.includes('data-command="undo"') && !lose.includes('data-command="undo" disabled'));
 
-// 2. Menu: state belum selesai
-const menu = renderMenuPage({
+function chapterView(chapterNumber: number, unlocked: boolean, cleared: boolean, selected: boolean): ChapterMapItem {
+  const chapter = CHAPTERS[chapterNumber - 1];
+  if (!chapter) throw new Error('Chapter fixture tidak ditemukan: ' + chapterNumber);
+  return {
+    id: chapter.id,
+    number: chapter.number,
+    name: chapter.name,
+    areaLabel: chapter.area,
+    x: chapter.mapPosition.x,
+    y: chapter.mapPosition.y,
+    unlocked,
+    cleared,
+    clearedFloorCount: cleared ? 5 : 0,
+    selected,
+  };
+}
+
+function floorView(
+  floorId: string,
+  unlocked: boolean,
+  cleared: boolean,
+  selected: boolean,
+): FloorListItem {
+  const floor = DUNGEON_FLOORS.find((candidate) => candidate.id === floorId);
+  if (!floor) throw new Error('Floor fixture tidak ditemukan: ' + floorId);
+  return {
+    id: floor.id,
+    chapterNumber: floor.chapterNumber,
+    floorNumber: floor.floorNumber,
+    name: floor.name,
+    glyph: floor.glyph,
+    subtitle: floor.subtitle,
+    reward: floor.reward,
+    unlocked,
+    cleared,
+    selected,
+    description: floor.description,
+    rule: floor.rule,
+    isBoss: floor.isBoss,
+    lockReason: unlocked ? '' : 'Selesaikan lantai sebelumnya terlebih dahulu.',
+  };
+}
+
+const chapterViews = CHAPTERS.map((chapter) =>
+  chapterView(chapter.number, chapter.number === 1, false, chapter.number === 1),
+);
+const firstChapterFloors = DUNGEON_FLOORS
+  .filter((floor) => floor.chapterId === CHAPTERS[0].id)
+  .map((floor) => floorView(floor.id, floor.floorNumber === 1, false, floor.floorNumber === 1));
+const firstFloor = firstChapterFloors[0];
+const firstBoss = firstChapterFloors[4];
+if (!firstFloor || !firstBoss) throw new Error('Fixture chapter pertama harus berisi lima lantai.');
+const menuView = {
   coins: 30,
   clearedCount: 0,
-  totalFloors: 3,
+  totalFloors: 50,
   allCleared: false,
-  nextBoss: { name: 'Pengawal Bastion', description: 'Benteng tua.', rule: 'Perisai berpindah.' },
-  selectedBoss: {
-    id: 'bastion', name: 'Pengawal Bastion', glyph: '♜', subtitle: 'Lantai 01 / Penjaga', reward: 15,
-    unlocked: true, defeated: false, selected: true, description: 'Benteng tua.', rule: 'Perisai berpindah.',
-  },
-  lastClearedBoss: null,
-  floorProgress: [
-    { id: 'bastion', name: 'Pengawal Bastion', glyph: '♜', subtitle: 'Lantai 01 / Penjaga', reward: 15, unlocked: true, defeated: false, selected: true, description: 'Benteng tua.', rule: 'Perisai berpindah.' },
-    { id: 'ash', name: 'Pemangsa Abu', glyph: '♛', subtitle: 'Lantai 02 / Penguras', reward: 20, unlocked: false, defeated: false, selected: false, description: 'Ratu abu.', rule: 'Menguras EN.' },
-    { id: 'rift', name: 'Peramal Retakan', glyph: '♞', subtitle: 'Lantai 03 / Pengunci', reward: 25, unlocked: false, defeated: false, selected: false, description: 'Retakan papan.', rule: 'Segel petak.' },
-  ],
+  chapters: chapterViews,
+  selectedChapter: chapterViews[0],
+  nextFloor: firstFloor,
+  selectedFloor: firstFloor,
+  lastClearedFloor: null,
+  floorProgress: firstChapterFloors,
   activeHero: {
     id: 'arunika',
     name: 'Arunika',
@@ -80,104 +130,61 @@ const menu = renderMenuPage({
   },
   heroCount: 6,
   cardCount: 37,
-});
-check('menu: 0 dari 3 lantai', menu.includes('0 dari 3'));
-check('menu: boss berikutnya tampil', menu.includes('Pengawal Bastion'));
-check('menu: hero aktif tampil', menu.includes('Arunika'));
-check('menu: potret via data-portrait', menu.includes('data-portrait="arunika"'));
-check('menu: tiga lantai progres memakai data boss', (menu.match(/class="home-floor-step(?: selected)?"/g) ?? []).length === 3);
-check('menu: lantai terkunci tetap diberi status', menu.includes('Terkunci'));
-check('menu: peta dunia lokal dan tiga marker boss tampil', menu.includes('src="/assets/broken-crescent-pixel-map.png"') && (menu.match(/<button class="dungeon-map-marker/g) ?? []).length === 3);
-check('menu: marker dan kartu memilih boss yang sama', (menu.match(/data-command="select-boss" data-boss-id="bastion"/g) ?? []).length === 2);
-check('menu: mulai tantangan memakai boss terpilih', menu.includes('data-command="start-boss" aria-label="Mulai pertarungan melawan Pengawal Bastion"'));
-check('menu: skill dan ultimate memakai deskripsi hero', menu.includes('Berpindah sampai dua petak.') && menu.includes('Berpindah ke petak kosong mana pun.'));
-check('menu: fakta koleksi berasal dari data game', menu.includes('37 kartu') && menu.includes('6 tersedia'));
-check('menu: riwayat kosong menampilkan tantangan dan hadiah aktual', menu.includes('Belum ada lantai selesai') && menu.includes('Tantangan berikutnya: Pengawal Bastion') && menu.includes('15 koin'));
+};
 
+// 2. Menu: chapter map, lima lantai, state campaign awal.
+const menu = renderMenuPage(menuView);
+check('menu: campaign awal 0 dari 50', menu.includes('0 dari 50'));
+check('menu: lantai pertama menjadi tantangan berikutnya', menu.includes('Tantangan berikutnya: Chapter 01') && menu.includes('Lantai 01'));
+check('menu: hero dan potret aktif tampil', menu.includes('Arunika') && menu.includes('data-portrait="arunika"'));
+check('menu: lima lantai chapter memakai data lantai', (menu.match(/class="home-floor-step[^"]*"/g) ?? []).length === 5);
+check('menu: sepuluh chapter ditampilkan pada peta lokal', menu.includes('src="/assets/broken-crescent-pixel-map.png"') && (menu.match(/<button class="dungeon-map-marker/g) ?? []).length === 10);
+check('menu: marker memilih chapter dan lantai pertama', menu.includes('data-command="select-chapter" data-chapter-id="chapter-01"') && menu.includes('data-floor-id="chapter-01-floor-01"'));
+const bossPreviewMenu = renderMenuPage({
+  ...menuView,
+  selectedFloor: firstBoss,
+  floorProgress: firstChapterFloors.map((floor) => ({ ...floor, selected: floor.id === firstBoss.id })),
+});
+check('menu: boss lantai lima punya skill unik', bossPreviewMenu.includes('Skill unik boss') && bossPreviewMenu.includes(firstBoss.name) && bossPreviewMenu.includes(firstBoss.rule));
+const homeStartButton = menu.match(/<button class="hub-button primary home-start-button"[^>]*>/)?.[0] ?? '';
+check('menu: CTA lantai awal aktif', homeStartButton.includes('data-command="start-floor"') && !homeStartButton.includes('disabled'));
+check('menu: fakta koleksi dan ekonomi tetap terlihat', menu.includes('37 kartu') && menu.includes('6 tersedia') && menu.includes('Untuk kartu') && menu.includes('Untuk hero'));
+
+const clearedChapters = CHAPTERS.map((chapter) => chapterView(chapter.number, true, true, chapter.number === 10));
+const finalChapter = CHAPTERS[CHAPTERS.length - 1];
+if (!finalChapter) throw new Error('Fixture chapter terakhir tidak ditemukan.');
+const finalChapterFloors = DUNGEON_FLOORS
+  .filter((floor) => floor.chapterId === finalChapter.id)
+  .map((floor) => floorView(floor.id, true, true, floor.isBoss));
+const finalBoss = finalChapterFloors[4];
+if (!finalBoss) throw new Error('Fixture boss chapter terakhir tidak ditemukan.');
 const cleared = renderMenuPage({
+  ...menuView,
   coins: 90,
-  clearedCount: 3,
-  totalFloors: 3,
+  clearedCount: 50,
   allCleared: true,
-  nextBoss: { name: 'Peramal Retakan', description: 'x', rule: 'y' },
-  selectedBoss: {
-    id: 'rift', name: 'Peramal Retakan', glyph: '♞', subtitle: 'Lantai 03 / Pengunci', reward: 25,
-    unlocked: true, defeated: true, selected: true, description: 'x', rule: 'y',
-  },
-  lastClearedBoss: {
-    id: 'rift', name: 'Peramal Retakan', glyph: '♞', subtitle: 'Lantai 03 / Pengunci', reward: 25,
-    unlocked: true, defeated: true, selected: true, description: 'x', rule: 'y',
-  },
-  floorProgress: [
-    { id: 'bastion', name: 'Pengawal Bastion', glyph: '♜', subtitle: 'Lantai 01 / Penjaga', reward: 15, unlocked: true, defeated: true, selected: false, description: 'Benteng tua.', rule: 'Perisai berpindah.' },
-    { id: 'ash', name: 'Pemangsa Abu', glyph: '♛', subtitle: 'Lantai 02 / Penguras', reward: 20, unlocked: true, defeated: true, selected: false, description: 'Ratu abu.', rule: 'Menguras EN.' },
-    { id: 'rift', name: 'Peramal Retakan', glyph: '♞', subtitle: 'Lantai 03 / Pengunci', reward: 25, unlocked: true, defeated: true, selected: true, description: 'Retakan papan.', rule: 'Segel petak.' },
-  ],
-  activeHero: {
-    id: 'liora',
-    name: 'Liora',
-    role: 'Penjaga Benteng',
-    portrait: 'liora',
-    skillName: 'Segel Petak',
-    skillDescription: 'Kunci petak kosong selama dua balasan.',
-    ultimateName: 'Benteng Prisma',
-    ultimateDescription: 'Bentuk blokade silang selama dua balasan.',
-    strength: 'Menutup lima petak.',
-    weakness: 'Membutuhkan petak kosong.',
-  },
-  heroCount: 6,
-  cardCount: 37,
+  chapters: clearedChapters,
+  selectedChapter: clearedChapters[clearedChapters.length - 1],
+  nextFloor: firstFloor,
+  selectedFloor: finalBoss,
+  lastClearedFloor: finalBoss,
+  floorProgress: finalChapterFloors,
 });
-check('menu selesai: judul menara', cleared.includes('Menara ditaklukkan'));
-check('menu selesai: 3 dari 3', cleared.includes('3 dari 3'));
-check('menu selesai: tiga status lantai selesai', (cleared.match(/class="home-floor-state">Selesai/g) ?? []).length === 3);
-check('menu selesai: riwayat terakhir memakai boss dan hadiah aktual', cleared.includes('Peramal Retakan') && cleared.includes('25 koin'));
+check('menu selesai: campaign 50 lantai', cleared.includes('Semua chapter selesai') && cleared.includes('50 dari 50'));
+check('menu selesai: lima status lantai selesai', (cleared.match(/class="home-floor-state">Selesai/g) ?? []).length === 5);
+check('menu selesai: chapter dan hadiah terakhir berasal dari konten', cleared.includes(finalBoss.name) && cleared.includes(finalBoss.reward + ' koin'));
 
-// 3. Dungeon: kunci + detail
+// 3. Dungeon: 10 chapter, lima lantai, boss chapter kelima tetap terkunci.
 const dungeon = renderDungeonPage({
-  items: [
-    {
-      id: 'bastion',
-      name: 'Pengawal Bastion',
-      glyph: '♜',
-      subtitle: 'Lantai 01 / Penjaga',
-      reward: 15,
-      unlocked: true,
-      defeated: false,
-      selected: true,
-    },
-    {
-      id: 'ash',
-      name: 'Pemangsa Abu',
-      glyph: '♛',
-      subtitle: 'Lantai 02 / Penguras',
-      reward: 20,
-      unlocked: false,
-      defeated: false,
-      selected: false,
-    },
-  ],
-  detail: {
-    id: 'bastion',
-    name: 'Pengawal Bastion',
-    glyph: '♜',
-    subtitle: 'Lantai 01 / Penjaga',
-    reward: 15,
-    unlocked: true,
-    defeated: false,
-    selected: true,
-    description: 'Benteng tua.',
-    rule: 'Perisai berpindah.',
-  },
+  chapters: chapterViews,
+  selectedChapter: chapterViews[0],
+  floors: firstChapterFloors,
+  detail: firstBoss,
 });
-check('dungeon: label mulai', dungeon.includes('Mulai pertarungan'));
-check('dungeon: aturan boss tampil', dungeon.includes('Keunikan:'));
-check('dungeon: hadiah koin tampil', dungeon.includes('Hadiah 15 koin'));
-check('dungeon: boss terkunci nonaktif', dungeon.includes('Terkunci'));
-check('dungeon: memakai aset peta lokal dengan alt', dungeon.includes('src="/assets/broken-crescent-pixel-map.png"') && dungeon.includes('alt="Peta pixel-art dunia'));
-check('dungeon: satu marker per boss pada view', (dungeon.match(/<button class="dungeon-map-marker/g) ?? []).length === 2);
-check('dungeon: marker membuka pilihan boss yang sama', dungeon.includes('data-command="select-boss" data-boss-id="bastion" style="--map-x:18%;--map-y:40%"'));
-check('dungeon: marker boss terkunci nonaktif', dungeon.includes('data-boss-id="ash" style="--map-x:48%;--map-y:82%" aria-label="Pemangsa Abu, Terkunci" aria-pressed="false" disabled>02</button>'));
+check('dungeon: sepuluh marker chapter pada peta lokal', dungeon.includes('src="/assets/broken-crescent-pixel-map.png"') && (dungeon.match(/<button class="dungeon-map-marker/g) ?? []).length === 10);
+check('dungeon: tersedia tepat lima lantai', (dungeon.match(/<button class="floor-node[^"]*"/g) ?? []).length === 5);
+check('dungeon: boss tampil dengan skill unik', dungeon.includes('Boss chapter') && dungeon.includes('Skill unik boss:') && dungeon.includes(firstBoss.rule));
+check('dungeon: boss terkunci dan CTA tidak aktif', dungeon.includes('Selesaikan lantai sebelumnya terlebih dahulu.') && dungeon.includes('data-command="start-floor"') && dungeon.includes('disabled'));
 
 // 4. Heroes: roster + detail + biaya EN
 const heroPageView = {
@@ -362,6 +369,7 @@ const captureMarkup = renderBoard({
   heroBlockadeSquares: [],
   heroBlockadeTurns: 0,
   heroBlockadeName: '',
+  bossSnareId: null,
   bossSealedSquare: null,
   targeting: false,
   disabled: false,

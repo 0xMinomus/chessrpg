@@ -20,6 +20,7 @@ src/
     cards.ts
     heroes.ts
     bosses.ts
+    dungeon.ts
   domain/
     chess/
       board.ts
@@ -76,6 +77,9 @@ Sesuaikan pemecahan file dengan ukuran modul saat implementasi; daftar ini batas
 - Data kartu, hero, dan boss tinggal di `content`; angka biaya, rarity, skill, kelemahan, aturan boss, dan hadiah tidak disalin ke komponen UI.
 - UI papan menerima snapshot state dan memancarkan input pemain. Renderer hanya menerjemahkan state menjadi DOM; renderer tidak mengubah state permainan.
 
+- Data campaign mendefinisikan 10 chapter dan 50 lantai berurutan pada satu sumber. Tiap chapter memiliki empat lantai standar dan boss di lantai kelima; boss yang dikalahkan membuka chapter berikutnya.
+- Progres campaign menyimpan ID lantai yang telah ditaklukkan sebagai prefiks berurutan. `startBattle` menolak lantai terkunci; adapter browser memigrasikan save lama tiga boss serta mempertahankan proyeksi kompatibilitasnya.
+
 ## Resource dan aturan acuan
 
 Aturan berikut mengikuti permintaan terbaru dan prototipe dungeon aktif:
@@ -91,8 +95,7 @@ Jika biaya atau aturan berubah melalui permintaan pengguna, perbarui sumber data
 
 ## Persistensi offline
 
-- Progres kampanye, hero aktif, deck kartu terpilih, koin, dan boss yang sudah dikalahkan disimpan melalui adapter browser dengan key berversi.
-- Validasi dan normalisasi data saat membaca save. Save rusak atau versi tidak dikenal harus memiliki fallback yang dapat dimainkan tanpa merusak sesi.
+- Progres kampanye menyimpan clear lantai berurutan (`clearedFloorIds`), hero aktif, deck kartu, dan koin melalui adapter browser dengan key berversi. Adapter memigrasikan save lama yang berisi boss kalah dan mempertahankan kompatibilitas baca mundur untuk tiga boss lama.
 - Penyimpanan battle aktif/resume setelah reload adalah fitur P1, bukan alasan untuk mengikat domain pada `localStorage`.
 - Semua aset yang diperlukan untuk bermain harus tersedia lokal atau dicache oleh aplikasi statis; gameplay tidak membuat request ke API.
 

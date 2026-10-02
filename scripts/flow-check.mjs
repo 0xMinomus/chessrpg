@@ -1,7 +1,6 @@
-// Smoke walkthrough fungsional di build statis: menu -> hero -> boss -> duel,
-// langkah legal, kartu, target/cancel, undo, restart, hasil, save/reload.
-//
-// Jalankan: node scripts/flow-check.mjs
+// Smoke walkthrough: chapter map, ten land markers, locked progression, duel,
+// standard chess/card/hero actions, save migration and continuation.
+
 
 import { chromium } from 'playwright-core';
 import { mkdirSync } from 'node:fs';
@@ -49,33 +48,105 @@ page.on('response', (r) => {
 });
 
 await page.goto(URL, { waitUntil: 'load' });
+const homeTerrain = await page.evaluate(async () => {
+  const image = document.querySelector('.home-world-image');
+  if (!(image instanceof HTMLImageElement)) return [];
+  await image.decode();
+  const canvas = document.createElement('canvas');
+  canvas.width = image.naturalWidth;
+  canvas.height = image.naturalHeight;
+  const context = canvas.getContext('2d');
+  if (!context) return [];
+  context.drawImage(image, 0, 0);
+  const isOcean = (red, green, blue) => blue > red * 1.4 && blue > green * 1.12 && red < 100 && green < 180;
+  return Array.from(document.querySelectorAll('.home-world-map .dungeon-map-marker')).map((marker) => {
+    const x = Math.round((Number.parseFloat(marker.style.getPropertyValue('--map-x')) / 100) * image.naturalWidth);
+    const y = Math.round((Number.parseFloat(marker.style.getPropertyValue('--map-y')) / 100) * image.naturalHeight);
+    const center = context.getImageData(x, y, 1, 1).data;
+    let ocean = 0;
+    let samples = 0;
+    for (let row = -3; row <= 3; row += 1) {
+      for (let column = -3; column <= 3; column += 1) {
+        const pixel = context.getImageData(x + column, y + row, 1, 1).data;
+        if (isOcean(pixel[0], pixel[1], pixel[2])) ocean += 1;
+        samples += 1;
+      }
+    }
+    return {
+      chapter: marker.getAttribute('data-chapter-id'),
+      x: Number.parseFloat(marker.style.getPropertyValue('--map-x')),
+      y: Number.parseFloat(marker.style.getPropertyValue('--map-y')),
+      centerRgb: Array.from(center.slice(0, 3)),
+      oceanRatio: ocean / samples,
+    };
+  });
+});
+check(
+  'sepuluh marker chapter berada di daratan',
+  homeTerrain.length === 10 && homeTerrain.every((marker) => marker.oceanRatio < 0.25),
+  JSON.stringify(homeTerrain),
+);
+
 
 // 1. Menu
-check('menu terbuka', await page.getByRole('heading', { name: 'Menara menunggu.' }).isVisible());
+check('menu terbuka', await page.getByRole('heading', { name: 'Peta campaign terbuka.' }).isVisible());
 check('koin 30 tampil', (await page.locator('.hub-wallet strong').textContent()) === '30');
 const homeMapState = await page.locator('.home-world-image').evaluate(async (image) => {
   await image.decode();
   return { width: image.naturalWidth, height: image.naturalHeight };
 });
 check('peta beranda lokal termuat', homeMapState.width > 0 && homeMapState.height > 0, JSON.stringify(homeMapState));
-check('tiga marker boss muncul di beranda', (await page.locator('.home-world-map .dungeon-map-marker').count()) === 3);
-check('boss terkunci nonaktif di peta beranda', await page.locator('.home-world-map .dungeon-map-marker[data-boss-id="ash"]').isDisabled());
+await page.setViewportSize({ width: 320, height: 780 });
+const homeMapLayout = await page.evaluate(() => {
+  const stage = document.querySelector('.home-world-map');
+  const stageRect = stage?.getBoundingClientRect();
+  const markers = Array.from(stage?.querySelectorAll('.dungeon-map-marker') ?? []);
+  return {
+    markers: markers.length,
+    markersFit: Boolean(stageRect) && markers.every((marker) => {
+      const rect = marker.getBoundingClientRect();
+      return rect.left >= stageRect.left - 1 && rect.right <= stageRect.right + 1 &&
+        rect.top >= stageRect.top - 1 && rect.bottom <= stageRect.bottom + 1;
+    }),
+    touchTargets: markers.every((marker) => {
+      const style = getComputedStyle(marker);
+      return Number.parseFloat(style.minWidth) >= 44 && Number.parseFloat(style.minHeight) >= 44;
+    }),
+    noHorizontalOverflow: document.documentElement.scrollWidth <= innerWidth,
+  };
+});
 check(
-  'skill, ultimate, dan sifat hero berada pada panel yang benar',
-  await page.evaluate(() => {
-    const panel = document.querySelector('.home-hero-panel');
-    const abilities = panel?.querySelector('.home-hero-abilities');
-    const traits = panel?.querySelector('.home-hero-traits');
-    return abilities?.children.length === 2 && traits?.parentElement === panel;
-  }),
+  'peta beranda muat dan marker punya target sentuh penuh pada 320px',
+  homeMapLayout.markers === 10 && homeMapLayout.markersFit && homeMapLayout.touchTargets &&
+    homeMapLayout.noHorizontalOverflow,
+  JSON.stringify(homeMapLayout),
 );
-await page.locator('.home-world-map .dungeon-map-marker[data-boss-id="bastion"]').click();
+await page.setViewportSize({ width: 1440, height: 900 });
+const allChapterMarkers = page.locator('.home-world-map .dungeon-map-marker');
+for (let index = 0; index < await allChapterMarkers.count(); index += 1) {
+  const marker = allChapterMarkers.nth(index);
+  const chapterId = await marker.getAttribute('data-chapter-id');
+  await marker.click();
+  check('marker ' + chapterId + ' dapat dipilih', (await marker.getAttribute('aria-pressed')) === 'true');
+}
+const secondChapterMarker = page.locator('.home-world-map .dungeon-map-marker[data-chapter-id="chapter-02"]');
 check(
-  'marker beranda menyelaraskan boss terpilih dan kartu progres',
-  (await page.locator('.home-selected-boss h3').textContent()) === 'Pengawal Bastion' &&
-    (await page.locator('.home-floor-step.selected').getAttribute('data-boss-id')) === 'bastion',
+  'chapter kedua terkunci tetapi bisa dipreview',
+  (await secondChapterMarker.getAttribute('class')).includes('locked') && !(await secondChapterMarker.isDisabled()),
 );
-check('CTA mulai tantangan beranda aktif', await page.locator('.home-start-button').isEnabled());
+await secondChapterMarker.click();
+check(
+  'lantai chapter terkunci tidak dapat dimulai',
+  (await page.locator('.home-selected-boss h3').textContent()) === 'Kuil Abu' &&
+    (await page.locator('.home-start-button').isDisabled()),
+);
+await page.locator('.home-world-map .dungeon-map-marker[data-chapter-id="chapter-01"]').click();
+check(
+  'chapter pertama menyelaraskan marker dan lantai terpilih',
+  (await page.locator('.home-selected-boss h3').textContent()) === 'Benteng Bastion' &&
+    (await page.locator('.home-floor-step.selected').getAttribute('data-floor-id')) === 'chapter-01-floor-01',
+);
+check('CTA lantai pertama aktif', await page.locator('.home-start-button').isEnabled());
 
 // 2. Hero roster 6 + potret termuat
 await page.getByRole('button', { name: 'Hero', exact: true }).click();
@@ -170,16 +241,15 @@ const temporarilyRemovedId = await temporarilyRemoved.getAttribute('data-card-id
 await temporarilyRemoved.click();
 await page.getByRole('button', { name: 'Dungeon', exact: true }).click();
 check('dungeon menawarkan atur deck sebelum duel',
-  await page.locator('.boss-detail [data-command="open-deck"]').count() === 1);
-await page.locator('.boss-detail [data-command="open-deck"]').click();
+  await page.locator('.floor-detail [data-command="open-deck"]').count() === 1);
+await page.locator('.floor-detail [data-command="open-deck"]').click();
 check('CTA dungeon membuka deck editor', await page.locator('.deck-builder-layout').isVisible());
 if (temporarilyRemovedId) await page.locator(`.deck-card[data-card-id="${temporarilyRemovedId}"]`).click();
 check('loadout dapat dilengkapi kembali', (await page.locator('.deck-selected-card').count()) === 11);
 
-// 3. Dungeon + boss terkunci
+// 3. Peta 10 chapter, lima lantai, dan gerbang chapter.
 await page.getByRole('button', { name: 'Dungeon' }).click();
-check('3 boss tampil', (await page.locator('.boss-node').count()) === 3);
-check('boss 2 terkunci', (await page.locator('.boss-node', { hasText: 'Pemangsa Abu' }).getAttribute('disabled')) !== null);
+check('lima lantai tampil', (await page.locator('.floor-node').count()) === 5);
 const mapImage = await page.locator('.dungeon-map-image').evaluate(async (image) => {
   await image.decode();
   return { source: image.getAttribute('src'), width: image.naturalWidth, height: image.naturalHeight };
@@ -189,17 +259,22 @@ check(
   mapImage.source === '/assets/broken-crescent-pixel-map.png' && mapImage.width > 0 && mapImage.height > 0,
   JSON.stringify(mapImage),
 );
-check('tiga marker lokasi boss tampil', (await page.locator('.dungeon-map-marker').count()) === 3);
-const marker = page.locator('.dungeon-map-marker:not(:disabled)').first();
-const markerBossId = await marker.getAttribute('data-boss-id');
-await marker.click();
+check('sepuluh marker chapter tampil', (await page.locator('.dungeon-map-marker').count()) === 10);
+await page.locator('.dungeon-map-marker[data-chapter-id="chapter-02"]').click();
 check(
-  'marker peta memilih baris boss yang sama',
-  markerBossId !== null && (await page.locator('.boss-node.selected').getAttribute('data-boss-id')) === markerBossId,
+  'lantai chapter berikutnya terkunci sebelum boss',
+  (await page.locator('.floor-node').count()) === 5 &&
+    (await page.locator('.floor-detail [data-command="start-floor"]').isDisabled()),
 );
+await page.locator('.dungeon-map-marker[data-chapter-id="chapter-01"]').click();
+await page.locator('.floor-node[data-floor-id="chapter-01-floor-02"]').click();
+check('lantai berikutnya terkunci sampai lantai sebelumnya selesai',
+  await page.locator('.floor-detail [data-command="start-floor"]').isDisabled());
+await page.locator('.floor-node[data-floor-id="chapter-01-floor-01"]').click();
+check('lantai pertama terbuka', await page.locator('.floor-detail [data-command="start-floor"]').isEnabled());
 
 // 4. Mulai duel
-await page.getByRole('button', { name: 'Mulai pertarungan' }).first().click();
+await page.locator('.floor-detail [data-command="start-floor"]').click();
 await page.waitForSelector('.square');
 const selectedDeckForBattle = await page.evaluate(() => JSON.parse(localStorage.getItem('crown-catalyst-dungeon-v1')).deckCardIds);
 const openingHandIds = await page.locator('.skill-card').evaluateAll((cards) => cards.map((card) => card.getAttribute('data-card-id')));
@@ -386,12 +461,12 @@ const before = await page.evaluate(() => localStorage.getItem('crown-catalyst-du
 await page.reload({ waitUntil: 'load' });
 const after = await page.evaluate(() => localStorage.getItem('crown-catalyst-dungeon-v1'));
 check('save bertahan setelah reload', before === after);
-check('menu terbuka setelah reload', await page.getByRole('heading', { name: 'Menara menunggu.' }).isVisible());
+check('menu terbuka setelah reload', await page.getByRole('heading', { name: 'Peta campaign terbuka.' }).isVisible());
 
 // 13. Save rusak -> fallback
 await page.evaluate(() => localStorage.setItem('crown-catalyst-dungeon-v1', '{broken'));
 await page.reload({ waitUntil: 'load' });
-check('save rusak tidak crash', await page.getByRole('heading', { name: 'Menara menunggu.' }).isVisible());
+check('save rusak tidak crash', await page.getByRole('heading', { name: 'Peta campaign terbuka.' }).isVisible());
 check('save rusak -> koin default', (await page.locator('.hub-wallet strong').textContent()) === '30');
 
 // 14. Layar hasil duel: main sampai pertandingan berakhir (maks 60 langkah putih)
@@ -399,7 +474,7 @@ check('save rusak -> koin default', (await page.locator('.hub-wallet strong').te
   await page.evaluate(() => localStorage.removeItem('crown-catalyst-dungeon-v1'));
   await page.goto(URL, { waitUntil: 'load' });
   await page.getByRole('button', { name: 'Dungeon', exact: true }).click();
-  await page.getByRole('button', { name: 'Mulai pertarungan' }).first().click();
+  await page.locator('.floor-detail [data-command="start-floor"]').click();
   await page.waitForSelector('.square');
   let ended = false;
   for (let turn = 0; turn < 60 && !ended; turn += 1) {
@@ -438,7 +513,7 @@ check('save rusak -> koin default', (await page.locator('.hub-wallet strong').te
   }
 }
 
-// 15. CTA beranda memilih boss aktif lalu langsung membuka duel.
+// 15. Save boss selesai membuka chapter berikutnya di beranda.
 {
   const startContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   await startContext.addInitScript(() => {
@@ -450,17 +525,20 @@ check('save rusak -> koin default', (await page.locator('.hub-wallet strong').te
   const homeActionPage = await startContext.newPage();
   homeActionPage.on('pageerror', (error) => errors.push('home-start pageerror: ' + error.message));
   await homeActionPage.goto(URL, { waitUntil: 'load' });
-  await homeActionPage.locator('.home-world-map .dungeon-map-marker[data-boss-id="ash"]').click();
+  check('clear boss tersimpan membuka progres lima lantai', (await homeActionPage.locator('.home-floor-progress-heading strong').textContent()).includes('5 dari 50'));
+  await homeActionPage.locator('.home-world-map .dungeon-map-marker[data-chapter-id="chapter-02"]').click();
   check(
-    'pilihan boss berikutnya diperbarui di beranda',
-    (await homeActionPage.locator('.home-selected-boss h3').textContent()) === 'Pemangsa Abu' &&
-      (await homeActionPage.locator('.home-floor-step.selected').getAttribute('data-boss-id')) === 'ash',
+    'chapter setelah boss terbuka dan memilih lantai pertama',
+    (await homeActionPage.locator('.home-selected-boss h3').textContent()) === 'Kuil Abu' &&
+      (await homeActionPage.locator('.home-floor-step.selected').getAttribute('data-floor-id')) === 'chapter-02-floor-01' &&
+      (await homeActionPage.locator('.home-start-button').isEnabled()),
   );
   await homeActionPage.locator('.home-start-button').click();
   await homeActionPage.waitForSelector('.square');
   check(
-    'CTA beranda memulai duel melawan boss yang dipilih',
-    (await homeActionPage.locator('.enemy-profile-copy strong').textContent()) === 'Pemangsa Abu',
+    'CTA beranda memulai lantai chapter kedua',
+    (await homeActionPage.locator('.enemy-profile-copy strong').textContent()) === 'Penjaga' &&
+      (await homeActionPage.locator('.board-heading .eyebrow').textContent()).includes('Kuil Abu'),
   );
   await startContext.close();
 }

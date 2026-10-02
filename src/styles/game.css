@@ -218,31 +218,35 @@ h1 {
 .home-hero-face { width: 112px; aspect-ratio: 1; }
 
 /* Dungeon */
-.dungeon-layout { display: grid; grid-template-columns: minmax(270px, 0.9fr) minmax(250px, 1.1fr); gap: 12px; }
-.boss-list { display: grid; align-content: start; gap: 7px; }
-.boss-node {
-  width: 100%; min-height: 74px; display: grid; grid-template-columns: 48px minmax(0, 1fr) auto;
-  align-items: center; gap: 10px; padding: 8px;
+ .dungeon-layout { display: grid; grid-template-columns: minmax(270px, 0.9fr) minmax(250px, 1.1fr); gap: 12px; }
+ .chapter-route { display: flex; flex-direction: column; gap: 10px; padding: 14px; }
+ .floor-list { min-width: 0; display: grid; gap: 6px; }
+ .floor-node {
+  width: 100%; min-height: 56px; display: grid; grid-template-columns: 25px 40px minmax(0, 1fr) auto;
+  align-items: center; gap: 8px; padding: 7px;
   border: 1px solid #5f566b; color: var(--cream); background: #1f2037; text-align: left; cursor: pointer;
 }
-.boss-node:hover:not(:disabled), .boss-node.selected { border-color: #d8b995; background: #30283c; }
-.boss-node:disabled { opacity: 0.48; cursor: not-allowed; }
-.boss-glyph {
+ .floor-node:hover, .floor-node.selected { border-color: #d8b995; background: #30283c; }
+ .floor-node.selected { box-shadow: inset 3px 0 0 #d8b995; }
+ .floor-node.locked { opacity: 0.62; }
+ .floor-node-index { color: #d7c8a2; font: 700 10px/1 "Courier New", monospace; }
+ .floor-node-copy { min-width: 0; }
+ .floor-node-copy strong { display: block; font: 700 12px/1.2 "Courier New", monospace; }
+ .floor-node-copy small { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; }
+ .floor-node-state { color: #d7c8a2; font: 700 9px/1 "Courier New", monospace; text-transform: uppercase; }
+ .boss-glyph {
   width: 42px; height: 46px; display: grid; place-items: center;
   border: 1px solid #786880; background: #33293e; color: #e7d1b6;
   font: 700 22px/1 Georgia, serif;
 }
-.boss-node strong { display: block; font: 700 12px/1.2 "Courier New", monospace; text-transform: uppercase; }
-.boss-node small { display: block; margin-top: 5px; color: var(--muted); font-size: 10px; }
-.boss-node-state { color: #d7c8a2; font: 700 9px/1 "Courier New", monospace; text-transform: uppercase; }
-.boss-detail {
+ .floor-node-glyph { width: 38px; height: 40px; font-size: 20px; }
+ .floor-detail {
   min-height: 220px; display: flex; flex-direction: column; align-items: flex-start;
-  padding: clamp(16px, 2.5vw, 28px); border: 1px solid #756580; background: #211d34;
+  gap: 12px; padding: clamp(16px, 2.5vw, 28px); border: 1px solid #756580; background: #211d34;
 }
-.boss-detail .boss-glyph { width: 54px; height: 58px; margin-bottom: 16px; font-size: 29px; }
-.boss-detail h3 { margin: 0 0 7px; font: 700 22px/1.1 Georgia, serif; }
-.boss-detail p { margin: 0 0 10px; color: #d1c8d3; font-size: 12px; }
-.boss-rule { margin: auto 0 15px; padding-top: 12px; border-top: 1px solid #4d455b; color: #f0d3aa; font-size: 11px; }
+ .floor-detail h3 { margin: 0; font: 700 22px/1.1 Georgia, serif; }
+ .floor-detail > p { margin: 0; color: #d1c8d3; font-size: 12px; }
+ .boss-rule { margin: auto 0 0; padding-top: 12px; border-top: 1px solid #4d455b; color: #f0d3aa; font-size: 11px; }
 
 .hero-detail p { margin: 8px 0; color: #d3cbd6; font-size: 11px; line-height: 1.35; }
 .hero-detail strong { color: #f0d4a9; }
@@ -359,7 +363,7 @@ h1 {
 .square.player-ward { box-shadow: inset 0 0 0 3px #f18aa0; }
 .square.blocked-target { outline: 3px dashed #f4bd7d; outline-offset: -5px; }
 .square.marked-piece .piece { text-decoration: underline; text-decoration-color: var(--coral); text-decoration-thickness: 3px; }
-.square.snared-piece .piece, .square.staggered-piece .piece { filter: grayscale(1); }
+ .square.snared-piece .piece, .square.staggered-piece .piece, .square.boss-snared-piece .piece { filter: grayscale(1); }
 .square.move-hint::after {
   content: ""; position: absolute; width: 22%; aspect-ratio: 1; border-radius: 50%;
   background: rgba(18, 17, 35, 0.42); pointer-events: none;
@@ -707,7 +711,7 @@ h1 {
   .home-hero-face { width: 82px; }
   .hero-roster { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hero-detail-face { width: 64px; height: 64px; }
-  .boss-node { min-height: 62px; grid-template-columns: 38px minmax(0, 1fr) auto; }
+  .floor-node { min-height: 50px; grid-template-columns: 24px 36px minmax(0, 1fr) auto; }
   .boss-glyph { width: 34px; height: 38px; }
 }
 
@@ -1116,7 +1120,7 @@ h1 {
   image-rendering: pixelated;
 }
 .home-world-map .dungeon-map-markers { position: absolute; inset: 0; }
-.home-world-map .dungeon-map-marker { min-width: 42px; min-height: 39px; font-size: 13px; }
+.home-world-map .dungeon-map-marker { min-width: 44px; min-height: 44px; font-size: 12px; }
 .home-selected-boss {
   min-width: 0;
   min-height: 0;
@@ -1226,7 +1230,7 @@ h1 {
 .home-floor-progress-heading { display: flex; align-items: center; justify-content: space-between; gap: 9px; padding-bottom: 7px; border-bottom: 1px solid #414a64; }
 .home-floor-progress-heading .eyebrow { color: var(--hub-coral); }
 .home-floor-progress-heading > strong { color: var(--hub-gold); font: 700 9px/1.2 "Courier New", monospace; text-align: right; text-transform: uppercase; }
-.home-floor-list { min-width: 0; min-height: 0; flex: 1 1 auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 8px 0; }
+.home-floor-list { min-width: 0; min-height: 0; flex: 1 1 auto; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; padding: 8px 0; }
 .home-floor-step {
   min-width: 0;
   display: grid;
@@ -1337,8 +1341,8 @@ h1 {
   z-index: 1;
   left: var(--map-x);
   top: var(--map-y);
-  min-width: 42px;
-  min-height: 38px;
+  min-width: 44px;
+  min-height: 44px;
   display: grid;
   place-items: center;
   padding: 3px 5px;
@@ -1376,66 +1380,61 @@ h1 {
 .map-legend-mark.current { border-color: var(--hub-coral); background: var(--hub-coral); }
 .map-legend-mark.locked { opacity: 0.58; }
 .dungeon-info-column { min-width: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); align-content: start; gap: 12px; }
-.boss-route { display: flex; flex-direction: column; gap: 10px; padding: 14px; }
-.hub-section-heading {
+ .chapter-route { gap: 10px; padding: 14px; }
+ .hub-section-heading {
   padding: 0 0 9px;
   border-bottom: 1px solid #414a64;
 }
-.boss-list { flex: 1 0 auto; grid-template-rows: repeat(3, minmax(76px, 1fr)); align-content: stretch; gap: 8px; }
-.boss-node {
+ .floor-list { flex: 1 0 auto; grid-template-rows: repeat(5, minmax(54px, auto)); align-content: stretch; gap: 8px; }
+ .floor-node {
   height: 100%;
   min-height: 0;
-  grid-template-columns: 48px minmax(0, 1fr) auto;
-  gap: 11px;
-  padding: 9px;
+  grid-template-columns: 25px 40px minmax(0, 1fr) auto;
+  gap: 9px;
+  padding: 8px;
   border-color: #68718d;
   background: #11192e;
 }
-.boss-node:hover:not(:disabled), .boss-node.selected {
+ .floor-node:hover, .floor-node.selected {
   border-color: var(--hub-coral);
   background: #252439;
 }
-.boss-node.selected { box-shadow: inset 3px 0 0 var(--hub-coral); }
-.boss-node:disabled { opacity: 0.62; }
-.boss-glyph {
-  width: 46px;
-  height: 48px;
-  border-color: #7f829b;
-  background: #20263b;
-  color: var(--hub-gold);
-}
-.boss-node strong { color: var(--cream); font: 700 13px/1.2 Georgia, "Times New Roman", serif; text-transform: none; }
-.boss-node small { color: var(--hub-copy); font-size: 11px; line-height: 1.35; }
-.boss-node-state { color: var(--hub-gold); font-size: 10px; }
-.boss-detail {
+ .floor-node.selected { box-shadow: inset 3px 0 0 var(--hub-coral); }
+ .floor-node.locked { opacity: 0.62; }
+ .floor-node-glyph { width: 38px; height: 40px; border-color: #7f829b; background: #20263b; color: var(--hub-gold); }
+ .floor-node-copy strong { color: var(--cream); font: 700 13px/1.2 Georgia, "Times New Roman", serif; }
+ .floor-node-copy small { color: var(--hub-copy); font-size: 10px; line-height: 1.35; }
+ .floor-node-state { color: var(--hub-gold); font-size: 10px; }
+ .floor-detail {
   min-height: 0;
   align-items: stretch;
   gap: 12px;
   padding: clamp(14px, 1.5vw, 21px);
   background: var(--hub-surface);
 }
-.boss-detail-heading, .boss-detail-facts, .boss-detail-identity { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.boss-detail-heading { padding-bottom: 9px; border-bottom: 1px solid #414a64; }
-.boss-detail-heading .eyebrow { color: var(--hub-coral); }
-.boss-detail-state {
+ .floor-detail-heading, .floor-detail-facts, .floor-detail-identity { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+ .floor-detail-heading { padding-bottom: 9px; border-bottom: 1px solid #414a64; }
+ .floor-detail-heading .eyebrow { color: var(--hub-coral); }
+ .floor-detail-state {
   padding: 4px 7px;
   border: 1px solid #707890;
   color: var(--hub-copy);
   font: 700 10px/1.1 "Courier New", monospace;
   text-transform: uppercase;
 }
-.boss-detail-identity { justify-content: flex-start; }
-.boss-detail .boss-glyph {
+ .floor-detail-identity { justify-content: flex-start; }
+ .floor-detail .boss-glyph {
   width: 74px;
   height: 74px;
   flex: 0 0 auto;
   margin: 0;
   font-size: 40px;
 }
-.boss-detail-identity > div { min-width: 0; }
-.boss-detail h3 { margin: 5px 0 0; color: var(--cream); font: 700 clamp(21px, 2vw, 29px)/1.1 Georgia, "Times New Roman", serif; }
-.boss-detail > p { margin: 0; color: var(--hub-copy); font-size: 13px; }
-.boss-rule {
+ .floor-detail-identity > div { min-width: 0; }
+ .floor-detail h3 { color: var(--cream); font: 700 clamp(21px, 2vw, 29px)/1.1 Georgia, "Times New Roman", serif; }
+ .floor-detail > p { color: var(--hub-copy); font-size: 13px; }
+ .floor-lock-reason { color: #f0d3aa !important; }
+ .boss-rule {
   margin: 0;
   padding: 10px 0;
   border-top: 1px solid #414a64;
@@ -1443,13 +1442,13 @@ h1 {
   color: var(--hub-copy);
   font-size: 12px;
 }
-.boss-rule strong { color: var(--cream); }
-.boss-detail-facts { justify-content: stretch; }
-.boss-detail-facts > div { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 5px; }
-.boss-detail-facts > div + div { padding-left: 12px; border-left: 1px solid #414a64; }
-.boss-detail-facts span { color: #bfc5dc; font: 700 10px/1.2 "Courier New", monospace; text-transform: uppercase; }
-.boss-detail-facts strong { color: var(--cream); font-size: 13px; }
-.boss-detail > .hub-button { margin-top: auto; min-height: 48px; }
+ .boss-rule strong { color: var(--cream); }
+ .floor-detail-facts { justify-content: stretch; }
+ .floor-detail-facts > div { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 5px; }
+ .floor-detail-facts > div + div { padding-left: 12px; border-left: 1px solid #414a64; }
+ .floor-detail-facts span { color: #bfc5dc; font: 700 10px/1.2 "Courier New", monospace; text-transform: uppercase; }
+ .floor-detail-facts strong { color: var(--cream); font-size: 13px; }
+ .floor-detail > .hub-button { margin-top: auto; min-height: 48px; }
 
 
 @media (max-width: 1000px) {
@@ -1496,8 +1495,8 @@ h1 {
   .home-page-heading h2 { font-size: clamp(26px, 7vw, 34px); }
   .home-dashboard { display: flex; flex-direction: column; min-height: 0; flex: 0 0 auto; gap: 9px; }
   .home-world-panel { display: flex; flex-direction: column; min-height: 0; padding: 8px; }
-  .home-world-map { width: 100%; aspect-ratio: 1.15; }
-  .home-world-map .dungeon-map-marker { min-width: 38px; min-height: 36px; font-size: 11px; }
+  .home-world-map { width: 100%; aspect-ratio: 1; }
+  .home-world-map .dungeon-map-marker { min-width: 44px; min-height: 44px; font-size: 11px; }
   .home-selected-boss { min-height: 270px; }
   .home-hero-panel { min-height: 0; }
   .home-hero-identity { grid-template-columns: 88px minmax(0, 1fr); }
@@ -1531,17 +1530,18 @@ h1 {
   .dungeon-map-panel { padding: 8px; }
   .dungeon-map-stage { max-height: min(92vw, 440px); aspect-ratio: 1; }
   .dungeon-map-image { object-fit: contain; }
-  .dungeon-map-marker { min-width: 38px; min-height: 36px; font-size: 12px; }
+  .dungeon-map-marker { min-width: 44px; min-height: 44px; font-size: 12px; }
+  .dungeon-map-marker { transform: translate(-50%, calc(-100% + 4px)); }
   .dungeon-map-legend { gap: 6px 12px; font-size: 9px; }
   .dungeon-info-column { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; }
-  .boss-route, .boss-detail { padding: 12px; }
+  .chapter-route, .floor-detail { padding: 12px; }
   .dungeon-page .dungeon-layout { flex: 0 0 auto; min-height: 0; }
-  .boss-list { flex: 0 0 auto; grid-template-rows: none; }
-  .boss-node { height: auto; min-height: 76px; grid-template-columns: 42px minmax(0, 1fr) auto; gap: 8px; padding: 7px; }
+  .floor-list { flex: 0 0 auto; grid-template-rows: repeat(5, minmax(58px, auto)); }
+  .floor-node { height: auto; min-height: 58px; grid-template-columns: 24px 38px minmax(0, 1fr) auto; gap: 7px; padding: 7px; }
+  .floor-node-state { max-width: 68px; white-space: normal; text-align: right; }
   .boss-glyph { width: 40px; height: 42px; }
-  .boss-node-state { max-width: 52px; white-space: normal; text-align: right; }
-  .boss-detail .boss-glyph { width: 62px; height: 62px; font-size: 34px; }
-  .boss-detail h3 { font-size: 22px; }
+  .floor-detail .boss-glyph { width: 62px; height: 62px; font-size: 34px; }
+  .floor-detail h3 { font-size: 22px; }
 }
 
 /* Hero roster + loadout: panel proportions and cornerwork follow the supplied roster reference. */

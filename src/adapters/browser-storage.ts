@@ -17,7 +17,7 @@ export interface StorageBacking {
 }
 
 export interface CampaignStore {
-  load(heroIds: string[], bossIds: string[], deckCatalog: DeckCatalog): Campaign;
+  load(heroIds: string[], floorIds: readonly string[], deckCatalog: DeckCatalog): Campaign;
   save(campaign: Campaign): boolean;
 }
 
@@ -52,14 +52,17 @@ export function createLocalStorageBacking(): StorageBacking | null {
   }
 }
 
-export function createCampaignStore(backing: StorageBacking | null): CampaignStore {
+export function createCampaignStore(
+  backing: StorageBacking | null,
+  legacyBossIds: readonly string[],
+): CampaignStore {
   return {
-    load(heroIds: string[], bossIds: string[], deckCatalog: DeckCatalog): Campaign {
+    load(heroIds: string[], floorIds: readonly string[], deckCatalog: DeckCatalog): Campaign {
       if (!backing) return defaultCampaign(heroIds, deckCatalog);
       try {
         const raw = backing.getItem(CAMPAIGN_STORAGE_KEY);
         if (raw == null) return defaultCampaign(heroIds, deckCatalog);
-        return normalizeCampaign(JSON.parse(raw) as unknown, heroIds, bossIds, deckCatalog);
+        return normalizeCampaign(JSON.parse(raw) as unknown, heroIds, floorIds, legacyBossIds, deckCatalog);
       } catch (_error) {
         return defaultCampaign(heroIds, deckCatalog);
       }
@@ -67,7 +70,13 @@ export function createCampaignStore(backing: StorageBacking | null): CampaignSto
     save(campaign: Campaign): boolean {
       if (!backing) return false;
       try {
-        backing.setItem(CAMPAIGN_STORAGE_KEY, JSON.stringify(campaign));
+        backing.setItem(
+          CAMPAIGN_STORAGE_KEY,
+          JSON.stringify({
+            ...campaign,
+            defeatedBosses: legacyBossIds.filter((id) => campaign.clearedFloorIds.indexOf(id) !== -1),
+          }),
+        );
         return true;
       } catch (_error) {
         return false;

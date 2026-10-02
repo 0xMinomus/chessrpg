@@ -1,6 +1,5 @@
-// Pemeriksaan layout battle di banyak viewport memakai Chromium lokal.
-// Mengukur petak papan yang benar-benar bisa diklik (elementFromPoint),
-// apakah frame papan muat di panel, dan error console.
+// Responsive Chromium check: campaign chapter map + floor route and clickable chess board.
+
 //
 // Jalankan: node scripts/layout-check.mjs
 
@@ -13,6 +12,7 @@ const OUT = join(process.env.LOCALAPPDATA ?? '.', 'Temp', 'opencode', 'layout-ch
 mkdirSync(OUT, { recursive: true });
 
 const VIEWPORTS = [
+  { name: '320x780', width: 320, height: 780 },
   { name: '390x844', width: 390, height: 844 },
   { name: '360x740', width: 360, height: 740 },
   { name: '430x932', width: 430, height: 932 },
@@ -133,16 +133,42 @@ for (const vp of VIEWPORTS) {
     if (res.status() >= 400) errors.push(res.status() + ' ' + res.url());
   });
 
+  let campaignLayout = null;
   try {
     await page.goto(URL, { waitUntil: 'load' });
-    await page.getByRole('button', { name: 'Dungeon' }).first().click();
-    await page.getByRole('button', { name: /Mulai pertarungan|Ulangi lantai/ }).first().click();
+    await page.getByRole('button', { name: 'Dungeon', exact: true }).first().click();
+    campaignLayout = await page.evaluate(() => {
+      const stage = document.querySelector('.dungeon-map-stage');
+      const list = document.querySelector('.floor-list');
+      const stageRect = stage?.getBoundingClientRect() ?? null;
+      const markers = Array.from(document.querySelectorAll('.dungeon-map-marker'));
+      const floors = Array.from(document.querySelectorAll('.floor-node'));
+      const markersFit = Boolean(stageRect) && markers.length === 10 && markers.every((marker) => {
+        const rect = marker.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0 && rect.left >= stageRect.left - 1 &&
+          rect.right <= stageRect.right + 1 && rect.top >= stageRect.top - 1 && rect.bottom <= stageRect.bottom + 1;
+      });
+      const floorsFit = Boolean(list) && floors.length === 5 && floors.every((floor) =>
+        floor.getBoundingClientRect().width > 0 && floor.scrollWidth <= floor.clientWidth + 1,
+      );
+      return {
+        markers: markers.length,
+        floors: floors.length,
+        markersFit,
+        floorsFit,
+        noHorizontalOverflow: document.documentElement.scrollWidth <= innerWidth,
+      };
+    });
+    if (vp.name === '390x844' || vp.name === '1440x900') {
+      await page.screenshot({ path: join(OUT, 'dungeon-' + vp.name + '.png'), fullPage: true });
+    }
+    await page.locator('.floor-detail [data-command="start-floor"]').click();
     await page.waitForSelector('.square');
     await page.waitForTimeout(250);
   } catch (error) {
     console.log(vp.name.padEnd(11) + ' GAGAL reach board: ' + String(error).split('\n')[0]);
     await page.screenshot({ path: join(OUT, 'fail-' + vp.name + '.png') });
-    rows.push({ vp: vp.name, total: 0, reachable: 0, blockedAfter: [], fits: false, frame: null, panel: null, smallestSquare: 0, errors: errors.length, errorSample: errors.slice(0, 3) });
+    rows.push({ vp: vp.name, campaignLayout, total: 0, reachable: 0, blockedAfter: [], fits: false, frame: null, panel: null, smallestSquare: 0, errors: errors.length, errorSample: errors.slice(0, 3) });
     await context.close();
     continue;
   }
@@ -176,10 +202,18 @@ for (const vp of VIEWPORTS) {
   rows.push({
     vp: vp.name,
     ...result,
+    campaignLayout,
     errors: errors.length,
     errorSample: errors.slice(0, 3),
   });
   await context.close();
+}
+for (const row of rows) {
+  const map = row.campaignLayout;
+  if (!map || !map.markersFit || !map.floorsFit || !map.noHorizontalOverflow) {
+    console.log('FAIL campaign layout ' + row.vp + ': ' + JSON.stringify(map));
+    process.exitCode = 1;
+  }
 }
 await browser.close();
 
@@ -199,5 +233,6 @@ for (const row of rows) {
       row.errors,
   );
   for (const sample of row.errorSample) console.log('    ! ' + sample);
+  console.log('    campaign: ' + JSON.stringify(row.campaignLayout));
 }
 console.log('screenshot: ' + OUT);

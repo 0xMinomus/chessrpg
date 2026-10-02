@@ -16,7 +16,9 @@
     "verify:portraits": "node scripts/hero-portrait-check.mjs",
     "shots:card": "node scripts/card-shots.mjs",
     "verify:flow": "node scripts/flow-check.mjs",
-    "verify": "npm run check && npm run smoke && npm run parity && npm run render && npm run build && npm run verify:dist",
+    "verify:campaign": "node --experimental-strip-types scripts/campaign-smoke.ts",
+    "verify:boss-skills": "node --experimental-strip-types scripts/boss-skills-smoke.ts",
+    "verify": "npm run check && npm run smoke && npm run verify:campaign && npm run verify:boss-skills && npm run parity && npm run render && npm run build && npm run verify:dist",
     "verify:browser": "npm run verify && npm run verify:portraits && npm run verify:layout && npm run verify:flow"
   },
   "devDependencies": {

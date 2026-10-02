@@ -21,6 +21,8 @@ import {
   canPlayCard,
   currentCardCost,
   gainEnergy,
+  gainEnemyEnergy,
+  loseEnergy,
   makeHand,
   payCardCost,
   refundCardCost,
@@ -126,10 +128,10 @@ export function undoTurn(state: BattleState): CommandResult {
 /** Ulangi duel dari posisi awal dengan hero + boss yang sama. */
 export function restartBattle(prev: BattleState, deps: BattleDeps): CommandResult {
   const hero = deps.heroes[prev.heroId] ?? Object.values(deps.heroes)[0];
-  const boss = deps.bosses[prev.bossId] ?? Object.values(deps.bosses)[0];
+  const opponent = deps.opponents[prev.floorId] ?? Object.values(deps.opponents)[0];
   const fresh = createInitialBattle({
     hero,
-    boss,
+    opponent,
     board: deps.chess.initialBoard(),
     hand: makeHand([], deps, prev.deckCardIds),
     deckCardIds: prev.deckCardIds,
@@ -151,9 +153,9 @@ export function continueAfterWhiteMove(
   alreadyDefeated: boolean,
 ): BattleState {
   const hero = heroOf(deps, state);
-  const boss = deps.bosses[state.bossId] ?? Object.values(deps.bosses)[0];
+  const opponent = deps.opponents[state.floorId] ?? Object.values(deps.opponents)[0];
   let next = applyWhiteMoveTriggers(state, deps, captured, movedPiece);
-  const outcome = checkOutcome(next, deps, 'b', boss, alreadyDefeated);
+  const outcome = checkOutcome(next, deps, 'b', opponent, alreadyDefeated);
   next = outcome.state;
   if (outcome.ended) {
     next = { ...next, enemyWardPieceId: null, enemyDrainArmed: false };
@@ -201,18 +203,23 @@ export function runBlackReply(
   alreadyDefeated: boolean,
 ): BattleState {
   if (state.gameOver) return state;
-  const boss = deps.bosses[state.bossId] ?? Object.values(deps.bosses)[0];
+  const opponent = deps.opponents[state.floorId] ?? Object.values(deps.opponents)[0];
   let next = state;
   const moves = battleLegalMoves(next, deps, 'b');
   if (moves.length === 0) {
     next = { ...next, thinking: false };
-    const outcome = checkOutcome(next, deps, 'b', boss, alreadyDefeated);
+    const outcome = checkOutcome(next, deps, 'b', opponent, alreadyDefeated);
     return finishFullTurn(outcome.state);
   }
   const move = chooseComputerMove(next, deps, moves);
   const committed = commitBattleMove(next, deps, move, 'b');
   next = committed.state;
   next = resolveEnemySkill(next, deps, committed.captured != null);
+  if (committed.captured && opponent.ruleKey === 'capture-leech') {
+    next = gainEnemyEnergy(next, 1);
+    next = loseEnergy(next, 1);
+    next = { ...next, status: 'Lintah Rawa mencuri 1 EN dan memperoleh 1 EN tambahan.' };
+  }
   if (next.lastLaughArmed) {
     if (deps.chess.isInCheck(next.board, 'w')) next = gainEnergy(next, 2);
     next = { ...next, lastLaughArmed: false };
@@ -229,7 +236,7 @@ export function runBlackReply(
     thinking: false,
     turn: 'w',
   };
-  const outcome = checkOutcome(next, deps, 'w', boss, alreadyDefeated);
+  const outcome = checkOutcome(next, deps, 'w', opponent, alreadyDefeated);
   next = outcome.state;
   if (outcome.ended) {
     next = { ...next, enemyDrainArmed: false, enemyWardPieceId: null };
@@ -239,7 +246,7 @@ export function runBlackReply(
       status:
         next.status.indexOf('Skak.') === 0 ? next.status : 'Giliran putih. Pilih langkah berikutnya.',
     };
-    next = applyBossRule(next, deps, boss);
+    next = applyBossRule(next, deps, opponent);
   }
   return finishFullTurn(next);
 }
@@ -432,8 +439,8 @@ export function resolveTarget(
     return { state: resolution.state, ok: false, message: resolution.message };
   }
   if (resolution.needsBlackOutcome) {
-    const boss = deps.bosses[resolution.state.bossId] ?? Object.values(deps.bosses)[0];
-    const outcome = checkOutcome(resolution.state, deps, 'b', boss, alreadyDefeated);
+    const opponent = deps.opponents[resolution.state.floorId] ?? Object.values(deps.opponents)[0];
+    const outcome = checkOutcome(resolution.state, deps, 'b', opponent, alreadyDefeated);
     const next = outcome.ended ? finishFullTurn(outcome.state) : outcome.state;
     return { state: next, ok: true, message: next.status };
   }
@@ -521,6 +528,7 @@ export function useHeroSkill(state: BattleState, deps: BattleDeps): CommandResul
     return cancelTarget(state, deps);
   }
   if (busy(state)) return { state, ok: false, message: state.status };
+  if (state.bossHeroSilence) return fail(state, 'Skill hero terkunci untuk giliran putih ini.');
   if (state.activeSkill) {
     return fail(state, 'Selesaikan target yang aktif atau tekan Esc.');
   }
@@ -564,6 +572,7 @@ export function useHeroUltimate(state: BattleState, deps: BattleDeps): CommandRe
     return cancelTarget(state, deps);
   }
   if (busy(state)) return { state, ok: false, message: state.status };
+  if (state.bossHeroSilence) return fail(state, 'Skill hero terkunci untuk giliran putih ini.');
   if (state.activeSkill) {
     return fail(state, 'Selesaikan target yang aktif atau tekan Esc.');
   }

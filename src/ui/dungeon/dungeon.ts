@@ -1,97 +1,116 @@
-// Komponen dungeon: daftar boss terkunci/terbuka + detail aturan + mulai duel.
-// Status kunci dihitung pemanggil dari progres kampanye.
-
-export interface BossListItem {
+export interface ChapterMapItem {
   id: string;
+  number: number;
+  name: string;
+  areaLabel: string;
+  x: number;
+  y: number;
+  unlocked: boolean;
+  cleared: boolean;
+  clearedFloorCount: number;
+  selected: boolean;
+}
+
+export interface FloorListItem {
+  id: string;
+  chapterNumber: number;
+  floorNumber: number;
   name: string;
   glyph: string;
   subtitle: string;
   reward: number;
   unlocked: boolean;
-  defeated: boolean;
+  cleared: boolean;
   selected: boolean;
-}
-
-export interface BossDetailView extends BossListItem {
   description: string;
   rule: string;
+  isBoss: boolean;
+  lockReason: string;
 }
 
-const BOSS_MAP_POSITIONS: Record<string, { x: number; y: number }> = {
-  bastion: { x: 18, y: 40 },
-  ash: { x: 48, y: 82 },
-  rift: { x: 50, y: 53 },
-};
+export interface DungeonPageView {
+  chapters: ChapterMapItem[];
+  selectedChapter: ChapterMapItem;
+  floors: FloorListItem[];
+  detail: FloorListItem;
+  deckReady?: boolean;
+}
 
-function bossState(item: BossListItem): string {
-  if (item.defeated) return 'Selesai';
-  if (item.unlocked) return 'Terbuka';
+function chapterState(chapter: ChapterMapItem): string {
+  if (chapter.cleared) return 'Selesai';
+  if (chapter.unlocked) return 'Terbuka';
   return 'Terkunci';
 }
 
-export function renderBossMapMarkers(items: BossListItem[]): string {
-  return items
-    .map(function (boss, index) {
-      const position = BOSS_MAP_POSITIONS[boss.id];
-      if (!position) return '';
-      const state = bossState(boss);
+function floorState(floor: FloorListItem): string {
+  if (floor.cleared) return 'Selesai';
+  if (floor.unlocked) return 'Terbuka';
+  return 'Terkunci';
+}
+
+export function renderChapterMapMarkers(chapters: ChapterMapItem[]): string {
+  return chapters
+    .map(function (chapter) {
       return (
-        '<button class="dungeon-map-marker' +
-        (boss.selected ? ' selected' : '') +
-        (boss.defeated ? ' defeated' : '') +
-        '" type="button" data-command="select-boss" data-boss-id="' +
-        boss.id +
+        '<button class="dungeon-map-marker chapter-map-marker' +
+        (chapter.selected ? ' selected' : '') +
+        (chapter.cleared ? ' defeated' : '') +
+        (chapter.unlocked ? '' : ' locked') +
+        '" type="button" data-command="select-chapter" data-chapter-id="' +
+        chapter.id +
         '" style="--map-x:' +
-        position.x +
+        chapter.x +
         '%;--map-y:' +
-        position.y +
-        '%" aria-label="' +
-        boss.name +
+        chapter.y +
+        '%" aria-label="Chapter ' +
+        String(chapter.number).padStart(2, '0') +
         ', ' +
-        state +
+        chapter.name +
+        ', ' +
+        chapter.areaLabel +
+        ', ' +
+        chapterState(chapter) +
         '" aria-pressed="' +
-        String(boss.selected) +
-        '"' +
-        (boss.unlocked ? '' : ' disabled') +
-        '>' +
-        String(index + 1).padStart(2, '0') +
+        String(chapter.selected) +
+        '">' +
+        String(chapter.number).padStart(2, '0') +
         '</button>'
       );
     })
     .join('');
 }
 
-export function renderBossList(items: BossListItem[]): string {
-  return items
-    .map(function (boss) {
-      const state = bossState(boss);
+export function renderFloorList(floors: FloorListItem[]): string {
+  return floors
+    .map(function (floor) {
+      const state = floorState(floor);
       return (
-        '<button class="boss-node' +
-        (boss.selected ? ' selected' : '') +
-        '" type="button" data-command="select-boss" data-boss-id="' +
-        boss.id +
-        '" aria-label="' +
-        boss.name +
+        '<button class="floor-node' +
+        (floor.selected ? ' selected' : '') +
+        (floor.cleared ? ' cleared' : '') +
+        (floor.unlocked ? '' : ' locked') +
+        (floor.isBoss ? ' boss-floor' : '') +
+        '" type="button" data-command="select-floor" data-floor-id="' +
+        floor.id +
+        '" aria-label="Lantai ' +
+        String(floor.floorNumber).padStart(2, '0') +
         ', ' +
-        boss.subtitle +
+        floor.name +
         ', ' +
         state +
         '" aria-pressed="' +
-        String(boss.selected) +
-        '"' +
-        (boss.unlocked ? '' : ' disabled') +
-        '>' +
-        '<span class="boss-glyph" aria-hidden="true">' +
-        boss.glyph +
-        '</span>' +
-        '<span><strong>' +
-        boss.name +
+        String(floor.selected) +
+        '">' +
+        '<span class="floor-node-index">' +
+        String(floor.floorNumber).padStart(2, '0') +
+        '</span><span class="boss-glyph floor-node-glyph" aria-hidden="true">' +
+        floor.glyph +
+        '</span><span class="floor-node-copy"><strong>' +
+        floor.name +
         '</strong><small>' +
-        boss.subtitle +
-        ' · Hadiah ' +
-        boss.reward +
-        ' koin</small></span>' +
-        '<span class="boss-node-state">' +
+        (floor.isBoss ? 'Boss · ' : '') +
+        floor.reward +
+        ' koin</small></span><span class="floor-node-state">' +
         state +
         '</span></button>'
       );
@@ -99,45 +118,55 @@ export function renderBossList(items: BossListItem[]): string {
     .join('');
 }
 
-export function renderBossDetail(boss: BossDetailView, deckReady = true): string {
-  const canStart = boss.unlocked;
-  const actionLabel = !deckReady && boss.unlocked
-    ? 'Lengkapi deck'
-    : boss.defeated
-      ? 'Ulangi lantai'
-      : boss.unlocked
-        ? 'Mulai pertarungan'
-        : 'Kalahkan boss sebelumnya';
-  const state = boss.defeated ? 'Selesai' : boss.unlocked ? 'Terbuka' : 'Terkunci';
+export function renderFloorDetail(floor: FloorListItem, deckReady = true): string {
+  const state = floorState(floor);
+  const actionLabel = !floor.unlocked
+    ? 'Selesaikan prasyarat'
+    : !deckReady
+      ? 'Lengkapi deck'
+      : floor.cleared
+        ? 'Ulangi lantai'
+        : 'Mulai lantai';
+  const command = floor.unlocked && !deckReady ? 'open-deck' : 'start-floor';
   return (
-    '<div class="boss-detail-heading"><span class="eyebrow">Detail dungeon</span><span class="boss-detail-state">' +
+    '<div class="floor-detail-heading"><span class="eyebrow">Chapter ' +
+    String(floor.chapterNumber).padStart(2, '0') +
+    ' · Lantai ' +
+    String(floor.floorNumber).padStart(2, '0') +
+    '</span><span class="floor-detail-state">' +
     state +
     '</span></div>' +
-    '<div class="boss-detail-identity"><span class="boss-glyph" aria-hidden="true">' +
-    boss.glyph +
-    '</span><div>' +
-    '<span class="feature-kicker">' +
-    boss.subtitle +
+    '<div class="floor-detail-identity"><span class="boss-glyph floor-detail-glyph" aria-hidden="true">' +
+    floor.glyph +
+    '</span><div><span class="feature-kicker">' +
+    (floor.isBoss ? 'Boss chapter' : 'Pertarungan standar') +
     '</span><h3>' +
-    boss.name +
+    floor.name +
     '</h3></div></div><p>' +
-    boss.description +
+    floor.description +
+    '</p><p class="boss-rule"><strong>' +
+    (floor.isBoss ? 'Skill unik boss:' : 'Aturan:') +
+    '</strong> ' +
+    floor.rule +
     '</p>' +
-    '<p class="boss-rule"><strong>Keunikan:</strong> ' +
-    boss.rule +
-    '</p><div class="boss-detail-facts"><div><span>Hadiah penyelesaian</span><strong>' +
-    boss.reward +
+    (floor.lockReason
+      ? '<p class="floor-lock-reason">' + floor.lockReason + '</p>'
+      : '') +
+    '<div class="floor-detail-facts"><div><span>Hadiah clear pertama</span><strong>' +
+    floor.reward +
     ' koin</strong></div><div><span>Status</span><strong>' +
     state +
     '</strong></div></div>' +
     '<button class="hub-button primary" type="button" data-command="' +
-    (deckReady ? 'start-boss' : boss.unlocked ? 'open-deck' : 'start-boss') +
+    command +
+    '" data-floor-id="' +
+    floor.id +
     '" aria-label="' +
     actionLabel +
-    ' melawan ' +
-    boss.name +
+    ' ' +
+    floor.name +
     '"' +
-    (canStart ? '' : ' disabled') +
+    (floor.unlocked ? '' : ' disabled') +
     '>' +
     actionLabel +
     '</button>'

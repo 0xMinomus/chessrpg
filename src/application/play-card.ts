@@ -55,7 +55,7 @@ export function playCardFlow(
 
 /**
  * Selesaikan target kartu / hero pada petak (row, col).
- * alreadyDefeated dibaca dari campaign.defeatedBosses untuk teks status.
+ * alreadyDefeated menunjukkan apakah lantai ini sudah ditaklukkan sebelumnya.
  */
 export function resolveCardTargetFlow(
   battle: BattleState,

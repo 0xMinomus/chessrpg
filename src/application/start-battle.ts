@@ -4,8 +4,8 @@
 import type { CampaignStore } from '../adapters/browser-storage.ts';
 import type { AudioPort } from './play-card.ts';
 import type { Campaign } from '../domain/campaign/progress.ts';
-import { isBossUnlocked } from '../domain/campaign/progress.ts';
-import type { BattleDeps, BattleState, BossDef } from '../domain/battle/state.ts';
+import { isFloorUnlocked } from '../domain/campaign/progress.ts';
+import type { BattleDeps, BattleState, OpponentDef } from '../domain/battle/state.ts';
 import { createInitialBattle } from '../domain/battle/state.ts';
 import { restartBattle } from '../domain/battle/commands.ts';
 import { claimBattleReward } from '../domain/battle/result.ts';
@@ -16,20 +16,20 @@ export type StartBattleResult =
   | { ok: true; battle: BattleState; message: string }
   | { ok: false; battle: null; message: string };
 
-/** Mulai duel hero vs boss yang terbuka. Gagal tanpa state bila id tak dikenal / terkunci. */
+/** Mulai duel pada lantai terbuka. Lantai terkunci atau id asing tidak membuat state. */
 export function startBattle(
   deps: BattleDeps,
-  bossOrder: string[],
+  floorOrder: readonly string[],
   campaign: Campaign,
   heroId: string,
-  bossId: string,
+  floorId: string,
 ): StartBattleResult {
   const hero = deps.heroes[heroId];
-  const boss = deps.bosses[bossId];
+  const opponent = deps.opponents[floorId];
   if (!hero) return { ok: false, battle: null, message: 'Hero tidak dikenal.' };
-  if (!boss) return { ok: false, battle: null, message: 'Boss tidak dikenal.' };
-  if (!isBossUnlocked(bossOrder, campaign, bossId)) {
-    return { ok: false, battle: null, message: 'Lantai boss masih terkunci.' };
+  if (!opponent) return { ok: false, battle: null, message: 'Lantai tidak dikenal.' };
+  if (!isFloorUnlocked(floorOrder, campaign, floorId)) {
+    return { ok: false, battle: null, message: 'Lantai masih terkunci.' };
   }
   const deckCatalog: DeckCatalog = {
     regularCardIds: Object.values(deps.cards)
@@ -52,7 +52,7 @@ export function startBattle(
   }
   const battle = createInitialBattle({
     hero,
-    boss,
+    opponent,
     board: deps.chess.initialBoard(),
     hand: makeHand([], deps, campaign.deckCardIds),
     deckCardIds: campaign.deckCardIds,
@@ -77,11 +77,12 @@ export interface RewardFlowResult {
 export function claimBattleRewardFlow(
   campaign: Campaign,
   battle: BattleState,
-  boss: BossDef,
+  opponent: OpponentDef,
+  floorOrder: readonly string[],
   store: CampaignStore,
   _audio: AudioPort,
 ): RewardFlowResult {
-  const claimed = claimBattleReward(campaign, battle, boss);
+  const claimed = claimBattleReward(campaign, battle, opponent, floorOrder);
   if (!claimed.firstClear) {
     return { campaign, firstClear: false, saved: false, message: 'Tidak ada hadiah baru.' };
   }
@@ -90,6 +91,6 @@ export function claimBattleRewardFlow(
     campaign: claimed.campaign,
     firstClear: true,
     saved,
-    message: 'Hadiah ' + boss.reward + ' koin diklaim.',
+    message: 'Hadiah ' + opponent.reward + ' koin diklaim.',
   };
 }
