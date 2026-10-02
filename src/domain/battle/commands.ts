@@ -131,7 +131,8 @@ export function restartBattle(prev: BattleState, deps: BattleDeps): CommandResul
     hero,
     boss,
     board: deps.chess.initialBoard(),
-    hand: makeHand([], deps),
+    hand: makeHand([], deps, prev.deckCardIds),
+    deckCardIds: prev.deckCardIds,
   });
   return { state: fresh, ok: true, message: fresh.status };
 }
@@ -504,7 +505,7 @@ export function rerollHand(state: BattleState, deps: BattleDeps): CommandResult 
     ...next,
     hand: [previousHand[0], previousHand[1], previousHand[2]],
   };
-  const hand = makeHand(previousHand, deps);
+  const hand = makeHand(previousHand, deps, state.deckCardIds);
   const done: BattleState = {
     ...redrawn,
     hand: [hand[0], hand[1], hand[2]],

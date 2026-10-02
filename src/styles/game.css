@@ -214,12 +214,7 @@ h1 {
 .hero-face[data-portrait="saka"] { background-position: 0 100%; }
 .hero-face[data-portrait="veyra"] { background-position: 50% 100%; }
 .hero-face[data-portrait="liora"] { background-position: 100% 100%; }
-/* Kartu hero memakai rasio 1,2 sedangkan sel atlas bujur 1:1, jadi jendela
-   dipotong 20px di salah satu sisi. Baris atas top-aligned (0), baris bawah
-   bottom-aligned (85,714%) agar wajah tetap terbaca — sama seperti prototipe. */
-.hero-card-face[data-portrait="saka"] { background-position: 0 85.714%; }
-.hero-card-face[data-portrait="veyra"] { background-position: 50% 85.714%; }
-.hero-card-face[data-portrait="liora"] { background-position: 100% 85.714%; }
+/* Roster frames match the square atlas cells so every hero portrait stays whole. */
 .home-hero-face { width: 112px; aspect-ratio: 1; }
 
 /* Dungeon */
@@ -249,27 +244,8 @@ h1 {
 .boss-detail p { margin: 0 0 10px; color: #d1c8d3; font-size: 12px; }
 .boss-rule { margin: auto 0 15px; padding-top: 12px; border-top: 1px solid #4d455b; color: #f0d3aa; font-size: 11px; }
 
-/* Hero */
-.heroes-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(250px, 0.8fr); align-items: start; gap: 12px; }
-.hero-roster { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.hero-card {
-  min-width: 0; display: grid; grid-template-rows: auto auto 1fr; gap: 7px; padding: 8px;
-  border: 1px solid #5e576a; color: var(--cream); background: #1c2036; text-align: left; cursor: pointer;
-}
-.hero-card:hover, .hero-card.selected { border-color: #dac39e; background: #2c273b; }
-.hero-card-face { width: min(100%, 122px); aspect-ratio: 1.2; max-height: 122px; justify-self: center; }
-.hero-card strong { overflow: hidden; font: 700 11px/1.15 "Courier New", monospace; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
-.hero-card small { color: var(--muted); font-size: 10px; }
-.hero-card-state { color: #ddc994; font: 700 9px/1 "Courier New", monospace; text-transform: uppercase; }
-.hero-detail { position: sticky; top: 0; min-width: 0; padding: 14px; border: 1px solid #756580; background: #211d34; }
-.hero-detail-head { display: flex; align-items: center; gap: 11px; margin-bottom: 10px; }
-.hero-detail-face { width: 82px; height: 82px; }
-.hero-detail h3 { margin: 0 0 3px; font: 700 18px/1.1 Georgia, serif; }
-.hero-detail-role { color: #c6b5ce; font: 700 10px/1.2 "Courier New", monospace; text-transform: uppercase; }
 .hero-detail p { margin: 8px 0; color: #d3cbd6; font-size: 11px; line-height: 1.35; }
 .hero-detail strong { color: #f0d4a9; }
-.hero-detail-actions { display: grid; gap: 6px; margin-top: 12px; }
-.hero-detail-state { min-height: 14px; color: #d7c8a2; font: 700 10px/1.25 "Courier New", monospace; }
 
 /* ===== Battle: profil lawan + stat ===== */
 .enemy-skill-profile {
@@ -1475,80 +1451,6 @@ h1 {
 .boss-detail-facts strong { color: var(--cream); font-size: 13px; }
 .boss-detail > .hub-button { margin-top: auto; min-height: 48px; }
 
-/* Hero roster: portraits and factual abilities take precedence over absent stats. */
-.heroes-layout {
-  grid-template-columns: minmax(0, 1.4fr) minmax(300px, 0.9fr);
-  align-items: stretch;
-  gap: 12px;
-  min-height: 0;
-}
-.hero-roster {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-  align-content: stretch;
-  gap: 8px;
-  padding: 12px;
-}
-.hero-card {
-  min-height: 0;
-  grid-template-rows: minmax(0, 1fr) auto auto auto;
-  gap: 6px;
-  padding: 8px;
-  border-color: #606984;
-  background: #11192e;
-}
-.hero-card:hover, .hero-card.selected { border-color: var(--hub-coral); background: #232439; }
-.hero-card.selected { box-shadow: inset 0 0 0 1px rgba(255, 123, 134, 0.35); }
-.hero-card-face {
-  width: 100%;
-  max-height: 160px;
-  aspect-ratio: 1.3;
-  justify-self: stretch;
-  border-color: #d6b799;
-}
-.hero-card strong {
-  color: var(--cream);
-  font: 700 clamp(13px, 1vw, 17px)/1.15 Georgia, "Times New Roman", serif;
-  text-transform: none;
-}
-.hero-card small { color: var(--hub-copy); font-size: 11px; line-height: 1.25; }
-.hero-card-state {
-  min-height: 30px;
-  display: grid;
-  place-items: center;
-  padding: 4px;
-  border: 1px solid #787890;
-  color: var(--hub-gold);
-  text-align: center;
-  font-size: 10px;
-}
-.hero-card.selected .hero-card-state { border-color: var(--hub-coral); color: var(--hub-coral); }
-.hero-detail {
-  position: static;
-  align-self: stretch;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: clamp(13px, 1.5vw, 20px);
-  background: var(--hub-surface);
-}
-.hero-detail-kicker { margin-bottom: -2px; color: var(--hub-coral); }
-.hero-detail-head { display: grid; grid-template-columns: minmax(88px, 0.75fr) minmax(0, 1.25fr); align-items: center; gap: 13px; margin: 0; }
-.hero-detail-face { width: 100%; height: auto; aspect-ratio: 1; border-color: #e0b6a1; }
-.hero-detail h3 { margin: 0 0 4px; color: var(--cream); font: 700 clamp(23px, 2.2vw, 34px)/1.08 Georgia, "Times New Roman", serif; }
-.hero-detail-role { color: var(--hub-copy); font: 600 12px/1.35 "Segoe UI", system-ui, sans-serif; text-transform: none; }
-.hero-ability-list { display: grid; }
-.hero-ability { padding: 9px 0; border-top: 1px solid #414a64; }
-.hero-ability-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; color: var(--hub-coral); font: 700 10px/1.2 "Courier New", monospace; text-transform: uppercase; }
-.hero-ability-heading small { color: #b6cbe6; font: inherit; }
-.hero-ability > strong { display: block; color: var(--cream); font: 700 15px/1.2 Georgia, "Times New Roman", serif; }
-.hero-ability p { margin: 4px 0 0; color: var(--hub-copy); font-size: 11px; line-height: 1.4; }
-.hero-traits { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; padding-top: 9px; border-top: 1px solid #414a64; }
-.hero-traits p { min-width: 0; display: flex; flex-direction: column; gap: 4px; margin: 0; color: var(--hub-copy); font-size: 11px; line-height: 1.35; }
-.hero-traits strong { color: var(--hub-gold); font: 700 10px/1.2 "Courier New", monospace; text-transform: uppercase; }
-.hero-detail-actions { display: grid; gap: 6px; margin-top: auto; }
-.hero-detail-actions .hub-button { min-height: 46px; }
-.hero-detail-state { color: var(--hub-copy); }
 
 @media (max-width: 1000px) {
   .home-dashboard {
@@ -1614,7 +1516,7 @@ h1 {
   .home-campaign-facts { min-height: 250px; }
   .home-campaign-fact { min-height: 68px; }
   .home-last-run { min-height: 210px; }
-  .home-feature-grid, .dungeon-layout, .heroes-layout { grid-template-columns: minmax(0, 1fr); }
+  .home-feature-grid, .dungeon-layout { grid-template-columns: minmax(0, 1fr); }
   .home-page .home-feature-grid { flex: 0 0 auto; }
   .home-dungeon-feature, .home-hero-feature { min-height: 0; padding: 15px; }
   .home-dungeon-feature { min-height: 235px; }
@@ -1640,12 +1542,247 @@ h1 {
   .boss-node-state { max-width: 52px; white-space: normal; text-align: right; }
   .boss-detail .boss-glyph { width: 62px; height: 62px; font-size: 34px; }
   .boss-detail h3 { font-size: 22px; }
-  .hero-roster { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto; grid-auto-rows: minmax(0, 1fr); padding: 8px; }
-  .hero-card { gap: 5px; padding: 6px; }
-  .hero-card-face { max-height: 140px; aspect-ratio: 1.15; }
+}
+
+/* Hero roster + loadout: panel proportions and cornerwork follow the supplied roster reference. */
+.heroes-page { max-width: 1480px; }
+.hero-page-heading { align-items: flex-end; }
+.hero-page-heading > div { min-width: 0; }
+.hero-menu-tabs { display: flex; flex: 0 0 auto; gap: 5px; padding: 4px; border: 1px solid #505873; background: #11172b; }
+.hero-menu-tab {
+  min-width: 148px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  color: #cbd0e4;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+.hero-menu-tab:hover { border-color: #666b87; color: var(--cream); }
+.hero-menu-tab.active { border-color: var(--hub-coral); color: var(--cream); background: #252238; }
+.hero-menu-tab > span { font: 700 12px/1.1 Georgia, "Times New Roman", serif; }
+.hero-menu-tab small { color: #aeb7d3; font: 700 9px/1.1 "Courier New", monospace; letter-spacing: .04em; }
+.hero-menu-tab.active small { color: var(--hub-coral-soft); }
+.heroes-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(340px, .92fr); align-items: stretch; gap: 12px; min-height: clamp(580px, calc(100dvh - 245px), 790px); }
+.hero-roster-panel {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #5f6988;
+  background: #121a30;
+}
+.hero-roster-heading, .deck-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.hero-roster-heading { padding: 0 3px 8px; border-bottom: 1px solid #414963; }
+.hero-roster-heading > span:last-child { color: #b9c2df; font: 700 10px/1 "Courier New", monospace; letter-spacing: .04em; }
+.hero-roster {
+  display: grid;
+  min-height: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  align-content: stretch;
+  gap: 9px;
+  padding: 0;
+}
+.hero-card {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-content: stretch;
+  gap: 6px;
+  padding: 7px;
+  border: 1px solid #58617e;
+  color: var(--cream);
+  background: #10172a;
+  cursor: pointer;
+  text-align: left;
+}
+.hero-card:hover, .hero-card.selected { border-color: var(--hub-coral); background: #252238; }
+.hero-card.selected { box-shadow: inset 0 0 0 1px rgba(255, 123, 134, .36); }
+.hero-card-face-wrap { min-width: 0; display: flex; align-items: flex-start; border: 2px solid #d9c29c; background: #24243b; }
+.hero-card-face { width: 100%; height: auto; min-height: 0; aspect-ratio: 1; border: 0; }
+.hero-card-copy { min-width: 0; display: grid; gap: 3px; }
+.hero-card strong { color: var(--cream); font: 700 clamp(14px, 1.15vw, 18px)/1.1 Georgia, "Times New Roman", serif; text-transform: none; }
+.hero-card small { overflow: hidden; color: #c2c9df; font-size: 11px; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+.hero-card-energy { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-top: 2px; padding-top: 4px; border-top: 1px solid #3b4560; color: #aebad8; font: 700 9px/1 "Courier New", monospace; }
+.hero-card-energy b { color: var(--hub-gold); font-size: 11px; font-variant-numeric: tabular-nums; }
+.hero-card-energy i { color: #aebad8; font-size: 9px; font-style: normal; }
+.hero-card-state { min-height: 27px; display: grid; place-items: center; padding: 4px; border: 1px solid #747991; color: var(--hub-gold); font: 700 9px/1.1 "Courier New", monospace; text-align: center; text-transform: uppercase; }
+.hero-card.selected .hero-card-state, .hero-card.active-hero .hero-card-state { border-color: var(--hub-coral); color: var(--hub-coral-soft); }
+.hero-loadout-link { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 4px 0; border-top: 1px solid #414963; }
+.hero-loadout-link > div { display: grid; gap: 4px; }
+.hero-loadout-link > div > span { color: #acb6d3; font: 700 9px/1 "Courier New", monospace; letter-spacing: .05em; text-transform: uppercase; }
+.hero-loadout-link strong { color: var(--cream); font: 700 12px/1.2 Georgia, "Times New Roman", serif; }
+.hero-loadout-link button { min-height: 34px; padding: 0 10px; border: 1px solid #82788b; color: var(--cream); background: #202239; cursor: pointer; font: 700 10px/1 "Courier New", monospace; text-transform: uppercase; }
+.hero-loadout-link button:hover { border-color: var(--hub-coral); }
+.hero-loadout-link button span { margin-left: 5px; color: var(--hub-coral-soft); }
+.hero-detail {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: clamp(13px, 1.3vw, 20px);
+  border-color: #66617d;
+  background: #171d32;
+}
+.hero-detail-heading { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid #414963; }
+.hero-detail-kicker { margin: 0; color: var(--hub-coral); }
+.hero-active-mark { padding: 4px 7px; border: 1px solid var(--hub-coral); color: var(--hub-coral-soft); font: 700 9px/1 "Courier New", monospace; }
+.hero-detail-head { display: grid; grid-template-columns: minmax(126px, .75fr) minmax(0, 1.25fr); align-items: center; gap: 14px; margin: 0; }
+.hero-detail-face { width: 100%; height: auto; max-width: 190px; aspect-ratio: 1; border: 2px solid #e1bda4; }
+.hero-detail-identity { min-width: 0; }
+.hero-detail h3 { margin: 0 0 6px; color: var(--cream); font: 700 clamp(26px, 2.4vw, 38px)/1 Georgia, "Times New Roman", serif; }
+.hero-detail-role { color: #c1c9df; font: 600 12px/1.35 "Segoe UI", system-ui, sans-serif; }
+.hero-stat-panel { display: grid; gap: 7px; padding: 9px 0 10px; border-top: 1px solid #414963; border-bottom: 1px solid #414963; }
+.hero-section-label { color: var(--hub-coral); font: 700 10px/1 "Courier New", monospace; letter-spacing: .04em; text-transform: uppercase; }
+.hero-meter { display: grid; grid-template-columns: minmax(86px, .8fr) minmax(40px, 1.6fr) 44px; align-items: center; gap: 8px; color: #c4cbe0; font-size: 11px; }
+.hero-meter > strong { color: var(--cream); font: 700 12px/1 "Courier New", monospace; text-align: right; font-variant-numeric: tabular-nums; }
+.hero-meter > strong small { color: #aeb6cd; font-size: 9px; }
+.hero-meter-track { height: 13px; padding: 2px; border: 1px solid #737b96; background: #0f1527; }
+.hero-meter-track i { height: 100%; display: block; background: #dc6277; }
+.hero-meter.skill .hero-meter-track i { background: #7caed9; }
+.hero-meter.ultimate .hero-meter-track i { background: #c584db; }
+.hero-ability-list { display: grid; }
+.hero-ability { padding: 8px 0; border-top: 1px solid #343d55; }
+.hero-ability:first-child { border-top: 0; }
+.hero-ability-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; color: var(--hub-coral); font: 700 10px/1.2 "Courier New", monospace; text-transform: uppercase; }
+.hero-ability-heading small { color: #b8d0ec; font: inherit; }
+.hero-ability > strong { display: block; color: var(--cream); font: 700 15px/1.2 Georgia, "Times New Roman", serif; }
+.hero-ability p { margin: 4px 0 0; color: #c3cbe0; font-size: 11px; line-height: 1.4; }
+.hero-traits { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-top: 9px; border-top: 1px solid #414963; }
+.hero-traits p { min-width: 0; display: flex; flex-direction: column; gap: 4px; margin: 0; color: #c2c9dd; font-size: 11px; line-height: 1.35; }
+.hero-traits strong { color: var(--hub-gold); font: 700 10px/1.2 "Courier New", monospace; text-transform: uppercase; }
+.hero-detail-actions { display: grid; gap: 6px; margin-top: auto; }
+.hero-detail-actions .hub-button { min-height: 46px; }
+.hero-detail-state { min-height: 14px; color: #c2c9dd; font: 700 10px/1.25 "Courier New", monospace; }
+
+.deck-page { max-width: 1480px; }
+.deck-builder-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(290px, 350px); align-items: start; gap: 12px; }
+.deck-catalog, .deck-loadout { min-width: 0; padding: clamp(11px, 1.2vw, 17px); border-color: #59627f; background: #121a30; }
+.deck-loadout { position: sticky; top: 10px; }
+.deck-panel-heading { padding-bottom: 9px; border-bottom: 1px solid #404963; }
+.deck-panel-heading > div { display: grid; gap: 5px; }
+.deck-panel-heading .eyebrow { color: var(--hub-coral); }
+.deck-panel-heading h3 { margin: 0; color: var(--cream); font: 700 clamp(18px, 1.5vw, 24px)/1.1 Georgia, "Times New Roman", serif; }
+.deck-catalog-total, .deck-ready-mark { flex: 0 0 auto; color: #c2cbe1; font: 700 10px/1 "Courier New", monospace; letter-spacing: .04em; }
+.deck-ready-mark { padding: 6px 8px; border: 1px solid #b48a65; color: #e5c38b; }
+.deck-ready-mark.ready { border-color: #86caa9; color: #a8e5bd; }
+.deck-rules-copy { max-width: 70ch; margin: 10px 0; color: #c1c9df; font-size: 12px; line-height: 1.45; }
+.deck-filters { display: flex; flex-wrap: wrap; gap: 5px; padding: 2px 0 10px; border-bottom: 1px solid #353e57; }
+.deck-filter { min-height: 32px; padding: 0 9px; border: 1px solid #555e79; color: #c2c9df; background: #171f35; cursor: pointer; font: 700 9px/1 "Courier New", monospace; text-transform: uppercase; }
+.deck-filter:hover, .deck-filter.active { border-color: var(--hub-coral); color: var(--cream); background: #27233b; }
+.deck-card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(205px, 1fr)); align-items: stretch; gap: 7px; padding-top: 10px; }
+.deck-card {
+  position: relative;
+  min-width: 0;
+  min-height: 118px;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 18px;
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 9px;
+  padding: 9px 9px 7px;
+  border: 1px solid #626a83;
+  color: var(--cream);
+  background: #171f35;
+  cursor: pointer;
+  text-align: left;
+}
+.deck-card:hover:not(:disabled), .deck-card.selected { border-color: #e1b879; background: #26243b; }
+.deck-card.selected { box-shadow: inset 0 0 0 1px rgba(225, 184, 121, .28); }
+.deck-card.kind-joker { border-color: #9f8a50; background: #282535; }
+.deck-card.kind-joker.selected { border-color: #e8c66f; }
+.deck-card:disabled { color: #a4abc0; background: #151a2a; cursor: not-allowed; }
+.deck-card:disabled .deck-card-copy > strong { color: #aeb7cc; }
+.deck-card:disabled .deck-card-description, .deck-card:disabled .deck-card-meta { color: #9faac1; }
+.deck-card:disabled .deck-card-meta b { color: #afbdd1; }
+.deck-card-art { grid-column: 1; grid-row: 1; width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid #79738b; color: #e3cfa8; background: #20233a; }
+.deck-card-art svg { width: 34px; height: 34px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: square; stroke-linejoin: miter; }
+.deck-card.kind-offense .deck-card-art { color: #ff8994; }
+.deck-card.kind-defense .deck-card-art { color: #8dc8ec; }
+.deck-card.kind-spell .deck-card-art { color: #c39be7; }
+.deck-card.kind-consumable .deck-card-art { color: #b5d89e; }
+.deck-card.kind-joker .deck-card-art { color: #f0d17e; }
+.deck-card-copy { min-width: 0; align-self: stretch; display: flex; flex-direction: column; gap: 4px; }
+.deck-card-meta { display: flex; align-items: center; justify-content: space-between; gap: 4px; color: #bec6dc; font: 700 8px/1.1 "Courier New", monospace; text-transform: uppercase; }
+.deck-card-meta b { flex: 0 0 auto; color: #d3e4fa; font-size: 8px; }
+.deck-card-copy > strong { color: var(--cream); font: 700 13px/1.15 Georgia, "Times New Roman", serif; }
+.deck-card-description { color: #c1c9df; font-size: 10px; line-height: 1.35; }
+.deck-card-action { grid-column: 3; grid-row: 1; align-self: center; color: #dbca9e; font: 700 16px/1 "Courier New", monospace; text-align: center; }
+.deck-card.selected .deck-card-action { color: #a6dfbd; }
+.deck-card-status { grid-column: 1 / -1; padding-top: 5px; border-top: 1px solid #3b4560; color: #c2cbe1; font: 700 8px/1 "Courier New", monospace; letter-spacing: .04em; }
+.deck-card.selected .deck-card-status { color: #c5e5c7; }
+.deck-card.kind-joker .deck-card-status { color: #e3c97e; }
+.deck-empty { grid-column: 1 / -1; color: #c1c9df; }
+.deck-notice { margin: 9px 0 0; padding: 8px; border: 1px solid #73674f; color: #f2d99a; background: #292638; font-size: 11px; line-height: 1.35; }
+.deck-slot-counts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px 0; }
+.deck-slot-count { display: flex; align-items: center; justify-content: space-between; gap: 7px; padding: 9px; border: 1px solid #56617d; background: #171f35; }
+.deck-slot-count > span { color: #c4cbe0; font-size: 10px; }
+.deck-slot-count > strong { color: var(--cream); font: 700 15px/1 "Courier New", monospace; font-variant-numeric: tabular-nums; }
+.deck-slot-count > strong small { color: #aeb7d2; font-size: 10px; }
+.deck-slot-count.joker-count { border-color: #8b7b4f; }
+.deck-slot-count.joker-count > strong { color: #f0d17e; }
+.deck-selected-list { max-height: min(59vh, 640px); display: grid; gap: 4px; overflow-y: auto; margin: 0; padding: 0 4px 0 0; list-style: none; scrollbar-color: #7b7189 #11172a; scrollbar-width: thin; }
+.deck-selected-list li { min-width: 0; }
+.deck-selected-card { width: 100%; min-height: 48px; display: grid; grid-template-columns: 24px 32px minmax(0, 1fr) auto; align-items: center; gap: 7px; padding: 5px 7px; border: 1px solid #424a64; color: var(--cream); background: #171f35; cursor: pointer; text-align: left; }
+.deck-selected-card:hover { border-color: var(--hub-coral); background: #24243a; }
+.deck-selected-index { color: #9faac5; font: 700 9px/1 "Courier New", monospace; font-variant-numeric: tabular-nums; }
+.deck-selected-icon { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid #626985; color: #d8c8a4; }
+.deck-selected-icon svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; }
+.deck-selected-card.kind-joker .deck-selected-icon { border-color: #a08a52; color: #f0d17e; }
+.deck-selected-copy { min-width: 0; display: grid; gap: 3px; }
+.deck-selected-copy strong { overflow: hidden; color: var(--cream); font: 700 11px/1.1 Georgia, "Times New Roman", serif; text-overflow: ellipsis; white-space: nowrap; }
+.deck-selected-copy small { color: #b9c2d9; font: 9px/1.1 "Courier New", monospace; }
+.deck-selected-remove { color: #e4959b; font: 700 8px/1 "Courier New", monospace; }
+.deck-loadout-footer { display: grid; gap: 7px; margin-top: 11px; padding-top: 10px; border-top: 1px solid #414963; }
+.deck-active-hero { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; gap: 9px; }
+.deck-active-face { width: 48px; height: 48px; border-color: #c5b69d; }
+.deck-active-hero > div { min-width: 0; display: grid; gap: 3px; }
+.deck-active-hero small { color: var(--hub-coral-soft); font: 700 8px/1 "Courier New", monospace; }
+.deck-active-hero strong { color: var(--cream); font: 700 14px/1.1 Georgia, "Times New Roman", serif; }
+.deck-active-hero span:not(.hero-face) { overflow: hidden; color: #bfc8df; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.deck-loadout-footer > p { margin: 0; color: #aeb8d1; font-size: 10px; line-height: 1.35; }
+
+@media (max-width: 1000px) {
+  .heroes-layout { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  .hero-roster-panel { min-height: 590px; }
+  .hero-detail { min-height: 0; }
+  .deck-builder-layout { grid-template-columns: minmax(0, 1fr); }
+  .deck-loadout { order: -1; }
+  .deck-loadout { position: static; }
+  .deck-selected-list { max-height: 440px; }
+}
+@media (max-width: 720px) {
+  .hero-page-heading { flex-direction: column; align-items: stretch; }
+  .hero-menu-tabs { width: 100%; }
+  .hero-menu-tab { flex: 1 1 50%; min-width: 0; padding: 8px; }
+  .hero-roster-panel { min-height: 0; padding: 9px; }
+  .hero-roster { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto; grid-auto-rows: minmax(220px, auto); gap: 7px; }
+  .hero-card { grid-template-rows: minmax(90px, 1fr) auto auto; gap: 5px; padding: 6px; }
+  .hero-card-face-wrap { min-height: 90px; }
   .hero-card strong { font-size: 14px; }
   .hero-card small { font-size: 10px; }
-  .hero-detail-head { grid-template-columns: 84px minmax(0, 1fr); }
-  .hero-detail-face { width: 84px; }
+  .hero-loadout-link { align-items: flex-start; }
+  .hero-detail-head { grid-template-columns: 104px minmax(0, 1fr); }
+  .hero-detail-face { width: 104px; }
+  .hero-meter { grid-template-columns: minmax(75px, .8fr) minmax(40px, 1.4fr) 40px; gap: 6px; font-size: 10px; }
   .hero-traits { grid-template-columns: minmax(0, 1fr); }
+  .deck-catalog, .deck-loadout { padding: 10px; }
+  .deck-card-grid { grid-template-columns: minmax(0, 1fr); }
+  .deck-selected-list { max-height: 220px; }
+}
+@media (max-width: 380px) {
+  .hero-roster { grid-auto-rows: minmax(202px, auto); }
+  .hero-card-energy { font-size: 8px; }
+  .hero-loadout-link { flex-direction: column; }
+  .hero-loadout-link button { width: 100%; }
+  .deck-slot-count { align-items: flex-start; flex-direction: column; }
 }

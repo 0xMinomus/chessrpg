@@ -41,6 +41,7 @@ Pemain kasual yang menyukai catur, kombinasi taktis, dan progres RPG; ingin dapa
 - **FR-03:** Tampilkan enam hero, termasuk Liora si Penjaga Benteng, dengan potret, peran, skill, ultimate, kelebihan, dan kelemahan.
 - **FR-04:** Semua hero tetap dapat dipilih pada build pengembangan ini; jangan mengembalikan lock/pembelian yang menghambat pengujian tanpa permintaan eksplisit. Sistem koin dan reward yang sudah ada tetap dapat ditampilkan sesuai perilaku prototipe.
 - **FR-05:** Pertahankan progres kampanye, hero pilihan, koin, dan boss yang ditaklukkan setelah reload melalui penyimpanan lokal.
+- **FR-24:** Dari menu Hero, pemain dapat menyusun loadout berisi tepat 10 kartu non-Joker pilihan dan 1 kartu Joker pilihan. Loadout disimpan lokal, divalidasi saat memuat save lama/rusak, dan menjadi satu-satunya pool kartu untuk tangan, penggantian kartu, dan putar ulang sepanjang duel. Aturan tangan 3 kartu unik serta bobot tarik Joker yang sudah ada tetap berlaku.
 
 ### Pertarungan
 
@@ -92,6 +93,7 @@ Biaya target tahap ini: skill hero 2 EN, ultimate hero 5 EN, dan Joker 5 mana se
 4. Reload mempertahankan progres kampanye; save tidak valid jatuh ke progres awal yang dapat dimainkan.
 5. Tampilan tetap mengikuti prototipe aktif dan dapat digunakan dengan mouse, keyboard, dan layar sentuh.
 6. `chess-rpg.html` dan `chess-rpg-dungeon.html` tetap tersedia sebagai referensi selama migrasi.
+7. Hero roster dan deck builder memakai data konten yang ada; pemain dapat memilih 10 kartu biasa + 1 Joker, menyimpan pilihan setelah reload, dan hanya melihat kartu loadout itu saat duel.
 
 ## Ukuran keberhasilan tahap
 

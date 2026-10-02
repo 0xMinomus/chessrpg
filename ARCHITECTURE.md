@@ -69,7 +69,7 @@ Sesuaikan pemecahan file dengan ukuran modul saat implementasi; daftar ini batas
 
 ## Model permainan
 
-- State battle mencakup papan, giliran, riwayat, tangan kartu, resource, efek tertunda, state hero, state boss, status pertandingan, dan state pemilihan target/promosi.
+- State battle mencakup papan, giliran, riwayat, loadout kartu terpilih, tangan kartu, resource, efek tertunda, state hero, state boss, status pertandingan, dan state pemilihan target/promosi.
 - Perubahan state dilakukan melalui command bernama, misalnya `movePiece`, `playCard`, `useHeroSkill`, `useHeroUltimate`, `undoTurn`, dan `restartBattle`.
 - Domain memvalidasi command dan mengembalikan state baru serta hasil yang dapat ditampilkan UI. Jangan menaruh aturan game di event handler atau template HTML.
 - Pengundian kartu dan pilihan AI menerima random source eksplisit. Ini menjaga jalur acak dapat direproduksi saat debugging dan tidak mengikat domain ke `Math.random` global.
@@ -83,7 +83,7 @@ Aturan berikut mengikuti permintaan terbaru dan prototipe dungeon aktif:
 - **Mana** membayar kartu. Mana bertambah 1 setelah setiap langkah catur putih yang benar-benar dilakukan dan kapasitasnya 6.
 - **EN** membayar skill serta ultimate hero. Skill berbiaya 2 EN, ultimate 5 EN, dan kapasitas EN putih 5.
 - Hero menentukan EN awal dan dapat mengubah efek resource sesuai data hero. Kartu juga dapat menghasilkan atau mengubah EN sebagai efek.
-- Tangan terdiri dari 3 kartu. Satu kartu berbiaya 0 mana dapat dimainkan per giliran. Kartu Joker tetap langka dan biaya dasarnya 5 mana; biaya hero yang berlaku ditambahkan melalui aturan biaya terpusat.
+- Tangan terdiri dari 3 kartu yang ditarik dari loadout pemain (10 kartu non-Joker + 1 Joker). Satu kartu berbiaya 0 mana dapat dimainkan per giliran. Kartu Joker tetap langka dan biaya dasarnya 5 mana; biaya hero yang berlaku ditambahkan melalui aturan biaya terpusat.
 - Permainan mempertahankan catur legal, termasuk rokade, en passant, keselamatan raja, dan pilihan promosi pion putih menjadi ratu, benteng, gajah, atau kuda.
 - Semua efek yang memindahkan, menghapus, membangkitkan, atau melindungi bidak tetap melewati validasi keselamatan raja.
 
@@ -91,7 +91,7 @@ Jika biaya atau aturan berubah melalui permintaan pengguna, perbarui sumber data
 
 ## Persistensi offline
 
-- Progres kampanye, hero aktif, koin, dan boss yang sudah dikalahkan disimpan melalui adapter browser dengan key berversi.
+- Progres kampanye, hero aktif, deck kartu terpilih, koin, dan boss yang sudah dikalahkan disimpan melalui adapter browser dengan key berversi.
 - Validasi dan normalisasi data saat membaca save. Save rusak atau versi tidak dikenal harus memiliki fallback yang dapat dimainkan tanpa merusak sesi.
 - Penyimpanan battle aktif/resume setelah reload adalah fitur P1, bukan alasan untuk mengikat domain pada `localStorage`.
 - Semua aset yang diperlukan untuk bermain harus tersedia lokal atau dicache oleh aplikasi statis; gameplay tidak membuat request ke API.

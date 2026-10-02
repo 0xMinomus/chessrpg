@@ -6,6 +6,7 @@ import type { BossDetailView, BossListItem } from '../dungeon/dungeon.ts';
 export interface DungeonPageView {
   items: BossListItem[];
   detail: BossDetailView;
+  deckReady?: boolean;
 }
 
 export function renderDungeonPage(view: DungeonPageView): string {
@@ -24,7 +25,7 @@ export function renderDungeonPage(view: DungeonPageView): string {
     '<div class="boss-list" role="group" aria-label="Lantai dungeon">' +
     renderBossList(view.items) +
     '</div></section><article class="boss-detail hub-frame" aria-label="Detail boss">' +
-    renderBossDetail(view.detail) +
+    renderBossDetail(view.detail, view.deckReady !== false) +
     '</article></div></div></section>'
   );
 }

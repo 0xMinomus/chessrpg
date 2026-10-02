@@ -10,13 +10,13 @@ import type { CardMeta, CardSlotView, RerollView } from './ui/cards/cards.ts';
 import { HERO_MANA_CAP, HERO_SKILL_COST, HERO_ULTIMATE_COST } from './ui/hero/hero.ts';
 import type { MenuView } from './ui/screens/menu.ts';
 import type { DungeonPageView } from './ui/screens/dungeon.ts';
-import type { HeroesPageView } from './ui/screens/heroes.ts';
+import type { DeckFilter, HeroMenuTab, HeroesPageView } from './ui/screens/heroes.ts';
 import type { BattlePageView, LedgerEntryView } from './ui/screens/battle.ts';
 import type { ResultView } from './ui/screens/result.ts';
 import type { BossListItem } from './ui/dungeon/dungeon.ts';
 
 import { CARDS, cardById } from './content/cards.ts';
-import { HEROES, heroById as contentHeroById } from './content/heroes.ts';
+import { EN_CAP, HEROES, heroById as contentHeroById } from './content/heroes.ts';
 import { BOSSES, bossById as contentBossById } from './content/bosses.ts';
 
 import type { BattleDeps, BattleState, CommandResult } from './domain/battle/state.ts';
@@ -28,6 +28,11 @@ import {
   chooseHero as chooseHeroProgress,
   isBossUnlocked,
   nextBossId as nextBossProgress,
+  DECK_JOKER_LIMIT,
+  DECK_REGULAR_LIMIT,
+  deckSelectionStatus,
+  toggleDeckCard,
+  type DeckCatalog,
   type Campaign,
 } from './domain/campaign/index.ts';
 import {
@@ -60,6 +65,18 @@ const HERO_IDS = HEROES.map(function (hero) {
 const BOSS_IDS = BOSSES.map(function (boss) {
   return boss.id;
 });
+const DECK_CATALOG: DeckCatalog = {
+  regularCardIds: CARDS.filter(function (card) {
+    return card.kind !== 'joker';
+  }).map(function (card) {
+    return card.id;
+  }),
+  jokerCardIds: CARDS.filter(function (card) {
+    return card.kind === 'joker';
+  }).map(function (card) {
+    return card.id;
+  }),
+};
 
 const deps: BattleDeps = {
   chess: chessRulesAdapter,
@@ -103,6 +120,9 @@ interface AppState {
   screen: ScreenName;
   campaign: Campaign;
   heroDetailsId: string;
+  heroesTab: HeroMenuTab;
+  deckFilter: DeckFilter;
+  deckNotice: string | null;
   selectedBossId: string;
   battle: BattleState | null;
   focusSquare: [number, number];
@@ -216,6 +236,7 @@ function buildMenuView(state: AppState): MenuView {
     },
     heroCount: HEROES.length,
     cardCount: CARDS.length,
+    deckReady: deckSelectionStatus(state.campaign.deckCardIds, DECK_CATALOG).complete,
   };
 }
 
@@ -237,6 +258,7 @@ function buildDungeonView(state: AppState): DungeonPageView {
   const defeated = state.campaign.defeatedBosses.indexOf(detail.id) !== -1;
   return {
     items,
+    deckReady: deckSelectionStatus(state.campaign.deckCardIds, DECK_CATALOG).complete,
     detail: {
       id: detail.id,
       name: detail.name,
@@ -253,21 +275,27 @@ function buildDungeonView(state: AppState): DungeonPageView {
 }
 
 function buildHeroesView(state: AppState): HeroesPageView {
+  const deckStatus = deckSelectionStatus(state.campaign.deckCardIds, DECK_CATALOG);
+  const selectedDeckIds = new Set(state.campaign.deckCardIds);
+  const selectedDeckCards = CARDS.filter(function (card) {
+    return selectedDeckIds.has(card.id);
+  });
+  const hero = contentHeroById(state.campaign.selectedHero);
   const roster = HEROES.map(function (hero) {
-    const owned = state.campaign.ownedHeroes.indexOf(hero.id) !== -1;
+    const active = hero.id === state.campaign.selectedHero;
     return {
       id: hero.id,
       name: hero.name,
       role: hero.role,
       portrait: hero.portrait,
-      cost: hero.cost,
-      stateLabel:
-        hero.id === state.campaign.selectedHero ? 'Dipakai' : owned ? 'Dimiliki' : hero.cost + ' koin',
+      startEnergy: hero.startEnergy,
+      energyCap: EN_CAP,
+      stateLabel: active ? 'Dipakai' : 'Dimiliki',
       selected: hero.id === state.heroDetailsId,
+      active,
     };
   });
   const detail = contentHeroById(state.heroDetailsId);
-  const owned = state.campaign.ownedHeroes.indexOf(detail.id) !== -1;
   const active = state.campaign.selectedHero === detail.id;
   return {
     roster,
@@ -276,6 +304,8 @@ function buildHeroesView(state: AppState): HeroesPageView {
       name: detail.name,
       role: detail.role,
       portrait: detail.portrait,
+      startEnergy: detail.startEnergy,
+      energyCap: EN_CAP,
       skillName: detail.skillName,
       skillCost: HERO_SKILL_COST,
       skillDesc: detail.skillDescription,
@@ -284,15 +314,59 @@ function buildHeroesView(state: AppState): HeroesPageView {
       ultimateDesc: detail.ultimateDescription,
       strength: detail.strength,
       weakness: detail.weakness,
-      owned,
       active,
-      canAfford: state.campaign.coins >= detail.cost,
-      cost: detail.cost,
-      stateMessage: owned
-        ? active
-          ? 'Hero ini sudah dipilih.'
-          : 'Hero ini bisa langsung dipakai.'
-        : 'Pembelian dan progres tersimpan di perangkat ini.',
+      stateMessage: active ? 'Hero ini sudah dipilih.' : 'Hero ini bisa langsung dipakai.',
+    },
+    tab: state.heroesTab,
+    filter: state.deckFilter,
+    deck: {
+      cards: CARDS.filter(function (card) {
+        return state.deckFilter === 'all' || card.kind === state.deckFilter;
+      }).map(function (card) {
+        const selected = selectedDeckIds.has(card.id);
+        return {
+          id: card.id,
+          name: card.name,
+          cost: card.cost,
+          kind: card.kind,
+          tag: card.tag,
+          desc: card.desc,
+          icon: card.icon,
+          selected,
+          disabled:
+            !selected &&
+            (card.kind === 'joker'
+              ? deckStatus.jokerCount >= DECK_JOKER_LIMIT
+              : deckStatus.regularCount >= DECK_REGULAR_LIMIT),
+        };
+      }),
+      selectedCards: selectedDeckCards.map(function (card) {
+        return {
+          id: card.id,
+          name: card.name,
+          cost: card.cost,
+          kind: card.kind,
+          tag: card.tag,
+          desc: card.desc,
+          icon: card.icon,
+          selected: true,
+          disabled: false,
+        };
+      }),
+      regularCount: deckStatus.regularCount,
+      jokerCount: deckStatus.jokerCount,
+      regularLimit: DECK_REGULAR_LIMIT,
+      jokerLimit: DECK_JOKER_LIMIT,
+      totalCardCount: CARDS.length,
+      complete: deckStatus.complete,
+      notice: state.deckNotice,
+      activeHero: {
+        name: hero.name,
+        role: hero.role,
+        portrait: hero.portrait,
+        skillName: hero.skillName,
+        ultimateName: hero.ultimateName,
+      },
     },
   };
 }
@@ -659,7 +733,13 @@ function statusFor(state: AppState): string {
       'Peta dungeon. ' + state.campaign.defeatedBosses.length + ' dari ' + BOSSES.length + ' lantai ditaklukkan.'
     );
   }
-  if (state.screen === 'heroes') return 'Daftar hero. Hero aktif: ' + activeHeroOf(state).name + '.';
+  if (state.screen === 'heroes') {
+    if (state.heroesTab === 'deck') {
+      const deck = deckSelectionStatus(state.campaign.deckCardIds, DECK_CATALOG);
+      return 'Deck: ' + deck.regularCount + ' dari ' + DECK_REGULAR_LIMIT + ' kartu dan ' + deck.jokerCount + ' dari ' + DECK_JOKER_LIMIT + ' Joker.';
+    }
+    return 'Daftar hero. Hero aktif: ' + activeHeroOf(state).name + '.';
+  }
   return 'Menu utama. ' + state.campaign.defeatedBosses.length + ' dari ' + BOSSES.length + ' lantai ditaklukkan.';
 }
 
@@ -681,11 +761,14 @@ function buildShell(state: AppState): AppShellView {
 function main(): void {
   const root = document.getElementById('app');
   if (!root) return;
-  const campaign = store.load(HERO_IDS, BOSS_IDS);
+  const campaign = store.load(HERO_IDS, BOSS_IDS, DECK_CATALOG);
   const state: AppState = {
     screen: 'menu',
     campaign,
     heroDetailsId: campaign.selectedHero,
+    heroesTab: 'roster',
+    deckFilter: 'all',
+    deckNotice: null,
     selectedBossId: nextBossProgress(BOSS_IDS, campaign),
     battle: null,
     focusSquare: [7, 0],
@@ -805,6 +888,14 @@ function main(): void {
   }
 
   function startDuel(bossId: string): void {
+    if (!deckSelectionStatus(state.campaign.deckCardIds, DECK_CATALOG).complete) {
+      state.screen = 'heroes';
+      state.heroesTab = 'deck';
+      state.deckNotice = 'Loadout harus berisi ' + DECK_REGULAR_LIMIT + ' kartu non-Joker dan ' + DECK_JOKER_LIMIT + ' Joker sebelum duel.';
+      render();
+      window.scrollTo(0, 0);
+      return;
+    }
     clearBlackTimer();
     state.rewardText = null;
     const result = startBattle(deps, BOSS_IDS, state.campaign, state.campaign.selectedHero, bossId);
@@ -830,6 +921,10 @@ function main(): void {
           clearBlackTimer();
           audio.play('toggle');
           state.screen = next;
+          if (next === 'heroes') {
+            state.heroesTab = 'roster';
+            state.deckNotice = null;
+          }
           render();
           return true;
         }
@@ -844,29 +939,71 @@ function main(): void {
         }
         return true;
       }
+      case 'hero-tab': {
+        const tab = target.dataset['tab'];
+        if (tab === 'roster' || tab === 'deck') {
+          state.heroesTab = tab;
+          state.deckNotice = null;
+          audio.play('toggle');
+          render();
+        }
+        return true;
+      }
+      case 'deck-filter': {
+        const filter = target.dataset['filter'];
+        if (
+          filter === 'all' ||
+          filter === 'offense' ||
+          filter === 'defense' ||
+          filter === 'spell' ||
+          filter === 'consumable' ||
+          filter === 'joker'
+        ) {
+          state.deckFilter = filter;
+          render();
+        }
+        return true;
+      }
+      case 'toggle-deck-card': {
+        const id = target.dataset['cardId'];
+        if (!id) return true;
+        const previous = state.campaign.deckCardIds;
+        const next = toggleDeckCard(previous, id, DECK_CATALOG);
+        const unchanged = previous.length === next.length && previous.every(function (cardId, index) {
+          return cardId === next[index];
+        });
+        if (unchanged) {
+          const card = cardById[id];
+          state.deckNotice = card?.kind === 'joker'
+            ? 'Slot Joker sudah terisi. Lepas Joker terpilih untuk menggantinya.'
+            : 'Sepuluh slot kartu pilihan sudah terisi. Lepas satu kartu untuk menggantinya.';
+          render();
+          return true;
+        }
+        state.campaign = { ...state.campaign, deckCardIds: next };
+        const complete = deckSelectionStatus(next, DECK_CATALOG).complete;
+        const saved = store.save(state.campaign);
+        state.deckNotice = complete
+          ? saved
+            ? 'Deck lengkap dan tersimpan. Siap dibawa ke duel.'
+            : 'Deck lengkap untuk sesi ini; penyimpanan browser tidak tersedia.'
+          : 'Lengkapi ' + DECK_REGULAR_LIMIT + ' kartu non-Joker dan ' + DECK_JOKER_LIMIT + ' Joker untuk bertarung.';
+        audio.play('select');
+        render();
+        return true;
+      }
+      case 'open-deck': {
+        state.screen = 'heroes';
+        state.heroesTab = 'deck';
+        state.deckNotice = 'Lengkapi ' + DECK_REGULAR_LIMIT + ' kartu non-Joker dan ' + DECK_JOKER_LIMIT + ' Joker sebelum duel.';
+        render();
+        return true;
+      }
       case 'choose-hero': {
         state.campaign = chooseHeroProgress(state.campaign, state.heroDetailsId, HERO_IDS);
         audio.play('select');
         store.save(state.campaign);
         render();
-        return true;
-      }
-      case 'buy-hero': {
-        const hero = contentHeroById(state.heroDetailsId);
-        if (
-          state.campaign.ownedHeroes.indexOf(hero.id) === -1 &&
-          state.campaign.coins >= hero.cost
-        ) {
-          audio.play('reveal');
-          state.campaign = {
-            ...state.campaign,
-            coins: state.campaign.coins - hero.cost,
-            ownedHeroes: state.campaign.ownedHeroes.concat([hero.id]),
-            selectedHero: hero.id,
-          };
-          store.save(state.campaign);
-          render();
-        }
         return true;
       }
       case 'select-boss': {

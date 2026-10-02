@@ -6,6 +6,7 @@ import {
   normalizeCampaign,
   type Campaign,
 } from '../domain/campaign/progress.ts';
+import type { DeckCatalog } from '../domain/campaign/deck.ts';
 
 /** Key save kampanye dari prototipe dungeon aktif. */
 export const CAMPAIGN_STORAGE_KEY = 'crown-catalyst-dungeon-v1';
@@ -16,7 +17,7 @@ export interface StorageBacking {
 }
 
 export interface CampaignStore {
-  load(heroIds: string[], bossIds: string[]): Campaign;
+  load(heroIds: string[], bossIds: string[], deckCatalog: DeckCatalog): Campaign;
   save(campaign: Campaign): boolean;
 }
 
@@ -53,14 +54,14 @@ export function createLocalStorageBacking(): StorageBacking | null {
 
 export function createCampaignStore(backing: StorageBacking | null): CampaignStore {
   return {
-    load(heroIds: string[], bossIds: string[]): Campaign {
-      if (!backing) return defaultCampaign(heroIds);
+    load(heroIds: string[], bossIds: string[], deckCatalog: DeckCatalog): Campaign {
+      if (!backing) return defaultCampaign(heroIds, deckCatalog);
       try {
         const raw = backing.getItem(CAMPAIGN_STORAGE_KEY);
-        if (raw == null) return defaultCampaign(heroIds);
-        return normalizeCampaign(JSON.parse(raw) as unknown, heroIds, bossIds);
+        if (raw == null) return defaultCampaign(heroIds, deckCatalog);
+        return normalizeCampaign(JSON.parse(raw) as unknown, heroIds, bossIds, deckCatalog);
       } catch (_error) {
-        return defaultCampaign(heroIds);
+        return defaultCampaign(heroIds, deckCatalog);
       }
     },
     save(campaign: Campaign): boolean {

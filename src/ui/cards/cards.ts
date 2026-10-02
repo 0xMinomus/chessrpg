@@ -82,7 +82,9 @@ export function renderHand(slots: CardSlotView[]): string {
         '<article class="skill-card kind-' +
         card.kind +
         stateClass +
-        '" role="listitem">' +
+        '" role="listitem" data-card-id="' +
+        escape(card.id) +
+        '">' +
         '<div class="card-face" style="--card-notch:' +
         NOTCH +
         '">' +

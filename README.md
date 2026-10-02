@@ -24,7 +24,7 @@ npm run verify
 
 This runs TypeScript checks, domain smoke tests, chess parity tests, UI render checks, a production build, and a scan of the generated files for remote network references.
 
-The browser checks are available with `npm run verify:browser` when `playwright-core` and a local Chromium installation are available. The preview-based checks expect the app at `http://localhost:4173/`.
+The browser checks are available with `npm run verify:browser` when `playwright-core` and a local Chromium installation are available. They cover hero portrait atlas alignment and cropping, viewport layout, and gameplay flow. The preview-based checks expect the app at `http://localhost:4173/`.
 
 ## Project layout
 

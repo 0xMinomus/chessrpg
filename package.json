@@ -13,10 +13,11 @@
     "verify:dist": "node scripts/verify-build.mjs",
     "render": "node --experimental-strip-types scripts/render-check.ts",
     "verify:layout": "node scripts/layout-check.mjs",
+    "verify:portraits": "node scripts/hero-portrait-check.mjs",
     "shots:card": "node scripts/card-shots.mjs",
     "verify:flow": "node scripts/flow-check.mjs",
     "verify": "npm run check && npm run smoke && npm run parity && npm run render && npm run build && npm run verify:dist",
-    "verify:browser": "npm run verify && npm run verify:layout && npm run verify:flow"
+    "verify:browser": "npm run verify && npm run verify:portraits && npm run verify:layout && npm run verify:flow"
   },
   "devDependencies": {
     "typescript": "^5.6.3",

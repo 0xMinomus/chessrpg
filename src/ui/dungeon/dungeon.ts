@@ -99,9 +99,15 @@ export function renderBossList(items: BossListItem[]): string {
     .join('');
 }
 
-export function renderBossDetail(boss: BossDetailView): string {
+export function renderBossDetail(boss: BossDetailView, deckReady = true): string {
   const canStart = boss.unlocked;
-  const actionLabel = boss.defeated ? 'Ulangi lantai' : boss.unlocked ? 'Mulai pertarungan' : 'Kalahkan boss sebelumnya';
+  const actionLabel = !deckReady && boss.unlocked
+    ? 'Lengkapi deck'
+    : boss.defeated
+      ? 'Ulangi lantai'
+      : boss.unlocked
+        ? 'Mulai pertarungan'
+        : 'Kalahkan boss sebelumnya';
   const state = boss.defeated ? 'Selesai' : boss.unlocked ? 'Terbuka' : 'Terkunci';
   return (
     '<div class="boss-detail-heading"><span class="eyebrow">Detail dungeon</span><span class="boss-detail-state">' +
@@ -124,7 +130,9 @@ export function renderBossDetail(boss: BossDetailView): string {
     ' koin</strong></div><div><span>Status</span><strong>' +
     state +
     '</strong></div></div>' +
-    '<button class="hub-button primary" type="button" data-command="start-boss" aria-label="' +
+    '<button class="hub-button primary" type="button" data-command="' +
+    (deckReady ? 'start-boss' : boss.unlocked ? 'open-deck' : 'start-boss') +
+    '" aria-label="' +
     actionLabel +
     ' melawan ' +
     boss.name +

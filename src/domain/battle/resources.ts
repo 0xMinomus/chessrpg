@@ -111,16 +111,23 @@ export function drawCard(
   return options[options.length - 1].id;
 }
 
-function cardList(deps: BattleDeps): CardDef[] {
-  return Object.values(deps.cards);
+function cardList(deps: BattleDeps, deckCardIds?: string[]): CardDef[] {
+  if (!deckCardIds) return Object.values(deps.cards);
+  return deckCardIds
+    .map(function (id) {
+      return deps.cards[id];
+    })
+    .filter(function (card): card is CardDef {
+      return card !== undefined;
+    });
 }
 
 /** Tangan baru 3 kartu tanpa duplikat. Cerminan makeHand prototipe. */
-export function makeHand(excluded: string[], deps: BattleDeps): [string, string, string] {
+export function makeHand(excluded: string[], deps: BattleDeps, deckCardIds?: string[]): [string, string, string] {
   const hand: string[] = [];
   const blocked = excluded.slice();
   while (hand.length < 3) {
-    hand.push(drawCard(cardList(deps), blocked.concat(hand), deps.rng));
+    hand.push(drawCard(cardList(deps, deckCardIds), blocked.concat(hand), deps.rng));
   }
   return [hand[0], hand[1], hand[2]];
 }
@@ -142,6 +149,6 @@ export function replaceHandSlot(
   });
   if (oldId) excluded.push(oldId);
   const next = state.hand.slice();
-  next[slot] = drawCard(cardList(deps), excluded, deps.rng);
+  next[slot] = drawCard(cardList(deps, state.deckCardIds), excluded, deps.rng);
   return { ...state, freeSkillUsedThisTurn: freeUsed, hand: next, dealtSlot: slot };
 }

@@ -10,6 +10,7 @@ import { createInitialBattle } from '../domain/battle/state.ts';
 import { restartBattle } from '../domain/battle/commands.ts';
 import { claimBattleReward } from '../domain/battle/result.ts';
 import { makeHand } from '../domain/battle/resources.ts';
+import { deckSelectionStatus, type DeckCatalog } from '../domain/campaign/deck.ts';
 
 export type StartBattleResult =
   | { ok: true; battle: BattleState; message: string }
@@ -30,11 +31,31 @@ export function startBattle(
   if (!isBossUnlocked(bossOrder, campaign, bossId)) {
     return { ok: false, battle: null, message: 'Lantai boss masih terkunci.' };
   }
+  const deckCatalog: DeckCatalog = {
+    regularCardIds: Object.values(deps.cards)
+      .filter(function (card) {
+        return card.kind !== 'joker';
+      })
+      .map(function (card) {
+        return card.id;
+      }),
+    jokerCardIds: Object.values(deps.cards)
+      .filter(function (card) {
+        return card.kind === 'joker';
+      })
+      .map(function (card) {
+        return card.id;
+      }),
+  };
+  if (!deckSelectionStatus(campaign.deckCardIds, deckCatalog).complete) {
+    return { ok: false, battle: null, message: 'Deck harus berisi 10 kartu non-Joker dan 1 Joker.' };
+  }
   const battle = createInitialBattle({
     hero,
     boss,
     board: deps.chess.initialBoard(),
-    hand: makeHand([], deps),
+    hand: makeHand([], deps, campaign.deckCardIds),
+    deckCardIds: campaign.deckCardIds,
   });
   return { ok: true, battle, message: battle.status };
 }

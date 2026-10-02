@@ -14,7 +14,9 @@ import {
   isBossUnlocked,
   nextBossId,
   defaultCampaign,
+  deckSelectionStatus,
   normalizeCampaign,
+  toggleDeckCard,
   type Campaign,
 } from '../src/domain/campaign/index.ts';
 import {
@@ -55,6 +57,10 @@ const deps: BattleDeps = {
 
 const BOSS_IDS = BOSSES.map((b) => b.id);
 const HERO_IDS = HEROES.map((h) => h.id);
+const DECK_CATALOG = {
+  regularCardIds: CARDS.filter((card) => card.kind !== 'joker').map((card) => card.id),
+  jokerCardIds: CARDS.filter((card) => card.kind === 'joker').map((card) => card.id),
+};
 
 let passed = 0;
 let failed = 0;
@@ -111,16 +117,40 @@ function main(): void {
   check('konten: biaya Joker dasar 5', CARDS.filter((c) => c.kind === 'joker').every((c) => c.cost === 5));
 
   // 2. Kampanye + save
-  const fresh = defaultCampaign(HERO_IDS);
+  const fresh = defaultCampaign(HERO_IDS, DECK_CATALOG);
   check('kampanye: koin awal 30', fresh.coins === 30);
   check('kampanye: semua hero terbuka', fresh.ownedHeroes.length === 6);
   check('kampanye: hero awal arunika', fresh.selectedHero === 'arunika');
+  check('deck: default berisi 10 kartu biasa + 1 Joker', fresh.deckCardIds.length === 11 && deckSelectionStatus(fresh.deckCardIds, DECK_CATALOG).complete);
+  check('deck: pilihan default hanya dari koleksi kartu', fresh.deckCardIds.every((id) => CARDS.some((card) => card.id === id)));
   check('kampanye: boss 2 terkunci', !isBossUnlocked(BOSS_IDS, fresh, 'ash'));
-  const corrupted = normalizeCampaign('{bukan json', HERO_IDS, BOSS_IDS);
+  const corrupted = normalizeCampaign('{bukan json', HERO_IDS, BOSS_IDS, DECK_CATALOG);
   check('save rusak: fallback default', corrupted.coins === 30 && corrupted.selectedHero === 'arunika');
-  const partial = normalizeCampaign({ coins: -5, defeatedBosses: ['ash', 'tidak-ada'] }, HERO_IDS, BOSS_IDS);
+  const partial = normalizeCampaign({ coins: -5, defeatedBosses: ['ash', 'tidak-ada'] }, HERO_IDS, BOSS_IDS, DECK_CATALOG);
   check('save parsial: koin di-clamp', partial.coins === 0);
   check('save parsial: boss tak dikenal dibuang', partial.defeatedBosses.join() === 'ash');
+  check('save lama: deck default ditambahkan', deckSelectionStatus(partial.deckCardIds, DECK_CATALOG).complete);
+  const invalidDeck = normalizeCampaign(
+    { deckCardIds: DECK_CATALOG.regularCardIds.concat(DECK_CATALOG.jokerCardIds) },
+    HERO_IDS,
+    BOSS_IDS,
+    DECK_CATALOG,
+  );
+  check('save: loadout dibatasi menjadi 10 kartu biasa + 1 Joker', invalidDeck.deckCardIds.length === 11 && deckSelectionStatus(invalidDeck.deckCardIds, DECK_CATALOG).complete);
+  const removedCard = fresh.deckCardIds[0];
+  const incompleteDeck = toggleDeckCard(fresh.deckCardIds, removedCard, DECK_CATALOG);
+  check('deck: kartu biasa dapat dilepas', incompleteDeck.length === 10 && !incompleteDeck.includes(removedCard));
+  check('deck: jumlah wajib terdeteksi', !deckSelectionStatus(incompleteDeck, DECK_CATALOG).complete);
+  check('deck: kartu biasa tidak melewati batas', toggleDeckCard(fresh.deckCardIds, DECK_CATALOG.regularCardIds[10], DECK_CATALOG).length === 11);
+  check('deck: Joker tidak melewati batas', toggleDeckCard(fresh.deckCardIds, DECK_CATALOG.jokerCardIds[1], DECK_CATALOG).length === 11);
+  const incompleteStart = startBattle(
+    deps,
+    BOSS_IDS,
+    { ...fresh, deckCardIds: incompleteDeck },
+    'arunika',
+    'bastion',
+  );
+  check('duel: deck tidak lengkap ditolak', !incompleteStart.ok && incompleteStart.battle === null);
 
   // 3. Mulai duel
   const started = startBattle(deps, BOSS_IDS, fresh, 'arunika', 'bastion');
@@ -130,6 +160,7 @@ function main(): void {
   check('duel: mana awal 0', battle.heroMana === 0);
   check('duel: EN lawan 2', battle.enemyEnergy === 2);
   check('duel: tangan 3 kartu unik', battle.hand.length === 3 && new Set(battle.hand).size === 3);
+  check('duel: tangan hanya dari deck terpilih', battle.hand.every((id) => fresh.deckCardIds.includes(id)));
   check('duel: papan 32 bidak', battle.board.flat().filter(Boolean).length === 32);
 
   // 4. Langkah legal + mana +1
@@ -168,6 +199,7 @@ function main(): void {
   const restarted = restartBattle(battle, deps);
   check('restart: papan awal 32 bidak', restarted.state.board.flat().filter(Boolean).length === 32);
   check('restart: giliran 1', restarted.state.turnNo === 1);
+  check('restart: pool kartu terpilih dipertahankan', restarted.state.deckCardIds.join() === fresh.deckCardIds.join() && restarted.state.hand.every((id) => fresh.deckCardIds.includes(id)));
 
   // 7. Reroll: putaran pertama gratis, berikutnya 1 EN
   const beforeReroll = battle.hand.join();
@@ -175,6 +207,7 @@ function main(): void {
   const rerolled = rerollHandFlow(battle, deps);
   check('reroll: gratis pertama', rerolled.ok && rerolled.state.energy === beforeEnergy);
   check('reroll: tangan diganti', rerolled.state.hand.join() !== beforeReroll);
+  check('reroll: hanya menggunakan kartu deck', rerolled.state.hand.every((id) => fresh.deckCardIds.includes(id)));
   const reroll2 = rerollHandFlow(rerolled.state, deps);
   check('reroll: putaran kedua 1 EN', reroll2.ok && reroll2.state.energy === beforeEnergy - 1);
   const reroll3 = rerollHandFlow(reroll2.state, deps);
@@ -194,6 +227,7 @@ function main(): void {
     const cost = card.cost;
     const manaBefore = battle.heroMana;
     const played = playCardFlow(battle, deps, manaCard);
+    check('kartu: pengganti hanya berasal dari deck', played.state.hand.every((id) => fresh.deckCardIds.includes(id)));
     check('kartu: biaya dipotong dari mana', played.state.heroMana === manaBefore - cost, String(played.state.heroMana));
     if (played.state.activeSkill !== null) {
       const cancelledResult = cancelTarget(played.state, deps);
@@ -249,7 +283,7 @@ function main(): void {
   }
 
   // 11. Hadiah first-clear sekali saja + buka lantai berikutnya
-  let campaign: Campaign = defaultCampaign(HERO_IDS);
+  let campaign: Campaign = defaultCampaign(HERO_IDS, DECK_CATALOG);
   const winBattle: BattleState = {
     ...(startBattle(deps, BOSS_IDS, campaign, 'arunika', 'bastion').battle as BattleState),
     gameOver: true,

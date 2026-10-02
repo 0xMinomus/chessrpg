@@ -180,25 +180,31 @@ check('dungeon: marker membuka pilihan boss yang sama', dungeon.includes('data-c
 check('dungeon: marker boss terkunci nonaktif', dungeon.includes('data-boss-id="ash" style="--map-x:48%;--map-y:82%" aria-label="Pemangsa Abu, Terkunci" aria-pressed="false" disabled>02</button>'));
 
 // 4. Heroes: roster + detail + biaya EN
-const heroes = renderHeroesPage({
+const heroPageView = {
+  tab: 'roster' as const,
+  filter: 'all' as const,
   roster: [
     {
       id: 'arunika',
       name: 'Arunika',
       role: 'Penjelajah Rembulan',
       portrait: 'arunika',
-      cost: 0,
+      startEnergy: 4,
+      energyCap: 5,
       stateLabel: 'Dipakai',
       selected: true,
+      active: true,
     },
     {
       id: 'liora',
       name: 'Liora',
       role: 'Penjaga Benteng',
       portrait: 'liora',
-      cost: 70,
-      stateLabel: '70 koin',
+      startEnergy: 3,
+      energyCap: 5,
+      stateLabel: 'Dimiliki',
       selected: false,
+      active: false,
     },
   ],
   detail: {
@@ -206,6 +212,8 @@ const heroes = renderHeroesPage({
     name: 'Liora',
     role: 'Penjaga Benteng',
     portrait: 'liora',
+    startEnergy: 3,
+    energyCap: 5,
     skillName: 'Segel Petak',
     skillCost: 2,
     skillDesc: 'Pilih satu petak kosong.',
@@ -214,13 +222,65 @@ const heroes = renderHeroesPage({
     ultimateDesc: 'Blokade silang.',
     strength: 'Menutup lima petak.',
     weakness: 'Butuh petak kosong.',
-    owned: false,
     active: false,
-    canAfford: false,
-    cost: 70,
-    stateMessage: 'Tersimpan di perangkat ini.',
+    stateMessage: 'Hero ini bisa langsung dipakai.',
   },
-});
+  deck: {
+    cards: [
+      {
+        id: 'ward',
+        name: 'Perisai bidak',
+        cost: 2,
+        kind: 'defense' as const,
+        tag: 'Bertahan',
+        desc: 'Pilih bidak selain raja.',
+        icon: 'ward',
+        selected: true,
+        disabled: false,
+      },
+      {
+        id: 'edict',
+        name: 'Titah Pemusnah',
+        cost: 5,
+        kind: 'joker' as const,
+        tag: 'Joker',
+        desc: 'Hapus satu bidak hitam.',
+        icon: 'shock',
+        selected: false,
+        disabled: true,
+      },
+    ],
+    selectedCards: [
+      {
+        id: 'ward',
+        name: 'Perisai bidak',
+        cost: 2,
+        kind: 'defense' as const,
+        tag: 'Bertahan',
+        desc: 'Pilih bidak selain raja.',
+        icon: 'ward',
+        selected: true,
+        disabled: false,
+      },
+    ],
+    regularCount: 10,
+    jokerCount: 1,
+    regularLimit: 10,
+    jokerLimit: 1,
+    totalCardCount: 37,
+    complete: true,
+    notice: null,
+    activeHero: {
+      name: 'Arunika',
+      role: 'Penjelajah Rembulan',
+      portrait: 'arunika',
+      skillName: 'Pergeseran Rembulan',
+      ultimateName: 'Gerbang Lintas',
+    },
+  },
+};
+const heroes = renderHeroesPage(heroPageView);
+const deckPage = renderHeroesPage({ ...heroPageView, tab: 'deck' });
 check(
   'heroes: 2 kartu roster',
   (heroes.match(/data-command="select-hero"/g) ?? []).length === 2,
@@ -229,7 +289,12 @@ check(
 check('heroes: skill 2 EN', heroes.includes('Skill utama</span><small>2 EN') && heroes.includes('Segel Petak'));
 check('heroes: ultimate 5 EN', heroes.includes('Ultimate</span><small>5 EN') && heroes.includes('Benteng Prisma'));
 check('heroes: selected state is exposed', heroes.includes('aria-pressed="true"'));
-check('heroes: beli nonaktif tanpa koin', heroes.includes('Beli · 70 koin') && heroes.includes('disabled'));
+check('heroes: hero nonaktif bisa dipilih', heroes.includes('data-command="choose-hero"') && !heroes.includes('data-command="choose-hero" disabled'));
+check('heroes: mode deck tersedia', heroes.includes('data-command="hero-tab" data-tab="deck"'));
+check('deck: slot 10 + 1 Joker ditampilkan', deckPage.includes('>10<small> / 10') && deckPage.includes('>01<small> / 1'));
+check('deck: kartu dibayar dengan mana', deckPage.includes('02 MANA'));
+check('deck: Joker berbobot slot khusus dan nonaktif saat penuh', deckPage.includes('kind-joker') && deckPage.includes('data-card-id="edict"') && deckPage.includes('disabled'));
+check('deck: loadout terpilih bisa dilepas', deckPage.includes('aria-label="Lepas Perisai bidak dari deck"'));
 
 // 5. Kartu: markup mengikuti katalog cards.html (bingkai notched, ikon, biaya mana)
 const slot = {

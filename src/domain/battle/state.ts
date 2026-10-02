@@ -172,6 +172,8 @@ export interface BattleState {
   /** Mana kartu: membayar kartu skill. Mulai 0, +1 per langkah putih, kap 6. */
   heroMana: number;
   hand: string[];
+  /** Pool kartu loadout yang dipilih sebelum duel. */
+  deckCardIds: string[];
   activeSkill: string | null;
   activeSlot: number | null;
   activeSkillCost: number;
@@ -301,6 +303,7 @@ export function snapshotBattle(state: BattleState): BattleSnapshot {
     energy: state.energy,
     heroMana: state.heroMana,
     hand: state.hand.slice(),
+    deckCardIds: state.deckCardIds.slice(),
     activeSkill: state.activeSkill,
     activeSlot: state.activeSlot,
     activeSkillCost: state.activeSkillCost,
@@ -401,6 +404,7 @@ export interface InitialBattleInput {
   boss: BossDef;
   board: Board;
   hand: [string, string, string];
+  deckCardIds: string[];
 }
 
 /**
@@ -417,6 +421,7 @@ export function createInitialBattle(input: InitialBattleInput): BattleState {
     energy: input.hero.startEnergy,
     heroMana: 0,
     hand: [input.hand[0], input.hand[1], input.hand[2]],
+    deckCardIds: input.deckCardIds.slice(),
     activeSkill: null,
     activeSlot: null,
     activeSkillCost: 0,

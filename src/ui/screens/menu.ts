@@ -46,10 +46,12 @@ export interface MenuView {
   activeHero: MenuHeroSummary;
   heroCount: number;
   cardCount: number;
+  deckReady?: boolean;
 }
 
 export function renderMenuPage(view: MenuView): string {
   const selectedBoss = view.selectedBoss;
+  const deckReady = view.deckReady !== false;
   const selectedBossState = selectedBoss.defeated
     ? 'Selesai'
     : selectedBoss.unlocked
@@ -186,12 +188,20 @@ export function renderMenuPage(view: MenuView): string {
     view.totalFloors +
     ' lantai ditaklukkan</strong></div><div class="home-floor-list" role="group" aria-label="Progres lantai dungeon">' +
     floorProgress +
-    '</div><button class="hub-button primary home-start-button" type="button" data-command="start-boss" aria-label="Mulai pertarungan melawan ' +
+    '</div><button class="hub-button primary home-start-button" type="button" data-command="' +
+    (deckReady ? 'start-boss' : 'open-deck') +
+    '" aria-label="' +
+    (deckReady ? 'Mulai pertarungan' : 'Atur deck sebelum bertarung') +
+    ' melawan ' +
     selectedBoss.name +
     '"' +
     (selectedBoss.unlocked ? '' : ' disabled') +
     '>' +
-    (selectedBoss.defeated ? 'Ulangi tantangan menara' : 'Mulai tantangan menara') +
+    (deckReady
+      ? selectedBoss.defeated
+        ? 'Ulangi tantangan menara'
+        : 'Mulai tantangan menara'
+      : 'Lengkapi deck sebelum duel') +
     '</button></section>' +
     '<section class="home-codex-panel hub-frame" aria-labelledby="home-codex-title"><div class="home-panel-heading"><span class="eyebrow" id="home-codex-title">Catatan perjalanan</span></div><div class="home-campaign-facts">' +
     campaignFacts +

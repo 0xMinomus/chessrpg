@@ -1,23 +1,27 @@
 // Progres kampanye dungeon: koin, hero, boss yang ditaklukkan.
 // Murni (tanpa DOM/storage); adapter browser menyimpan hasil normalisasi.
 
+import { defaultDeckSelection, normalizeDeckSelection, type DeckCatalog } from './deck.ts';
+
 export interface Campaign {
   coins: number;
   ownedHeroes: string[];
   selectedHero: string;
   defeatedBosses: string[];
+  deckCardIds: string[];
 }
 
 /**
  * Kampanye awal: 30 koin, semua hero terbuka untuk pengujian baseline,
  * hero aktif Arunika. Cerminan defaultCampaign prototipe.
  */
-export function defaultCampaign(heroIds: string[]): Campaign {
+export function defaultCampaign(heroIds: string[], deckCatalog: DeckCatalog): Campaign {
   return {
     coins: 30,
     ownedHeroes: heroIds.slice(),
     selectedHero: heroIds.indexOf('arunika') !== -1 ? 'arunika' : (heroIds[0] ?? 'arunika'),
     defeatedBosses: [],
+    deckCardIds: defaultDeckSelection(deckCatalog),
   };
 }
 
@@ -31,8 +35,9 @@ export function normalizeCampaign(
   raw: unknown,
   heroIds: string[],
   bossIds: string[],
+  deckCatalog: DeckCatalog,
 ): Campaign {
-  const fallback = defaultCampaign(heroIds);
+  const fallback = defaultCampaign(heroIds, deckCatalog);
   if (!raw || typeof raw !== 'object') {
     return { ...fallback, ownedHeroes: heroIds.slice(), defeatedBosses: [] };
   }
@@ -54,6 +59,7 @@ export function normalizeCampaign(
     ownedHeroes: heroIds.slice(),
     selectedHero,
     defeatedBosses,
+    deckCardIds: normalizeDeckSelection(stored.deckCardIds, deckCatalog),
   };
 }
 

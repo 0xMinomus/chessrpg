@@ -104,6 +104,78 @@ check('hero Liora dipilih', (await page.evaluate(() => JSON.parse(localStorage.g
 await page.locator('.hero-card', { hasText: 'Arunika' }).click();
 await page.getByRole('button', { name: 'Pilih hero' }).click();
 
+// Deck builder: slot tepat 10 kartu non-Joker + 1 Joker, tersimpan dan dipakai saat duel.
+await page.locator('.hero-menu-tab[data-tab="deck"]').click();
+check('37 kartu tersedia di deck builder', (await page.locator('.deck-card').count()) === 37);
+check('loadout awal berisi 10 kartu + 1 Joker', (await page.locator('.deck-selected-card').count()) === 11);
+check('batas jenis tampak pada panel loadout', (await page.locator('.deck-slot-count').nth(0).textContent()).includes('10') && (await page.locator('.deck-slot-count').nth(1).textContent()).includes('1'));
+check('kartu lain nonaktif saat 10 slot reguler terisi', (await page.locator('.deck-card:not(.kind-joker):disabled').count()) > 0);
+check('Joker lain nonaktif saat slot Joker terisi', (await page.locator('.deck-card.kind-joker:disabled').count()) === 2);
+
+const removedDeckCard = page.locator('.deck-card.selected:not(.kind-joker)').first();
+const removedDeckCardId = await removedDeckCard.getAttribute('data-card-id');
+await removedDeckCard.focus();
+await page.keyboard.press('Enter');
+check('kartu dapat dilepas dari slot reguler dengan keyboard', (await page.locator('.deck-slot-count').nth(0).textContent()).includes('09'));
+const availableRegularCardIds = await page.locator('.deck-card:not(.kind-joker):not(.selected):not(:disabled)').evaluateAll((cards) =>
+  cards.map((card) => card.getAttribute('data-card-id')).filter(Boolean),
+);
+const addedDeckCardId = availableRegularCardIds.find((id) => id !== removedDeckCardId) ?? null;
+if (addedDeckCardId) await page.locator(`.deck-card[data-card-id="${addedDeckCardId}"]`).click();
+check('kartu pengganti mengisi slot tanpa melewati batas', (await page.locator('.deck-card.selected:not(.kind-joker)').count()) === 10);
+check('pilihan lama dilepas dan pilihan baru disimpan',
+  removedDeckCardId !== null && addedDeckCardId !== null &&
+    (await page.locator(`.deck-card[data-card-id="${removedDeckCardId}"]`).getAttribute('aria-pressed')) === 'false' &&
+    (await page.locator(`.deck-card[data-card-id="${addedDeckCardId}"]`).getAttribute('aria-pressed')) === 'true');
+const savedDeck = await page.evaluate(() => JSON.parse(localStorage.getItem('crown-catalyst-dungeon-v1')).deckCardIds);
+check('save menyimpan 10 kartu reguler + 1 Joker',
+  savedDeck.length === 11 && savedDeck.filter((id) => ['phoenix', 'fold', 'edict'].includes(id)).length === 1);
+await page.locator('.deck-filter[data-filter="joker"]').focus();
+await page.keyboard.press('Enter');
+check('filter deck dapat dipakai dengan keyboard',
+  (await page.locator('.deck-card').count()) === 3 && await page.locator('.deck-filter[data-filter="joker"]').getAttribute('aria-pressed') === 'true');
+await page.locator('.deck-filter[data-filter="all"]').click();
+await page.screenshot({ path: join(OUT, 'deck-builder.png') });
+await page.reload({ waitUntil: 'load' });
+await page.getByRole('button', { name: 'Hero', exact: true }).click();
+await page.locator('.hero-menu-tab[data-tab="deck"]').click();
+check('deck terpilih tetap ada setelah reload',
+  (await page.locator('.deck-card.selected:not(.kind-joker)').count()) === 10 &&
+    (await page.locator('.deck-card.selected.kind-joker').count()) === 1);
+
+// Cek roster + deck pada desktop, tablet, dan ponsel.
+for (const width of [320, 390, 720, 1024, 1440]) {
+  await page.setViewportSize({ width, height: 900 });
+  const deckFits = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+  check('deck tidak overflow horizontal pada ' + width + 'px', deckFits);
+}
+await page.setViewportSize({ width: 390, height: 844 });
+await page.screenshot({ path: join(OUT, 'deck-builder-mobile.png') });
+await page.setViewportSize({ width: 1440, height: 900 });
+await page.locator('.hero-menu-tab[data-tab="roster"]').click();
+for (const width of [320, 390, 720, 1024, 1440]) {
+  await page.setViewportSize({ width, height: 900 });
+  const rosterFits = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+  check('roster tidak overflow horizontal pada ' + width + 'px', rosterFits);
+}
+await page.setViewportSize({ width: 390, height: 844 });
+await page.screenshot({ path: join(OUT, 'hero-roster-mobile.png'), fullPage: true });
+await page.setViewportSize({ width: 1440, height: 900 });
+await page.screenshot({ path: join(OUT, 'hero-roster.png') });
+
+// CTA yang diakses saat loadout belum lengkap membawa pemain langsung ke deck editor.
+await page.locator('.hero-menu-tab[data-tab="deck"]').click();
+const temporarilyRemoved = page.locator('.deck-card.selected:not(.kind-joker)').first();
+const temporarilyRemovedId = await temporarilyRemoved.getAttribute('data-card-id');
+await temporarilyRemoved.click();
+await page.getByRole('button', { name: 'Dungeon', exact: true }).click();
+check('dungeon menawarkan atur deck sebelum duel',
+  await page.locator('.boss-detail [data-command="open-deck"]').count() === 1);
+await page.locator('.boss-detail [data-command="open-deck"]').click();
+check('CTA dungeon membuka deck editor', await page.locator('.deck-builder-layout').isVisible());
+if (temporarilyRemovedId) await page.locator(`.deck-card[data-card-id="${temporarilyRemovedId}"]`).click();
+check('loadout dapat dilengkapi kembali', (await page.locator('.deck-selected-card').count()) === 11);
+
 // 3. Dungeon + boss terkunci
 await page.getByRole('button', { name: 'Dungeon' }).click();
 check('3 boss tampil', (await page.locator('.boss-node').count()) === 3);
@@ -129,6 +201,10 @@ check(
 // 4. Mulai duel
 await page.getByRole('button', { name: 'Mulai pertarungan' }).first().click();
 await page.waitForSelector('.square');
+const selectedDeckForBattle = await page.evaluate(() => JSON.parse(localStorage.getItem('crown-catalyst-dungeon-v1')).deckCardIds);
+const openingHandIds = await page.locator('.skill-card').evaluateAll((cards) => cards.map((card) => card.getAttribute('data-card-id')));
+check('tangan awal duel hanya berasal dari deck pilihan',
+  openingHandIds.length === 3 && openingHandIds.every((id) => selectedDeckForBattle.includes(id)));
 const pieceCount = () =>
   page.evaluate(
     () => Array.from(document.querySelectorAll('.square .piece')).filter((p) => p.textContent.trim()).length,
