@@ -1790,27 +1790,44 @@ h1 {
 .combat-cast-fx {
   position: absolute; inset: 0; z-index: 8; display: grid; place-items: center;
   overflow: hidden; pointer-events: none; contain: paint;
-  animation: cast-fx-life 280ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  animation: cast-fx-life 780ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+.combat-cast-fx::before, .combat-cast-fx::after {
+  content: ""; position: absolute; top: 50%; left: 50%; display: block; opacity: 0;
+  border-radius: 999px; transform: translate(-50%, -50%);
+  background: linear-gradient(90deg, transparent, var(--cast-accent) 22%, var(--cast-ink) 50%, var(--cast-accent) 78%, transparent);
+  box-shadow: 0 0 20px 5px var(--cast-accent);
+}
+.combat-cast-fx::before {
+  width: clamp(180px, 94cqh, 720px); height: clamp(4px, 1cqh, 8px);
+  animation: cast-ray-sweep 730ms cubic-bezier(0.23, 1, 0.32, 1) 12ms both;
+}
+.combat-cast-fx::after {
+  width: clamp(140px, 78cqh, 580px); height: clamp(3px, 0.7cqh, 6px);
+  animation: cast-ray-cross 700ms cubic-bezier(0.23, 1, 0.32, 1) 46ms both;
 }
 .combat-cast-fx > i {
   position: absolute; top: 50%; left: 50%; display: block; opacity: 0;
   transform: translate(-50%, -50%);
 }
 .combat-cast-fx > i:nth-child(1) {
-  width: clamp(72px, 42cqh, 224px); aspect-ratio: 1;
-  border: 2px solid var(--cast-ink); border-radius: var(--cast-ring, 50%);
-  box-shadow: 0 0 0 1px var(--cast-accent); clip-path: var(--cast-shell, none);
-  animation: var(--cast-a) 236ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  width: clamp(150px, 82cqh, 560px); aspect-ratio: 1;
+  border: 5px solid var(--cast-ink); border-radius: var(--cast-ring, 50%);
+  box-shadow: 0 0 0 2px var(--cast-accent), 0 0 18px 4px var(--cast-accent);
+  clip-path: var(--cast-shell, none);
+  animation: var(--cast-a) 720ms cubic-bezier(0.23, 1, 0.32, 1) both;
 }
 .combat-cast-fx > i:nth-child(2) {
-  width: clamp(52px, 29cqh, 168px); aspect-ratio: 1;
-  border: 2px dashed var(--cast-accent); border-radius: var(--cast-orbit, 50%);
-  animation: var(--cast-b) 228ms cubic-bezier(0.23, 1, 0.32, 1) 16ms both;
+  width: clamp(100px, 62cqh, 430px); aspect-ratio: 1;
+  border: 3px dashed var(--cast-accent); border-radius: var(--cast-orbit, 50%);
+  box-shadow: 0 0 14px 2px var(--cast-accent);
+  animation: var(--cast-b) 690ms cubic-bezier(0.23, 1, 0.32, 1) 24ms both;
 }
 .combat-cast-fx > i:nth-child(3) {
-  width: clamp(18px, 10cqh, 62px); aspect-ratio: 1;
+  width: clamp(40px, 20cqh, 136px); aspect-ratio: 1;
   background: var(--cast-accent); clip-path: var(--cast-core, polygon(50% 0, 100% 50%, 50% 100%, 0 50%));
-  animation: var(--cast-c) 220ms cubic-bezier(0.23, 1, 0.32, 1) 28ms both;
+  box-shadow: 0 0 26px 8px var(--cast-accent);
+  animation: var(--cast-c) 660ms cubic-bezier(0.23, 1, 0.32, 1) 48ms both;
 }
 
 .combat-cast-fx[data-effect="hero-phase"] {
@@ -1906,7 +1923,19 @@ h1 {
   --cast-core: polygon(50% 0, 100% 100%, 0 100%);
 }
 
-@keyframes cast-fx-life { 0%, 64% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes cast-fx-life { 0%, 72% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes cast-ray-sweep {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(-52deg) scaleX(.12); }
+  18% { opacity: .94; transform: translate(-50%, -50%) rotate(-30deg) scaleX(.94); }
+  62% { opacity: .82; transform: translate(-50%, -50%) rotate(2deg) scaleX(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(24deg) scaleX(.78); }
+}
+@keyframes cast-ray-cross {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(48deg) scaleX(.12); }
+  20% { opacity: .86; transform: translate(-50%, -50%) rotate(24deg) scaleX(.92); }
+  62% { opacity: .7; transform: translate(-50%, -50%) rotate(-8deg) scaleX(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(-38deg) scaleX(.76); }
+}
 @keyframes cast-expand { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.52); } 25% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.42); } }
 @keyframes cast-orbit { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(-58deg) scale(.58); } 25% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(112deg) scale(1.16); } }
 @keyframes cast-gate { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(-42deg) scale(.55); } 28% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(38deg) scale(1.08); } }
@@ -1928,6 +1957,8 @@ h1 {
 @keyframes cast-spark { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(0) scale(.35); } 24% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(135deg) scale(1.22); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .combat-cast-fx { animation: cast-fx-life 120ms ease-out both !important; }
+  .combat-cast-fx, .combat-cast-fx::before, .combat-cast-fx::after {
+    animation: cast-fx-life 120ms ease-out both !important;
+  }
   .combat-cast-fx > i { animation: cast-fx-life 120ms ease-out both !important; }
 }

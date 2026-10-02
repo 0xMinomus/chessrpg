@@ -414,8 +414,9 @@ if (enabledSlots.length === 0) {
       : null;
     check(
       'cast kartu menampilkan animasi keluarga ' + chosenKind,
-      cardFxCount === 1 && cardMotion?.name !== 'none' && cardMotion?.duration === '0.236s',
+      cardFxCount === 1 && cardMotion?.name !== 'none' && cardMotion?.duration === '0.72s',
     );
+    await page.screenshot({ path: join(OUT, 'combat-cast-card.png') });
   }
   if (targeting) {
     const manaPaid = await page.locator('.card-mana-hud strong').textContent();
@@ -468,20 +469,27 @@ check('skill Arunika masuk mode target', phaseTargeting);
 check('skill Arunika menemukan bidak putih non-raja', Boolean(phaseTarget));
 if (phaseTargeting && phaseTarget) {
   await page.locator(`.square[data-row="${phaseTarget.row}"][data-col="${phaseTarget.col}"]`).click();
+  const boardFrameWidth = await page.locator('.board-frame').evaluate((element) => element.getBoundingClientRect().width);
   const phaseFx = page.locator('.combat-cast-fx[data-effect="hero-phase"]');
   const phaseFxCount = await phaseFx.count();
   const phaseMotion = phaseFxCount
     ? await phaseFx.locator('i').first().evaluate((element) => ({
         name: getComputedStyle(element).animationName,
         duration: getComputedStyle(element).animationDuration,
+        parentDuration: getComputedStyle(element.parentElement).animationDuration,
+        width: element.getBoundingClientRect().width,
       }))
     : null;
   check(
     'cast skill menampilkan efek fase dengan animasi',
-    phaseFxCount === 1 && phaseMotion?.name === 'cast-orbit' && phaseMotion.duration === '0.236s',
+    phaseFxCount === 1 && phaseMotion?.name === 'cast-orbit' && phaseMotion.duration === '0.72s' &&
+      phaseMotion.width >= boardFrameWidth * 0.62 && phaseMotion.parentDuration === '0.78s',
+    JSON.stringify({ phaseFxCount, phaseMotion, boardFrameWidth }),
   );
+  await page.screenshot({ path: join(OUT, 'combat-cast-hero.png') });
 }
-await page.waitForTimeout(320);
+await page.waitForTimeout(820);
+check('efek cast dibersihkan setelah animasi penuh', (await page.locator('.combat-cast-fx').count()) === 0);
 await page.emulateMedia({ reducedMotion: 'reduce' });
 await page.locator('[data-command="hero-skill"]').click();
 const reducedPhaseTarget = await page.locator('.square').evaluateAll((squares) => {
@@ -556,8 +564,9 @@ if (pendingTargetCardCast) {
     : null;
   check(
     'resolusi kartu target menampilkan animasi keluarga ' + pendingTargetCardCast.kind,
-    cardFxCount === 1 && cardMotion?.name !== 'none' && cardMotion?.duration === '0.236s',
+    cardFxCount === 1 && cardMotion?.name !== 'none' && cardMotion?.duration === '0.72s',
   );
+  await page.screenshot({ path: join(OUT, 'combat-cast-card.png') });
   if (pendingTargetCardCast.id === 'sacrifice' || pendingTargetCardCast.id === 'relay') {
     await page.waitForFunction(() => (document.querySelector('.turn-flag')?.textContent ?? '').toLowerCase().includes('putih'));
   }
