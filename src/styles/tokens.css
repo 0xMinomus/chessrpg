@@ -1,0 +1,20 @@
+:root {
+  color-scheme: dark;
+  --night: #0c1020;
+  --cabinet: #151a31;
+  --panel: #1b2038;
+  --panel-deep: #11162b;
+  --line: #55516b;
+  --cream: #f3e4c4;
+  --sand: #e7d4ac;
+  --mauve: #8b708e;
+  --mauve-deep: #5e4a69;
+  --coral: #f14d6d;
+  --coral-soft: #ff9eaa;
+  --muted: #c8c0d0;
+  --green: #a7d1a0;
+  --gold: #f0d17e;
+  --mana: #9dc4e4;
+  --focus-ring: #fff0bf;
+  font-synthesis: none;
+}

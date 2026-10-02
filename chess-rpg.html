@@ -1,0 +1,2380 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0c1020">
+  <title>Takhta Taktis | Crown &amp; Catalyst</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --night: #0c1020;
+      --cabinet: #151a31;
+      --panel: #1b2038;
+      --panel-deep: #11162b;
+      --line: #55516b;
+      --cream: #f3e4c4;
+      --sand: #e7d4ac;
+      --mauve: #8b708e;
+      --mauve-deep: #5e4a69;
+      --coral: #f14d6d;
+      --coral-soft: #ff9eaa;
+      --muted: #c8c0d0;
+      --green: #a7d1a0;
+      font-synthesis: none;
+    }
+
+    * { box-sizing: border-box; }
+    html { height:100%; overflow:hidden; background: var(--night); scroll-behavior: auto; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+      color: var(--cream);
+      background: radial-gradient(ellipse at 50% 46%, rgba(92,69,111,.19), transparent 52%), var(--night);
+      font-family: "Segoe UI", system-ui, sans-serif;
+      line-height: 1.45;
+    }
+
+    /* CRT scanlines stay faint so they never compete with board notation. */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      pointer-events: none;
+      opacity: .16;
+      background: repeating-linear-gradient(to bottom, rgba(255,255,255,.09) 0 1px, transparent 1px 4px);
+      mix-blend-mode: screen;
+    }
+
+    button, summary { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, summary:focus-visible { outline: 3px solid var(--coral-soft); outline-offset: 3px; }
+    ::selection { color: var(--night); background: var(--coral-soft); }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--night); }
+    ::-webkit-scrollbar-thumb { background: var(--mauve-deep); border: 2px solid var(--night); }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+    .cabinet {
+      /* A 90% interface scale with a compensated frame keeps the game viewport full. */
+      zoom: .9;
+      width: min(111.111%, 1866.6667px);
+      height: 111.111vh;
+      height: 111.111dvh;
+      min-height: 0;
+      margin: 0 auto;
+      padding: clamp(6px, .8vh, 12px);
+      border: 1px solid #787084;
+      border-radius: 0;
+      background: var(--cabinet);
+      box-shadow: 0 18px 42px rgba(0,0,0,.4);
+      position: relative;
+      display: grid;
+      grid-template-rows: auto minmax(0,1fr);
+      overflow: hidden;
+    }
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(205px,1.15fr) repeat(2,minmax(110px,.62fr)) auto;
+      align-items: stretch;
+      gap: 8px;
+      padding: 2px 4px 8px;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 5px 8px; }
+    .brand-mark {
+      width: 40px;
+      height: 42px;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      color: var(--coral);
+      background: #20182f;
+      border: 2px solid var(--coral);
+      box-shadow: inset 0 0 0 3px var(--night);
+      font: 700 26px/1 Georgia, serif;
+      text-shadow: 2px 2px 0 var(--night);
+    }
+    .brand-copy { min-width: 0; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 2px; color: var(--cream); font: 700 clamp(13px,1.35vw,19px)/1.2 "Courier New",monospace; letter-spacing: .035em; text-transform: uppercase; }
+    .brand-copy p { margin: 0; color: var(--muted); font: 700 11px/1.3 "Courier New",monospace; letter-spacing: .1em; text-transform: uppercase; }
+    .hud-box {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+      padding: 7px 10px;
+      background: var(--panel-deep);
+      border: 1px solid #49445f;
+    }
+    .hud-label, .eyebrow, .micro-label { display: block; color: #d0c5d3; font: 700 11px/1.3 "Courier New",monospace; letter-spacing: .08em; text-transform: uppercase; }
+    .hud-value { color: var(--cream); font: 700 14px/1.15 "Courier New",monospace; text-transform: uppercase; }
+    .hud-value.coral { color: var(--coral-soft); }
+    .energy-row { display: flex; align-items: center; gap: 7px; }
+    .energy-track { display: flex; gap: 3px; }
+    .energy-pip { width: 13px; height: 9px; background: #403a52; border: 1px solid #75677c; }
+    .energy-pip.on { background: var(--coral); border-color: #ff9eaa; }
+    .energy-number { color: var(--cream); font: 700 15px/1 "Courier New",monospace; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .energy-hud { border-color: #815d72; background: #241d34; }
+    .energy-hud .energy-track { gap: 4px; }
+    .energy-hud .energy-pip { width: 16px; height: 12px; border-width: 1px 2px; }
+    .energy-emblem { width: 25px; height: 25px; display: grid; place-items: center; color: #ffd18a; border: 1px solid #ac826e; background: #453047; }
+    .energy-emblem svg { width: 16px; height: 16px; fill: currentColor; }
+    .hud-subtext { color: var(--muted); font: 600 11px/1.2 "Courier New",monospace; }
+    .top-actions { display: flex; align-items: center; gap: 7px; }
+    .utility-button {
+      min-height: 39px;
+      padding: 0 11px;
+      border: 1px solid #73687e;
+      background: #29263c;
+      color: var(--cream);
+      font: 700 11px/1 "Courier New",monospace;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease;
+    }
+    .utility-button:hover:not(:disabled) { background: #3a304b; border-color: var(--coral-soft); }
+    .utility-button:disabled { color: #b4adbe; cursor: not-allowed; }
+    .sound-button[aria-pressed="true"] { border-color: var(--coral); color: #ffbac4; }
+    .sound-button[aria-pressed="false"] { color: var(--muted); }
+
+    .game-layout {
+      display: grid;
+      grid-template-columns: minmax(190px,.68fr) minmax(470px,2fr) minmax(220px,.78fr);
+      grid-template-rows: auto minmax(0,1fr) auto;
+      align-items: stretch;
+      min-height: 0;
+      gap: 8px;
+      padding: 8px 4px 2px;
+      overflow: hidden;
+    }
+    .rail, .board-panel { min-width: 0; min-height: 0; border: 1px solid var(--line); background: #191e35; }
+    .rail { padding: 9px; }
+    .rail-heading {
+      margin: 0 0 11px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--cream);
+      font: 700 11px/1.25 "Courier New",monospace;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .rail-heading small { color: var(--coral-soft); font: inherit; font-size: 11px; white-space: nowrap; }
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 7px 0; }
+    .stat-cell { min-height: 48px; padding: 6px; border: 1px solid #49455e; background: #14192f; }
+    .stat-cell strong { display: block; margin-top: 6px; color: var(--cream); font: 700 19px/1 "Courier New",monospace; font-variant-numeric: tabular-nums; }
+    .stat-cell span { display: block; color: var(--muted); font: 700 11px/1.2 "Courier New",monospace; letter-spacing: .03em; text-transform: uppercase; }
+    .run-note { display: grid; grid-template-columns: 11px 1fr; gap: 8px; padding: 7px 8px; border-top: 1px solid #4e465f; border-bottom: 1px solid #4e465f; color: #ded4df; font-size: 11px; }
+    .run-note-mark { width: 8px; height: 8px; margin-top: 4px; background: var(--coral); box-shadow: 0 0 0 3px rgba(241,77,109,.12); }
+    .run-note p { margin: 0; }
+    .enemy-energy {
+      margin-top: 10px;
+      padding: 9px;
+      border: 1px solid #514a64;
+      background: #14192f;
+    }
+    .enemy-energy-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
+    .enemy-energy-head strong { color: var(--cream); font: 700 12px/1 "Courier New",monospace; }
+    .enemy-energy .energy-pip { width: 18px; height: 10px; }
+    .enemy-energy .energy-pip.on { background: #b684a3; border-color: #e2bad2; }
+    .enemy-energy-note { margin: 6px 0 0; color: var(--muted); font-size: 12px; }
+
+    .board-panel { padding: 6px; display:grid; grid-template-rows:auto minmax(0,1fr) auto auto; align-items:center; container-type:size; overflow:hidden; }
+    .board-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+    .board-heading h2 { margin: 2px 0 0; color: var(--cream); font: 700 clamp(12px,1.2vw,16px)/1.2 "Courier New",monospace; letter-spacing: .06em; text-transform: uppercase; }
+    .board-heading .eyebrow { color: var(--coral-soft); }
+    .enemy-signal {
+      display: grid;
+      grid-template-columns: 32px minmax(0,1fr) auto;
+      align-items: center;
+      gap: 9px;
+      margin: 0;
+      padding: 6px 8px;
+      border: 1px solid #76617e;
+      background: #211b32;
+      transition: border-color .18s cubic-bezier(.23,1,.32,1), transform .18s cubic-bezier(.23,1,.32,1);
+    }
+    .enemy-signal.signal-pulse { border-color: var(--coral-soft); transform: translateY(-2px); }
+    .signal-mark {
+      width: 27px;
+      height: 27px;
+      display: grid;
+      place-items: center;
+      color: var(--night);
+      background: var(--coral-soft);
+      font: 700 13px/1 "Courier New",monospace;
+    }
+    .signal-copy { min-width: 0; }
+    .signal-copy strong { display: block; color: var(--cream); font: 700 11px/1.2 "Courier New",monospace; letter-spacing: .04em; text-transform: uppercase; }
+    .signal-copy p { margin: 3px 0 0; color: #d4cad6; font-size: 12px; }
+    .signal-state { color: var(--coral-soft); font: 700 11px/1.2 "Courier New",monospace; text-align: right; text-transform: uppercase; }
+    .turn-flag { max-width: 52%; padding: 6px 8px; border: 1px solid #776580; color: var(--cream); background: #252139; font: 700 11px/1.15 "Courier New",monospace; letter-spacing: .04em; text-align: right; text-transform: uppercase; }
+    .turn-flag.player-turn { border-color: var(--coral); color: #ffb1bb; }
+    .turn-flag.thinking { color: #e5d5a7; }
+    .turn-flag.game-over { border-color: var(--green); color: var(--green); }
+    .board-frame { width:min(100%,840px,calc(56vh - 40px)); width:min(100%,840px,calc(100cqh - 56px)); aspect-ratio:1; min-height:0; justify-self:center; align-self:center; padding:6px; border:2px solid #b69c9e; background:#201a30; box-shadow:0 7px 17px rgba(0,0,0,.28); }
+    .board { width:100%; height:100%; display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); grid-template-rows:repeat(8,minmax(0,1fr)); gap:2px; aspect-ratio:1; background:#2c243b; border:2px solid #2c243b; touch-action:manipulation; }
+    .square { aspect-ratio: 1; border: 0; padding: 0; display: grid; place-items: center; position: relative; overflow: hidden; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .square.light { background: #edddb9; }
+    .square.dark { background: #866c8d; }
+    .square:hover { filter: brightness(1.08); }
+    .square:focus-visible { z-index: 2; outline: 3px solid var(--coral); outline-offset: -4px; }
+    .square.last-from::before, .square.last-to::before { content: ""; position: absolute; inset: 0; background: rgba(241,77,109,.23); pointer-events: none; }
+    .square.selected { z-index: 1; box-shadow: inset 0 0 0 4px var(--coral); }
+    .square.in-check { box-shadow: inset 0 0 0 5px #f14d6d; }
+    .square-status {
+      display: none;
+      position: absolute;
+      z-index: 3;
+      top: 3px;
+      right: 3px;
+      width: 15px;
+      height: 17px;
+      place-items: center;
+      color: var(--night);
+      border: 1px solid var(--night);
+      background: #e8d2a3;
+    }
+    .square-status.active { display: grid; }
+    .square-status.enemy { background: #eed8a8; }
+    .square-status svg { display: block; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: square; }
+    .square.blocked-target { outline: 3px dashed #f4bd7d; outline-offset: -5px; }
+    .square.marked-piece .piece { text-decoration: underline; text-decoration-color: var(--coral); text-decoration-thickness: 3px; }
+    .square.snared-piece .piece, .square.staggered-piece .piece { filter: grayscale(1); }
+    .square.last-to .piece { animation: piece-land .18s steps(2,end); }
+    .square.capture-origin::after { content:""; position:absolute; z-index:2; width:26%; aspect-ratio:1; border:2px solid rgba(241,77,109,.9); box-shadow:0 0 8px rgba(241,77,109,.75); pointer-events:none; animation:capture-trail .34s ease-out both; }
+    .square.capture-impact .piece { animation: capture-landing .36s cubic-bezier(.16,.82,.26,1.18) both; }
+    .capture-effect { position:absolute; inset:0; z-index:4; display:none; overflow:visible; pointer-events:none; }
+    .capture-effect.active { display:block; }
+    .capture-ghost { position:absolute; z-index:1; inset:0; display:grid; place-items:center; font:400 clamp(27px,4.3vw,53px)/1 Georgia,"Times New Roman",serif; transform:translateY(-2%); }
+    .capture-ghost.white { color:#fff4da; text-shadow:1px 1px 0 #241b35,-1px -1px 0 #241b35,1px -1px 0 #241b35,-1px 1px 0 #241b35,2px 3px 0 #241b35; }
+    .capture-ghost.black { color:#171426; text-shadow:1px 1px 0 #f5e7c6,-1px -1px 0 #f5e7c6,1px -1px 0 #f5e7c6,-1px 1px 0 #f5e7c6,2px 3px 0 rgba(23,20,38,.48); }
+    .capture-ghost.shattering { animation: piece-shatter .43s steps(4,end) both; }
+    .capture-burst { position:absolute; z-index:2; inset:9%; border:3px solid #fff0c6; box-shadow:0 0 0 3px rgba(241,77,109,.65),inset 0 0 15px rgba(255,240,198,.75); animation:capture-flash .42s steps(3,end) both; }
+    .capture-burst::after { content:""; position:absolute; inset:12%; background:#f14d6d; clip-path:polygon(45% 0,60% 32%,100% 20%,69% 48%,92% 78%,56% 65%,37% 100%,35% 62%,0 72%,28% 43%,8% 15%); animation:capture-pixels .42s steps(3,end) both; }
+    .square.enemy-ward { box-shadow: inset 0 0 0 3px #f0dcae; }
+    .square.player-ward { box-shadow: inset 0 0 0 3px #f18aa0; }
+    @keyframes piece-land { from { transform: translateY(-12%) scale(.9); opacity: .65; } to { transform: translateY(-2%) scale(1); opacity: 1; } }
+    @keyframes capture-trail { 0% { opacity:0; transform:scale(.25); } 25% { opacity:.9; } 100% { opacity:0; transform:scale(1.55); } }
+    @keyframes capture-landing { 0% { transform:translateY(-22%) scale(1.24); filter:brightness(1.8); } 62% { transform:translateY(4%) scale(.9); } 100% { transform:translateY(-2%) scale(1); filter:brightness(1); } }
+    @keyframes piece-shatter { 0% { opacity:1; transform:translateY(-2%) scale(1) rotate(0); filter:brightness(1); } 35% { opacity:.9; transform:translate(-2px,-8%) scale(1.08) rotate(-7deg); filter:brightness(1.9); } 100% { opacity:0; transform:translate(3px,-22%) scale(.58) rotate(13deg); filter:brightness(2); } }
+    @keyframes capture-flash { 0% { opacity:0; transform:scale(.48) rotate(-8deg); } 22% { opacity:1; transform:scale(1.06) rotate(3deg); } 62% { opacity:.9; transform:scale(.92) rotate(-2deg); } 100% { opacity:0; transform:scale(1.22) rotate(5deg); } }
+    @keyframes capture-pixels { 0%,20% { opacity:0; transform:scale(.25); } 38% { opacity:.9; transform:scale(1.12); } 100% { opacity:0; transform:scale(1.42); } }
+    .square.move-hint::after { content: ""; position: absolute; width: 22%; aspect-ratio: 1; border-radius: 50%; background: rgba(18,17,35,.42); pointer-events: none; }
+    .square.capture-hint::after { content: ""; position: absolute; inset: 7%; border: 4px solid rgba(241,77,109,.85); border-radius: 50%; pointer-events: none; }
+    .piece { z-index: 1; position: relative; font: 400 clamp(27px,4.3vw,53px)/1 Georgia,"Times New Roman",serif; user-select: none; transform: translateY(-2%); }
+    .piece.white { color: #fff4da; text-shadow: 1px 1px 0 #241b35,-1px -1px 0 #241b35,1px -1px 0 #241b35,-1px 1px 0 #241b35,2px 3px 0 #241b35; }
+    .piece.black { color: #171426; text-shadow: 1px 1px 0 #f5e7c6,-1px -1px 0 #f5e7c6,1px -1px 0 #f5e7c6,-1px 1px 0 #f5e7c6,2px 3px 0 rgba(23,20,38,.48); }
+    .coordinate { position: absolute; z-index: 2; left: 4px; bottom: 2px; color: rgba(17,19,37,.72); font: 700 11px/1 "Courier New",monospace; pointer-events: none; }
+    .square.dark .coordinate { color: rgba(255,240,206,.74); }
+    .board-status-row { min-height: 18px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 2px 0; }
+    .board-status { min-width:0; margin: 0; color: var(--cream); font-size: 11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .board-hint { color: var(--muted); font: 700 11px/1.2 "Courier New",monospace; letter-spacing: .02em; text-align: right; text-transform: uppercase; }
+    .promotion-dialog { width:min(440px,calc(100vw - 28px)); max-width:none; padding:18px; border:2px solid var(--cream); color:var(--cream); background:linear-gradient(145deg,#28243c,#14192f 72%); box-shadow:0 0 0 5px var(--mauve-deep),0 18px 44px rgba(0,0,0,.65); text-align:center; }
+    .promotion-dialog::backdrop { background:rgba(7,9,18,.82); }
+    .promotion-dialog h2 { margin:5px 0 6px; font:700 18px/1.2 "Courier New",monospace; text-transform:uppercase; }
+    .promotion-dialog p { margin:0 0 14px; color:var(--muted); font-size:12px; }
+    .promotion-options { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+    .promotion-choice { min-width:0; min-height:78px; display:grid; place-items:center; align-content:center; gap:3px; border:2px solid #82728a; background:#211d34; color:var(--cream); cursor:pointer; font:700 11px/1.1 "Courier New",monospace; text-transform:uppercase; }
+    .promotion-choice:hover { border-color:var(--coral-soft); background:#34273f; }
+    .promotion-piece { color:#fff4da; font:400 34px/1 Georgia,"Times New Roman",serif; text-shadow:1px 1px 0 #241b35,-1px -1px 0 #241b35,1px -1px 0 #241b35,-1px 1px 0 #241b35,2px 3px 0 #241b35; }
+    .effect-strip { display:flex; flex-wrap:nowrap; gap:6px; min-height:20px; max-height:28px; padding:2px 1px 0; overflow-x:auto; overflow-y:hidden; scrollbar-width:thin; }
+    .effect-chip { flex:0 0 auto; padding:3px 6px; border:1px solid #8e748e; color:#f3dfba; background:#2a233a; font:700 10px/1.15 "Courier New",monospace; }
+    .effect-chip.enemy-effect { border-color: #d88a9c; color: #ffc0c9; }
+    .effect-empty { color: var(--muted); font-size: 12px; }
+    .move-ledger { min-height:0; margin-top:0; padding:8px; border:1px solid #514a64; background:#14192f; overflow:hidden; }
+    .ledger-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; margin-bottom: 6px; }
+    .ledger-top h3 { margin: 0; color: var(--cream); font: 700 11px/1.2 "Courier New",monospace; letter-spacing: .08em; text-transform: uppercase; }
+    .ledger-top span { color: var(--muted); font: 700 11px/1.2 "Courier New",monospace; text-transform: uppercase; }
+    .move-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 4px 9px; list-style: none; margin: 0; padding: 0; }
+    .move-list li { display: flex; justify-content: space-between; gap: 6px; padding: 4px 2px; border-bottom: 1px solid #37344b; color: #e7ddcf; font: 700 11px/1.2 "Courier New",monospace; font-variant-numeric: tabular-nums; }
+    .move-list li span:last-child { color: var(--muted); }
+    .empty-ledger { margin: 0; color: var(--muted); font-size: 12px; }
+    .hero-rail { grid-column:1; grid-row:2; }
+    .board-panel { grid-column:2; grid-row:2; }
+    .battle-rail { grid-column:3; grid-row:2; display:grid; grid-template-rows:auto minmax(0,1fr); gap:7px; overflow:hidden; }
+    .battle-rail .move-ledger { margin-top:0; }
+    .battle-rail .enemy-signal { grid-template-columns:25px minmax(0,1fr) auto; gap:6px; }
+    .battle-rail .signal-mark { width:22px; height:22px; font-size:11px; }
+    .battle-rail .signal-copy p { font-size:11px; line-height:1.2; }
+    .enemy-skill-profile { grid-column:1 / -1; grid-row:1; min-width:0; min-height:0; display:grid; grid-template-columns:minmax(220px,.72fr) minmax(0,1.28fr); grid-template-rows:auto; align-items:center; gap:10px; padding:7px 10px; border:1px solid #514a64; background:#14192f; }
+    .enemy-profile-heading { min-width:0; display:flex; align-items:center; gap:8px; }
+    .enemy-profile-avatar { width:46px; height:48px; flex:0 0 auto; display:grid; place-items:center; color:#fff0d0; border:2px solid #d2bca0; background:#302740; box-shadow:inset 0 0 0 3px #17172c; font:400 31px/1 Georgia,serif; text-shadow:2px 2px 0 #161527; }
+    .enemy-profile-copy { min-width:0; display:flex; flex-direction:column; gap:3px; }
+    .enemy-profile-copy .eyebrow { color:var(--coral-soft); font-size:11px; }
+    .enemy-profile-copy strong { overflow:hidden; color:var(--cream); font:700 12px/1.15 "Courier New",monospace; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }
+    .enemy-profile-copy small { color:var(--muted); font:600 11px/1.2 "Courier New",monospace; }
+    .enemy-skill-profile .enemy-energy { min-width:0; min-height:0; margin:0; display:grid; grid-template-columns:auto minmax(0,1fr); grid-template-rows:auto auto; align-items:center; gap:4px 10px; padding:0; border:0; background:transparent; }
+    .enemy-skill-profile .enemy-energy-head { grid-column:1 / -1; margin:0; }
+    .enemy-skill-profile .enemy-energy .energy-track { grid-column:1 / -1; gap:4px; }
+    .enemy-skill-profile .enemy-energy-note { grid-column:1 / -1; margin:0; font-size:11px; }
+    .skill-rail { grid-column:1 / -1; grid-row:3; position:relative; display:grid; grid-template-columns:subgrid; grid-template-rows:auto; column-gap:inherit; row-gap:10px; padding:0; min-height:0; overflow:visible; border:0; background:transparent; }
+    .skill-rail::before { content:""; position:absolute; inset:0; z-index:0; border:1px solid var(--line); background:#191e35; pointer-events:none; }
+    .skill-tools { grid-column:1; grid-row:1; min-width:0; padding:8px; position:relative; z-index:1; }
+    .player-skill-profile { min-width:0; min-height:0; height:100%; display:grid; grid-template-rows:auto minmax(0,1fr); align-content:start; gap:7px; padding:8px; border:1px solid #514a64; background:#14192f; }
+    .player-profile-heading { min-width:0; display:flex; align-items:center; gap:8px; }
+    .player-profile-avatar { width:37px; height:39px; flex:0 0 auto; display:grid; place-items:center; color:#fff0d0; border:2px solid #d2bca0; background:#302740; box-shadow:inset 0 0 0 3px #17172c; font:400 26px/1 Georgia,serif; text-shadow:2px 2px 0 #161527; }
+    .player-profile-copy { min-width:0; display:flex; flex-direction:column; gap:3px; }
+    .player-profile-copy .micro-label { color:var(--coral-soft); font-size:11px; }
+    .player-profile-copy strong { overflow:hidden; color:var(--cream); font:700 12px/1.15 "Courier New",monospace; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }
+    .player-profile-copy small { color:var(--muted); font:600 11px/1.2 "Courier New",monospace; }
+    .player-skill-profile .energy-hud { min-width:0; min-height:0; display:flex; flex-direction:column; align-items:stretch; justify-content:space-between; gap:6px; padding:0; border:0; background:transparent; }
+    .player-skill-profile .energy-hud .hud-label { margin:0; color:#e6d7db; font-size:11px; white-space:nowrap; }
+    .player-skill-profile .energy-hud .energy-row { gap:4px; }
+    .player-skill-profile .energy-hud .energy-track { gap:2px; }
+    .player-skill-profile .energy-hud .energy-pip { width:13px; height:9px; }
+    .player-skill-profile .energy-hud .hud-subtext { color:#c9bbc9; font-size:9px; }
+    .skill-tools .free-card-note { width:100%; }
+    .free-card-note { min-width:0; display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:5px; padding:5px 6px; border:1px solid #625c70; color:#ded4df; background:#211c34; font:700 11px/1.2 "Courier New",monospace; text-transform:uppercase; }
+    .free-token { padding:3px 4px; color:#f2dda9; border:1px solid #998258; background:#453a30; white-space:nowrap; }
+    .free-card-note > span:nth-child(2) { color:#c9bbc9; }
+    .free-card-note strong { color:#9acb9d; text-align:right; }
+    .roll-availability { min-height:34px; display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:6px 9px; border:1px solid #8e748e; color:#f1dcae; background:#211c34; font:700 11px/1 "Courier New",monospace; letter-spacing:.025em; white-space:nowrap; cursor:pointer; transition:transform .18s cubic-bezier(.23,1,.32,1),border-color .16s ease,background .16s ease; }
+    .roll-availability svg { width:15px; height:15px; flex:0 0 auto; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:square; stroke-linejoin:miter; }
+    .roll-availability:hover:not(:disabled) { transform:translateY(-1px); border-color:var(--coral-soft); color:#fff; background:#49344f; }
+    .roll-availability:focus-visible { outline:3px solid #fff0bf; outline-offset:3px; }
+    .roll-availability:disabled { color:#aaa0ad; background:#4a4450; cursor:not-allowed; }
+    .skill-rail > .roll-availability { grid-column:3; grid-row:1; min-height:150px; margin:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:9px; padding:14px 10px; border-color:#c88c91; color:#fff0d0; background:#38243b; font-size:14px; line-height:1.25; text-align:center; white-space:normal; position:relative; z-index:1; }
+    .skill-rail > .roll-availability svg { width:38px; height:38px; }
+    .skill-rail > .roll-availability:hover:not(:disabled) { border-color:var(--coral-soft); background:#49304a; }
+    .roll-counter { color:inherit; font:inherit; }
+    .roll-caption { color:#e3d4d8; font:600 11px/1.25 "Courier New",monospace; }
+    .skill-list { grid-column:2; grid-row:1; width:100%; max-width:706px; padding:8px 0; justify-self:center; position:relative; z-index:1; display:grid; grid-template-columns:repeat(3,minmax(0,228px)); justify-content:center; align-items:stretch; align-content:center; gap:14px; }
+    .skill-card { --card-accent:#ff829e; --card-dark:#43283f; --card-art-tint:rgba(255,130,158,.2); position:relative; min-width:0; display:flex; flex-direction:column; gap:5px; perspective:900px; }
+    .skill-card.kind-defense { --card-accent:#c6a8d8; --card-dark:#3e3452; --card-art-tint:rgba(198,168,216,.2); }
+    .skill-card.kind-spell { --card-accent:#9dc4e4; --card-dark:#263d56; --card-art-tint:rgba(157,196,228,.2); }
+    .skill-card.kind-consumable { --card-accent:#e6b8d1; --card-dark:#493344; --card-art-tint:rgba(230,184,209,.2); }
+    .skill-card.kind-joker { --card-accent:#f3d477; --card-dark:#50402b; --card-art-tint:rgba(243,212,119,.24); }
+    .card-play { --tilt-x:0deg; --tilt-y:0deg; isolation:isolate; width:100%; aspect-ratio:.93; min-height:clamp(218px,25vh,244px); display:grid; grid-template-rows:auto 68px 1fr auto; gap:5px; position:relative; padding:14px 13px 12px; border:0; color:var(--cream); background:transparent; box-shadow:none; cursor:pointer; text-align:left; transform:translateY(0) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)); transform-style:preserve-3d; transition:transform .28s cubic-bezier(.22,1,.36,1),filter .16s ease; }
+    .card-play::before, .card-play::after { content:""; position:absolute; z-index:-1; pointer-events:none; clip-path:polygon(10px 0,calc(100% - 10px) 0,calc(100% - 10px) 4px,calc(100% - 4px) 4px,calc(100% - 4px) 10px,100% 10px,100% calc(100% - 10px),calc(100% - 10px) calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,10px calc(100% - 4px),4px calc(100% - 4px),4px calc(100% - 10px),0 calc(100% - 10px),0 10px,4px 10px,4px 4px,10px 4px); }
+    .card-play::before { inset:0; background:#e1c9a1; transition:background .16s ease; }
+    .card-play::after { inset:5px; background:var(--card-dark); box-shadow:inset 0 0 0 2px #98819a,inset 0 0 0 4px #302a42; }
+    .card-play > * { position:relative; z-index:1; }
+    .card-play:disabled, .card-play.unaffordable { color:#c2b8bc; filter:grayscale(.78) saturate(.42); cursor:not-allowed; }
+    .card-play:disabled::before, .card-play.unaffordable::before { background:#aaa0a8; }
+    .card-play.active::before { background:#ff829e; }
+    .card-play.active { transform:translateY(-8px) scale(1.018) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)); }
+    .skill-card.kind-joker .card-play::before { background:linear-gradient(105deg,#ac7934 0%,#f3d477 24%,#fff2b3 42%,#c59143 62%,#ffedaa 82%,#ac7934 100%); background-size:220% 100%; animation:joker-frame-shine 3.8s linear infinite; }
+    .skill-card.kind-joker .card-play::after { box-shadow:inset 0 0 0 2px #e7c66b,inset 0 0 0 4px #302a42; }
+    .skill-card.kind-joker .card-play:disabled::before, .skill-card.kind-joker .card-play.unaffordable::before { background:#aaa0a8; animation:none; }
+    .card-play:active:not(:disabled) { transform:translateY(-1px) scale(.985) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)); transition-duration:.08s; }
+    .card-play:focus-visible { outline: 3px solid #fff0bf; outline-offset: 3px; }
+    .card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; min-height:24px; padding:4px 7px; color:#29233a; background:#efe1bf; clip-path:polygon(4px 0,calc(100% - 4px) 0,calc(100% - 4px) 2px,100% 2px,100% calc(100% - 4px),calc(100% - 4px) calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,4px calc(100% - 2px),0 calc(100% - 2px),0 4px,4px 4px); }
+    .card-kind { display: inline-flex; align-items: center; gap: 5px; min-width: 0; color: var(--card-dark); font: 700 11px/1 "Courier New",monospace; letter-spacing: .03em; text-transform: uppercase; }
+    .card-kind-mark { width: 11px; height: 11px; flex: 0 0 auto; border: 2px solid currentColor; background: var(--card-accent); }
+    .card-cost { min-height: 22px; display: inline-grid; place-items: center; color: #fff0d0; background: var(--card-dark); box-shadow:inset 0 0 0 1px var(--card-accent); padding: 4px 6px; font: 700 12px/1 "Courier New",monospace; white-space: nowrap; }
+    .card-cost.free { color:#e4f2f1; background:#2e4852; box-shadow:inset 0 0 0 1px #9dc4e4; }
+    .card-discount { color:var(--card-dark); font:700 9px/1 "Courier New",monospace; white-space:nowrap; }
+    .card-art { display: grid; place-items: center; position: relative; overflow: hidden; color: var(--card-accent); border:2px solid var(--card-accent); background-color:#211d35; background-image:linear-gradient(rgba(17,19,39,.14),rgba(17,19,39,.14)),conic-gradient(var(--card-art-tint) 25%,transparent 0 50%,var(--card-art-tint) 0 75%,transparent 0); background-size:auto,14px 14px; image-rendering:pixelated; }
+    .card-art::before { content:""; position:absolute; inset:4px; border:1px solid rgba(243,228,196,.64); box-shadow:inset 0 0 0 2px rgba(30,28,49,.62); pointer-events:none; }
+    .card-art svg { width: 64px; height: 64px; position: relative; z-index: 1; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: square; stroke-linejoin: miter; shape-rendering:crispEdges; filter: drop-shadow(2px 2px 0 rgba(20,17,31,.72)); }
+    .card-copy { min-width:0; padding:6px; color:#332a3c; background:#eadbb8; clip-path:polygon(4px 0,calc(100% - 4px) 0,calc(100% - 4px) 2px,100% 2px,100% calc(100% - 4px),calc(100% - 4px) calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,4px calc(100% - 2px),0 calc(100% - 2px),0 4px,4px 4px); }
+    .card-title { display:block; margin:0 0 4px; color:#211a2a; font:700 13px/1.15 "Courier New",monospace; text-transform:uppercase; }
+    .card-description { display:block; margin:0; color:#433947; font-size:12px; line-height:1.28; }
+    .card-state { display:flex; justify-content:space-between; align-items:center; gap:4px; padding:5px 3px 0; border-top:1px solid rgba(243,228,196,.48); color:#f1e4ca; font:700 11px/1.15 "Courier New",monospace; text-transform:uppercase; }
+    .card-state strong { color:var(--card-accent); text-align:right; }
+    .skill-card.kind-joker .card-top { background:#f5e8c8; box-shadow:inset 0 0 0 1px #d2aa53; }
+    .skill-card.kind-joker .card-art { border-color:#f3d477; background-color:#29223a; background-image:radial-gradient(1.5px 1.5px at 17% 24%,rgba(255,239,177,.9) 0 1px,transparent 1.7px),radial-gradient(1.5px 1.5px at 78% 31%,rgba(255,239,177,.82) 0 1px,transparent 1.7px),radial-gradient(2px 2px at 70% 77%,rgba(255,239,177,.75) 0 1px,transparent 2px),linear-gradient(rgba(17,19,39,.12),rgba(17,19,39,.12)),conic-gradient(var(--card-art-tint) 25%,transparent 0 50%,var(--card-art-tint) 0 75%,transparent 0); background-size:100% 100%,100% 100%,100% 100%,auto,14px 14px; }
+    .skill-card.kind-joker .card-art::before { border-color:#f3d477; }
+    .skill-card.kind-joker:not(.dealing) .card-art::after { content:""; position:absolute; inset:0; background:radial-gradient(1.5px 1.5px at 34% 42%,#fff2b3 0 1px,transparent 1.7px),radial-gradient(2px 2px at 63% 59%,#ffe28a 0 1px,transparent 2px); opacity:.45; animation:joker-sparkle 2.2s steps(2,end) infinite; pointer-events:none; }
+    .skill-card.rolling .card-art svg { animation:card-shuffle .42s steps(3,end); }
+    .skill-card.dealing { animation:card-deal .46s cubic-bezier(.2,.9,.25,1.25) both; }
+    .skill-card.dealing .card-art::after { content:""; position:absolute; inset:0; background:linear-gradient(115deg,transparent 20%,rgba(255,245,205,.42) 48%,transparent 72%); transform:translateX(-110%); animation:card-glint .42s ease-out .06s both; pointer-events:none; }
+    @keyframes card-shuffle { 0% { transform:translateY(0) rotate(0); opacity:1; } 25% { transform:translateY(-6px) rotate(-5deg); opacity:.3; } 58% { transform:translateY(2px) rotate(4deg); opacity:.65; } 100% { transform:translateY(0) rotate(0); opacity:1; } }
+    @keyframes card-deal { 0% { transform:translateY(18px) rotate(-4deg) rotateY(-16deg) scale(.94); opacity:.15; } 68% { transform:translateY(-4px) rotate(1deg) rotateY(2deg) scale(1.02); opacity:1; } 100% { transform:translateY(0) rotate(0) rotateY(0) scale(1); opacity:1; } }
+    @keyframes card-glint { to { transform:translateX(110%); } }
+    @keyframes joker-frame-shine { to { background-position:220% 0; } }
+    @keyframes joker-sparkle { 0%,100% { opacity:.25; } 50% { opacity:.8; } }
+    .deck-note { display:none; }
+    .cabinet-footer { display:none; }
+    .cabinet-footer span:last-child { color: var(--coral-soft); text-align: right; }
+
+    @media (min-width: 1500px) {
+      .game-layout { grid-template-columns: 228px minmax(0,1fr) 286px; gap: 12px; }
+    }
+    @media (hover:hover) and (pointer:fine) {
+      .card-play:hover:not(:disabled):not(.active) { transform:translateY(-5px) scale(1.012) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)); filter:brightness(1.08); }
+    }
+    @media (max-width: 1120px) {
+      .topbar { grid-template-columns:minmax(0,1fr) auto; gap:5px; }
+      .topbar .hud-box { display:none; }
+      .top-actions { grid-column:2; grid-row:1; justify-content:flex-end; }
+      .game-layout { grid-template-columns:minmax(132px,.42fr) minmax(0,1.5fr) minmax(154px,.52fr); gap:6px; }
+      .rail { padding:7px; }
+      .board-panel { padding:6px; }
+      .board-heading h2 { font-size:12px; }
+      .signal-copy p { font-size:10px; }
+      .enemy-skill-profile { grid-template-columns:minmax(150px,.75fr) minmax(0,1.25fr); gap:7px; padding:6px 8px; }
+      .skill-rail { grid-template-rows:auto auto; column-gap:inherit; row-gap:8px; }
+      .skill-tools { grid-column:1 / 3; grid-row:1; }
+      .skill-tools .energy-hud { justify-content:center; gap:5px; padding:6px; }
+      .skill-tools .energy-hud .hud-label { font-size:11px; }
+      .skill-tools .energy-hud .hud-subtext, .skill-tools .energy-hud .energy-emblem { display:none; }
+      .skill-tools .energy-hud .energy-row { gap:3px; }
+      .skill-tools .energy-hud .energy-pip { width:11px; height:9px; }
+      .skill-tools .energy-hud .energy-number { font-size:11px; }
+      .skill-tools .free-card-note { gap:3px; padding:3px 4px; font-size:11px; }
+      .skill-rail > .roll-availability { grid-column:3; grid-row:1; min-height:68px; margin:7px; gap:5px; padding:8px; font-size:12px; }
+      .skill-rail > .roll-availability svg { width:25px; height:25px; }
+      .skill-list { grid-column:2; grid-row:2; width:min(604px,calc(100vw - 32px)); max-width:none; padding:0 0 8px; grid-template-columns:repeat(3,minmax(0,192px)); gap:10px; }
+      .card-play { min-height:clamp(190px,23vh,218px); grid-template-rows:auto 58px 1fr auto; padding:12px 11px 10px; gap:4px; }
+      .card-kind { font-size:10px; }
+      .card-description { font-size:10px; line-height:1.18; }
+      .card-state { padding-top:4px; font-size:9px; }
+    }
+    @media (max-width: 720px) {
+      .topbar { grid-template-columns:minmax(0,1fr) auto; gap:4px; padding:2px 2px 6px; }
+      .brand { grid-column:1; min-height:37px; padding:1px 3px; gap:8px; }
+      .brand-mark { width:31px; height:32px; font-size:21px; }
+      h1 { font-size:12px; }
+      .brand-copy p { font-size:9px; }
+      .topbar .hud-box { display:none; }
+      .energy-hud .hud-label { font-size:9px; }
+      .energy-row { gap:4px; }
+      .energy-emblem { width:19px; height:19px; }
+      .energy-emblem svg { width:12px; height:12px; }
+      .energy-hud .energy-track { gap:2px; }
+      .energy-hud .energy-pip { width:10px; height:8px; }
+      .energy-number { font-size:11px; }
+      .hud-subtext { font-size:8px; }
+      .top-actions { grid-column:2; grid-row:1; justify-content:flex-end; gap:3px; }
+      .top-actions .utility-button { width:34px; min-width:34px; min-height:44px; padding:0; font-size:0; }
+      .top-actions .sound-button::after { content:"♫"; font:700 15px/1 "Courier New",monospace; }
+      .top-actions #undo-button::after { content:"↶"; font:700 19px/1 "Courier New",monospace; }
+      .top-actions #reset-button::after { content:"↻"; font:700 18px/1 "Courier New",monospace; }
+      .game-layout { grid-template-columns:minmax(0,1fr); grid-template-rows:auto minmax(0,1fr) auto auto; gap:5px; padding:5px 0 0; }
+      .hero-rail { display:none; }
+      .enemy-skill-profile { grid-column:1; grid-row:1; grid-template-columns:minmax(0,1fr) minmax(0,1fr); grid-template-rows:auto; align-items:center; gap:5px; padding:5px; }
+      .board-panel { grid-column:1; grid-row:2; padding:5px; }
+      .board-frame { width:min(100%,840px,calc(100cqh - 56px)); padding:4px; }
+      .board-heading { margin-bottom:3px; }
+      .board-heading h2 { font-size:11px; }
+      .board-heading .eyebrow { font-size:9px; }
+      .turn-flag { max-width:52%; padding:4px 5px; font-size:9px; }
+      .piece { font-size:clamp(22px,8vw,39px); }
+      .coordinate { left:2px; bottom:1px; font-size:9px; }
+      .board-status-row { min-height:18px; gap:4px; padding-top:1px; }
+      .board-status { font-size:9px; }
+      .board-hint { max-width:32%; font-size:8px; }
+      .effect-strip { min-height:19px; max-height:24px; gap:4px; padding-top:1px; }
+      .effect-chip { padding:2px 4px; font-size:8px; }
+      .skill-rail { grid-column:1; grid-row:3; grid-template-columns:minmax(0,1fr) minmax(120px,min(190px,42%)); grid-template-rows:auto auto; gap:5px; padding:0; }
+      .enemy-profile-heading { grid-column:1; grid-row:1; gap:6px; }
+      .enemy-profile-avatar { width:29px; height:31px; font-size:21px; }
+      .enemy-profile-copy { gap:2px; }
+      .enemy-profile-copy .eyebrow { font-size:11px; }
+      .enemy-profile-copy strong { font-size:11px; }
+      .enemy-profile-copy small { display:none; }
+      .enemy-skill-profile .enemy-energy { grid-column:2; grid-row:1; gap:3px; padding:4px; }
+      .enemy-energy-head { margin-bottom:3px; }
+      .enemy-energy-head .micro-label { font-size:11px; }
+      .enemy-energy-head strong { font-size:11px; }
+      .enemy-energy .energy-pip { width:12px; height:7px; }
+      .enemy-energy-note { display:none; }
+      .skill-tools { grid-column:1; grid-row:1; padding:5px; }
+      .player-skill-profile { grid-template-columns:minmax(0,1fr); grid-template-rows:auto auto; gap:4px; padding:5px; }
+      .player-profile-heading { gap:6px; }
+      .player-profile-avatar { width:27px; height:29px; font-size:19px; }
+      .player-profile-copy { gap:2px; }
+      .player-profile-copy .micro-label { font-size:11px; }
+      .player-profile-copy strong { font-size:11px; }
+      .player-profile-copy small { display:none; }
+      .skill-tools .energy-hud { display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:auto auto auto; align-content:center; justify-content:stretch; gap:3px; min-height:0; padding:4px; }
+      .skill-tools .energy-hud .hud-label { display:block; font-size:11px; }
+      .skill-tools .energy-hud .hud-subtext { display:none; }
+      .skill-tools .energy-hud .energy-row { justify-content:space-between; gap:4px; }
+      .skill-tools .energy-hud .energy-emblem { display:none; }
+      .skill-tools .energy-hud .energy-pip { width:11px; height:9px; }
+      .skill-tools .energy-hud .energy-track { gap:2px; }
+      .skill-tools .energy-hud .energy-number { font-size:11px; }
+      .skill-tools .free-card-note { gap:3px; padding:3px 4px; font-size:11px; }
+      .free-token { padding:2px 3px; }
+      .skill-rail > .roll-availability { grid-column:2; grid-row:1; min-height:58px; margin:5px; gap:3px; padding:5px 4px; font-size:11px; }
+      .roll-availability svg { width:14px; height:14px; }
+      .skill-rail > .roll-availability svg { width:25px; height:25px; }
+      .roll-caption { display:block; font-size:11px; }
+      .skill-list { grid-column:1 / -1; grid-row:2; width:100%; max-width:none; padding:0 5px 5px; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+      .skill-card { gap:3px; }
+      .card-play { aspect-ratio:.93; min-height:clamp(138px,17vh,152px); grid-template-rows:auto 38px 1fr auto; gap:3px; padding:9px 6px 7px; }
+      .card-play::after { inset:3px; box-shadow:inset 0 0 0 1px #98819a,inset 0 0 0 2px #302a42; }
+      .card-top { gap:2px; }
+      .card-kind { gap:0; font-size:0; }
+      .card-kind-mark { width:8px; height:8px; border-width:1px; }
+      .card-cost { min-height:17px; padding:3px; font-size:8px; }
+      .card-discount { display:none; }
+      .card-art svg { width:30px; height:30px; stroke-width:3.5; }
+      .card-art::before { inset:3px; }
+      .card-title { margin:0; font-size:9px; line-height:1.05; overflow-wrap:anywhere; }
+      .card-description { display:-webkit-box; overflow:hidden; -webkit-box-orient:vertical; -webkit-line-clamp:2; font-size:8px; line-height:1.08; }
+      .card-state { justify-content:center; padding-top:2px; font-size:8px; line-height:1; }
+      .card-state strong { display:none; }
+      .battle-rail { grid-column:1; grid-row:4; grid-template-columns:minmax(0,1fr); grid-template-rows:auto auto; gap:4px; padding:4px; }
+      .battle-rail .enemy-signal { grid-column:1 / -1; grid-row:1; grid-template-columns:19px minmax(0,1fr) auto; padding:4px 5px; gap:5px; }
+      .battle-rail .signal-mark { width:17px; height:17px; font-size:9px; }
+      .battle-rail .signal-copy .eyebrow { font-size:8px; }
+      .battle-rail .signal-copy strong { font-size:9px; }
+      .battle-rail .signal-copy p { display:none; }
+      .battle-rail .signal-state { font-size:8px; }
+      .battle-rail .move-ledger { grid-column:1; grid-row:2; padding:3px 5px; }
+      .ledger-top { margin:0 0 2px; }
+      .ledger-top h3 { font-size:8px; }
+      .ledger-top span { display:none; }
+      .move-list { grid-template-columns:repeat(3,minmax(0,1fr)); gap:2px; }
+      .move-list li { display:flex; flex-direction:column; gap:0; padding:1px; font-size:8px; }
+      .move-list li:nth-child(n+4) { display:none; }
+      .move-list li span:last-child { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:7px; }
+      .empty-ledger { font-size:8px; }
+    }
+    @media (max-height: 760px) {
+      .topbar { gap:5px; padding-bottom:5px; }
+      .topbar .hud-box { padding:5px 7px; }
+      .top-actions { justify-content:flex-end; }
+      .brand { padding-block:2px; }
+      .brand-mark { width:34px; height:35px; font-size:22px; }
+      .hud-box { padding:5px 7px; }
+      .utility-button { min-height:32px; }
+      .game-layout { gap:6px; padding-top:6px; }
+      .rail { padding:6px; }
+      .board-panel { padding:5px; }
+      .board-frame { padding:4px; }
+      .skill-rail { padding:0; }
+      .skill-tools { padding:6px; }
+      .skill-list { padding-block:0 6px; }
+      .skill-rail > .roll-availability { margin:6px; }
+      .enemy-skill-profile { min-height:0; gap:5px; padding:5px 6px; }
+      .enemy-profile-avatar { width:35px; height:36px; font-size:23px; }
+      .card-play { min-height:clamp(164px,21vh,190px); grid-template-rows:auto 48px 1fr auto; padding:6px; gap:3px; }
+      .card-art svg { width:36px; height:36px; }
+      .card-title { font-size:11px; }
+      .card-description { font-size:9px; line-height:1.1; }
+      .card-state { padding-top:2px; font-size:8px; }
+      .deck-note { display:none; }
+    }
+    @media (max-height: 680px) {
+      .card-play { aspect-ratio:1.05; min-height:106px; grid-template-rows:auto 24px 1fr auto; }
+      .card-art svg { width:26px; height:26px; }
+      .card-description { display:none; }
+      .battle-rail .move-ledger { display:none; }
+      .battle-rail { grid-template-columns:minmax(0,1fr); grid-template-rows:auto; }
+      .battle-rail .enemy-signal { grid-column:1; grid-row:1; }
+    }
+    @media (min-width: 721px) and (max-height: 760px) {
+      .skill-list { grid-template-columns:repeat(3,minmax(0,192px)); }
+      .card-play { aspect-ratio:.93; }
+    }
+    @media (min-width: 721px) and (max-height: 680px) {
+      .card-play { aspect-ratio:1.11; }
+    }
+    @media (max-width: 720px) and (max-height: 760px) {
+      .card-play { aspect-ratio:.92; }
+    }
+    @media (max-width: 720px) and (max-height: 680px) {
+      .top-actions { justify-content:stretch; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+      .square.last-to .piece { animation: none; }
+      .square.capture-origin::after, .square.capture-impact .piece, .capture-ghost.shattering, .capture-burst, .capture-burst::after { animation:none; }
+      .capture-ghost.shattering { opacity:.48; }
+      .capture-burst { opacity:.82; }
+      .enemy-signal.signal-pulse { transform: none; }
+      .skill-card.rolling .card-art svg, .skill-card.dealing { animation: none; }
+      .skill-card.kind-joker .card-play::before, .skill-card.kind-joker:not(.dealing) .card-art::after { animation:none; }
+      .card-play.active { transform:none; }
+      .card-play { transform:none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="cabinet">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">♔</div>
+        <div class="brand-copy">
+          <h1>Crown &amp; Catalyst</h1>
+          <p>Takhta taktis / prototipe</p>
+        </div>
+      </div>
+
+      <div class="hud-box">
+        <span class="hud-label">Lantai</span>
+        <span class="hud-value">01 <span style="color:var(--coral-soft)">/</span> Menara</span>
+      </div>
+      <div class="hud-box">
+        <span class="hud-label">Langkah</span>
+        <span class="hud-value" id="turn-count">01</span>
+      </div>
+
+      <div class="top-actions">
+        <button class="utility-button sound-button" id="sound-button" type="button" aria-label="Suara permainan" title="Aktifkan atau nonaktifkan suara permainan." aria-pressed="true">Suara: ON</button>
+        <button class="utility-button" id="undo-button" type="button" disabled aria-label="Batalkan satu giliran penuh">Batalkan giliran</button>
+        <button class="utility-button" id="reset-button" type="button" aria-label="Mulai ulang permainan" title="Mulai permainan dari posisi awal">Mulai ulang</button>
+      </div>
+    </header>
+
+    <main class="game-layout">
+      <aside class="enemy-skill-profile" aria-label="Profil lawan dan energi hitam">
+        <div class="enemy-profile-heading">
+          <span class="enemy-profile-avatar" aria-hidden="true">♚</span>
+          <span class="enemy-profile-copy"><span class="eyebrow">LAWAN / CPU</span><strong>Raja hitam</strong><small>Pasukan hitam</small></span>
+        </div>
+        <section class="enemy-energy" aria-label="Energi lawan">
+          <div class="enemy-energy-head"><span class="micro-label">Energi hitam</span><strong id="enemy-energy-number">02 / 05</strong></div>
+          <div class="energy-track" id="enemy-energy-track" aria-hidden="true"></div>
+          <p class="enemy-energy-note" id="enemy-energy-note">Lawan dapat memakai skill saat memiliki 2 EN.</p>
+        </section>
+      </aside>
+
+      <aside class="rail hero-rail" aria-label="Status pasukan putih">
+        <h2 class="rail-heading">Pasukan putih <small id="army-state">SIAP</small></h2>
+        <div class="stat-grid" aria-label="Statistik pertandingan">
+          <div class="stat-cell"><span>Bidak aktif</span><strong id="piece-count">16</strong></div>
+          <div class="stat-cell"><span>Tangkapan</span><strong id="capture-count">00</strong></div>
+          <div class="stat-cell"><span>Raja lawan</span><strong id="enemy-king-state">AMAN</strong></div>
+          <div class="stat-cell"><span>Mode lawan</span><strong style="font-size:12px">CPU</strong></div>
+        </div>
+
+        <div class="run-note">
+          <span class="run-note-mark" aria-hidden="true"></span>
+          <p id="run-note">Buka jalur, jaga raja, lalu pakai skill untuk merebut tempo.</p>
+        </div>
+      </aside>
+
+      <section class="board-panel" aria-labelledby="board-title">
+        <div class="board-heading">
+          <div>
+            <span class="eyebrow">Lantai 01 / duel pembuka</span>
+            <h2 id="board-title">Papan pertempuran</h2>
+          </div>
+          <div class="turn-flag player-turn" id="turn-flag" aria-live="polite">Giliran putih</div>
+        </div>
+        <div class="board-frame">
+          <div class="board" id="board" role="grid" aria-label="Papan catur 8 kali 8"></div>
+        </div>
+
+        <div class="board-status-row">
+          <p class="board-status" id="board-status">Pilih bidak putih untuk melihat langkah legal.</p>
+          <span class="board-hint">64 petak / klik atau keyboard</span>
+        </div>
+        <div class="effect-strip" id="effect-strip" aria-live="polite"><span class="effect-empty">Tidak ada efek aktif.</span></div>
+
+      </section>
+
+      <aside class="rail battle-rail" aria-label="Telegraph lawan dan catatan pertandingan">
+        <section class="enemy-signal" id="enemy-signal" aria-live="polite" aria-label="Skill lawan berikutnya">
+          <span class="signal-mark" aria-hidden="true">!</span>
+          <div class="signal-copy"><span class="eyebrow">Telegraph lawan</span><strong id="enemy-skill-title">Lawan menyiapkan Perisai</strong><p id="enemy-skill-copy">Ia akan melindungi bidak hitam setelah langkah berikutnya.</p></div>
+          <span class="signal-state" id="enemy-skill-state">SIAP</span>
+        </section>
+        <section class="move-ledger" aria-labelledby="ledger-title">
+          <div class="ledger-top"><h3 id="ledger-title">Catatan langkah</h3><span id="ledger-count">Belum ada langkah</span></div>
+          <ol class="move-list" id="move-list"></ol>
+          <p class="empty-ledger" id="empty-ledger">Putih membuka pertandingan. Pilih satu bidak di papan.</p>
+        </section>
+      </aside>
+
+      <section class="rail skill-rail" aria-label="Tangan skill">
+        <aside class="skill-tools" aria-label="Profil pemain dan energi putih">
+          <section class="player-skill-profile" aria-label="Profil pemain dan energi putih">
+            <div class="player-profile-heading">
+              <span class="player-profile-avatar" aria-hidden="true">♔</span>
+              <span class="player-profile-copy"><span class="micro-label">PEMAIN / PUTIH</span><strong>Raja putih</strong><small id="king-state">Menunggu langkah pembuka.</small></span>
+            </div>
+            <div class="energy-hud" role="group" aria-label="Energi putih yang tersedia untuk kartu skill">
+              <span class="hud-label">Energi skill putih</span>
+              <div class="energy-row">
+                <span class="energy-emblem" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13.5 2.5 5.7 13h5.2l-.4 8.5L18.3 11h-5.2z"/></svg></span>
+                <div class="energy-track" id="energy-track" aria-hidden="true"></div>
+                <strong class="energy-number" id="energy-number">3 / 5</strong>
+              </div>
+              <span class="hud-subtext">Satu segmen = 1 EN</span>
+              <div class="free-card-note" aria-label="Jatah kartu putih tanpa biaya energi">
+                <span class="free-token">0 EN</span><span>1 / giliran</span><strong id="free-skill-state" aria-live="polite">SIAP</strong>
+              </div>
+            </div>
+          </section>
+        </aside>
+        <button class="roll-availability" id="reroll-hand" type="button" aria-label="Putar ulang semua kartu; putaran pertama giliran ini gratis" title="Ganti seluruh tangan. Putaran pertama tiap giliran gratis; putaran berikutnya membutuhkan 1 EN.">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6.2 9A7 7 0 0 1 18 6l2 2M4 16l2 2a7 7 0 0 0 11.8-3"/></svg>
+          <span class="roll-counter" id="roll-counter">PUTAR KARTU</span>
+          <small class="roll-caption" id="roll-caption">Gratis • putaran 1 dari 2</small>
+        </button>
+        <div class="skill-list" id="skill-list" role="list" aria-label="Tiga kartu skill"></div>
+        <p class="deck-note">Tangkapan putih memulihkan 1 EN. Putaran pertama seluruh tangan gratis tiap giliran, putaran berikutnya seharga 1 EN; Keberuntungan menambah satu putaran berbayar.</p>
+      </aside>
+    </main>
+
+    <footer class="cabinet-footer">
+      <span>Crown &amp; Catalyst / build konsep 0.1</span>
+      <span id="footer-state">Papan standar / lawan sederhana</span>
+    </footer>
+    <p class="sr-only" id="live-message" aria-live="polite"></p>
+    <dialog class="promotion-dialog" id="promotion-dialog" aria-labelledby="promotion-title" aria-describedby="promotion-message">
+      <span class="eyebrow">Promosi pion</span>
+      <h2 id="promotion-title">Pilih bidak pengganti</h2>
+      <p id="promotion-message">Pilih bidak untuk promosi pion.</p>
+      <div class="promotion-options" role="group" aria-label="Pilihan bidak promosi">
+        <button class="promotion-choice" type="button" data-promotion="q" aria-label="Promosikan menjadi ratu" autofocus><span class="promotion-piece" aria-hidden="true">♕</span><span>Ratu</span></button>
+        <button class="promotion-choice" type="button" data-promotion="r" aria-label="Promosikan menjadi benteng"><span class="promotion-piece" aria-hidden="true">♖</span><span>Benteng</span></button>
+        <button class="promotion-choice" type="button" data-promotion="b" aria-label="Promosikan menjadi gajah"><span class="promotion-piece" aria-hidden="true">♗</span><span>Gajah</span></button>
+        <button class="promotion-choice" type="button" data-promotion="n" aria-label="Promosikan menjadi kuda"><span class="promotion-piece" aria-hidden="true">♘</span><span>Kuda</span></button>
+      </div>
+    </dialog>
+  </div>
+
+  <script>
+    const boardElement = document.getElementById('board');
+    const squareElements = [];
+    const files = ['a','b','c','d','e','f','g','h'];
+    const symbols = {
+      w: { k:'♔', q:'♕', r:'♖', b:'♗', n:'♘', p:'♙' },
+      b: { k:'♚', q:'♛', r:'♜', b:'♝', n:'♞', p:'♟' }
+    };
+    const pieceNames = { k:'raja', q:'ratu', r:'benteng', b:'gajah', n:'kuda', p:'pion' };
+    const values = { p:1, n:3, b:3, r:5, q:9, k:100 };
+    const skillPool = [
+      { id:'lancer', name:'Jejak kuda', cost:2, kind:'spell', tag:'Mantra', icon:'lancer', desc:'Pilih bidak selain raja. Langkah berikutnya mengikuti pola kuda.' },
+      { id:'tempo', name:'Tempo ganda', cost:3, kind:'offense', tag:'Serang', icon:'tempo', desc:'Tangkapan putih berikutnya memberi satu langkah tambahan.' },
+      { id:'ration', name:'Ransum fokus', cost:1, kind:'consumable', tag:'Konsumsi', icon:'ration', desc:'Pulihkan 2 EN. Kapasitas energi adalah 5.' },
+      { id:'ward', name:'Perisai bidak', cost:2, kind:'defense', tag:'Bertahan', icon:'ward', desc:'Pilih bidak selain raja. Tahan satu tangkapan lawan.' },
+      { id:'disrupt', name:'Kuras inti', cost:2, kind:'spell', tag:'Mantra', icon:'disrupt', desc:'Kurangi 2 EN lawan. Di bawah 2 EN, skill tertunda.' },
+      { id:'focus', name:'Taktik presisi', cost:1, kind:'offense', tag:'Serang', icon:'focus', desc:'Tangkapan putih berikutnya memulihkan 1 EN tambahan.' },
+      { id:'pawnstep', name:'Langkah pion', cost:2, kind:'spell', tag:'Mantra', icon:'pawnstep', desc:'Pilih pion. Ia dapat maju 2 petak dari rank mana pun.' },
+      { id:'mark', name:'Tanda buru', cost:1, kind:'offense', tag:'Serang', icon:'mark', desc:'Tandai bidak hitam. Menangkapnya sebelum giliran hitam memberi +1 EN.' },
+      { id:'pierce', name:'Tembus perisai', cost:2, kind:'offense', tag:'Serang', icon:'pierce', desc:'Tangkapan berikutnya menembus Perisai lawan. Habis jika tidak menangkap.' },
+      { id:'shock', name:'Pukulan guntur', cost:2, kind:'offense', tag:'Serang', icon:'shock', desc:'Langkah putih berikutnya yang memberi skak menguras 1 EN lawan.' },
+      { id:'leech', name:'Lintah arkanum', cost:2, kind:'spell', tag:'Mantra', icon:'leech', desc:'Tangkapan berikutnya mencuri 1 EN lawan jika ia memilikinya.' },
+      { id:'surcharge', name:'Pajak mantra', cost:1, kind:'spell', tag:'Mantra', icon:'surcharge', desc:'Skill lawan berikutnya berbiaya 1 EN lebih mahal.' },
+      { id:'counterspell', name:'Penawar', cost:2, kind:'spell', tag:'Mantra', icon:'counterspell', desc:'Batalkan skill aktif dan rencana lawan. Jika kosong, kurangi 1 EN.' },
+      { id:'parry', name:'Tangkis arus', cost:2, kind:'defense', tag:'Bertahan', icon:'parry', desc:'Jika Gangguan lawan aktif berikutnya, batalkan drain dan pulihkan 1 EN.' },
+      { id:'riposte', name:'Balas tusuk', cost:1, kind:'defense', tag:'Bertahan', icon:'riposte', desc:'Jika lawan menangkap pada balasan berikutnya, pulihkan 1 EN.' },
+      { id:'reserve', name:'Fokus cadangan', cost:1, kind:'consumable', tag:'Konsumsi', icon:'reserve', desc:'Skill berikutnya berbiaya 1 EN lebih murah.' },
+      { id:'quiet', name:'Arus sunyi', cost:1, kind:'consumable', tag:'Konsumsi', icon:'quiet', desc:'Jika langkah putih berikutnya bukan tangkapan, pulihkan 1 EN.' },
+      { id:'lastLaugh', name:'Bangkit balik', cost:1, kind:'defense', tag:'Bertahan', icon:'lastLaugh', desc:'Jika langkah hitam berikutnya memberi skak, pulihkan 2 EN.' },
+      { id:'salvage', name:'Rongsokan', cost:1, kind:'consumable', tag:'Konsumsi', icon:'salvage', desc:'Tangkapan sebelum giliranmu berikutnya memberi putih +1 EN.' },
+      { id:'relay', name:'Relay bidak', cost:3, kind:'spell', tag:'Mantra', icon:'relay', desc:'Tukar posisi dua bidak putih selain raja. Menghabiskan langkah.' },
+      { id:'phase', name:'Langkah bayangan', cost:2, kind:'spell', tag:'Mantra', icon:'phase', desc:'Pilih bidak. Pindah ke petak kosong dalam jarak 2, tanpa menangkap.' },
+      { id:'prism', name:'Prisma gerak', cost:2, kind:'spell', tag:'Mantra', icon:'prism', desc:'Pilih gajah atau benteng. Langkah berikutnya memakai pola yang lain.' },
+      { id:'pawnraid', name:'Serbu pion', cost:2, kind:'offense', tag:'Serang', icon:'pawnraid', desc:'Pilih pion. Ia dapat menangkap lurus satu petak pada langkah berikutnya.' },
+      { id:'rookbend', name:'Belok benteng', cost:1, kind:'spell', tag:'Mantra', icon:'rookbend', desc:'Pilih benteng. Langkah berikutnya juga boleh diagonal satu petak.' },
+      { id:'stagger', name:'Gentar', cost:2, kind:'offense', tag:'Serang', icon:'stagger', desc:'Bidak hitam pilihanmu tak dapat menangkap pada balasan berikutnya.' },
+      { id:'snare', name:'Jerat', cost:3, kind:'offense', tag:'Serang', icon:'snare', desc:'Bidak hitam pilihanmu tak dapat bergerak pada balasan berikutnya.' },
+      { id:'sacrifice', name:'Tumbal pion', cost:1, kind:'consumable', tag:'Konsumsi', icon:'sacrifice', desc:'Korbankan satu pion putih untuk memulihkan 3 EN. Memakai langkah.' },
+      { id:'blockade', name:'Blokade', cost:2, kind:'defense', tag:'Bertahan', icon:'blockade', desc:'Pilih petak kosong. Lawan tak dapat mendarat di sana pada balasan.' },
+      { id:'fortune', name:'Kartu keberuntungan', cost:1, kind:'consumable', tag:'Konsumsi', icon:'fortune', desc:'Tambahkan satu putar ulang. Putaran ekstra tetap berbiaya 1 EN.' },
+      { id:'pawnBreath', name:'Napas pion', cost:0, kind:'consumable', tag:'Konsumsi', icon:'quiet', desc:'Pulihkan 1 EN jika langkah putih berikutnya adalah pion tanpa tangkapan.' },
+      { id:'pawnGuard', name:'Tameng pion', cost:0, kind:'defense', tag:'Bertahan', icon:'ward', desc:'Pilih pion putih. Tahan satu tangkapan lawan.' },
+      { id:'pawnMark', name:'Tanda pion', cost:0, kind:'offense', tag:'Serang', icon:'mark', desc:'Tandai pion hitam. Tangkap pada langkah putih berikutnya untuk +1 EN.' },
+      { id:'pawnStagger', name:'Gentar pion', cost:0, kind:'offense', tag:'Serang', icon:'stagger', desc:'Pilih pion hitam. Ia tak dapat menangkap pada balasan berikutnya.' },
+      { id:'pawnPulse', name:'Denyut pion', cost:0, kind:'spell', tag:'Mantra', icon:'shock', desc:'Jika pion putih memberi skak pada langkah berikutnya, kurangi 1 EN lawan.' },
+      { id:'phoenix', name:'Kebangkitan Phoenix', cost:5, kind:'joker', tag:'Joker', icon:'salvage', weight:0.2, desc:'Bangkitkan bidak putih non-ratu bernilai tertinggi yang gugur ke petak kosong di dua baris awal, tanpa menghilangkan jalan keluar dari skak.' },
+      { id:'fold', name:'Lipatan Dimensi', cost:5, kind:'joker', tag:'Joker', icon:'phase', weight:0.2, desc:'Pilih bidak putih selain raja. Pada langkah berikutnya, bidak itu dapat berpindah ke petak kosong mana pun tanpa menangkap.' },
+      { id:'edict', name:'Titah Pemusnah', cost:5, kind:'joker', tag:'Joker', icon:'shock', weight:0.2, desc:'Hapus satu bidak hitam selain raja dan ratu. Ini bukan tangkapan.' }
+    ];
+    const skillById = Object.fromEntries(skillPool.map(function(skill) { return [skill.id,skill]; }));
+    const cardArt = {
+      lancer:'<path d="M13 47h16V31h15V16h8M44 31l8-8 8 8M29 47l-8 8"/>',
+      tempo:'<path d="M12 49h13V37h13V25h13V13h5M47 13h9v9"/>',
+      ration:'<path d="M24 12h16M28 12v13L17 45a5 5 0 0 0 4 7h22a5 5 0 0 0 4-7L36 25V12M24 39h24M28 33h7"/>',
+      ward:'<path d="M32 8 51 16v14c0 12-8 20-19 26-11-6-19-14-19-26V16zM23 32l6 6 13-14"/>',
+      disrupt:'<path d="M10 32h9l6-12 8 24 7-15 5 7h9M10 12v6M54 46v6"/>',
+      focus:'<circle cx="32" cy="32" r="17"/><circle cx="32" cy="32" r="5"/><path d="M32 7v11M32 46v11M7 32h11M46 32h11"/>',
+      pawnstep:'<circle cx="32" cy="17" r="7"/><path d="M22 29h20l5 16H17zM14 52h36M12 23l-5-5M52 23l5-5"/>',
+      mark:'<circle cx="32" cy="32" r="15"/><circle cx="32" cy="32" r="5"/><path d="M32 6v12M32 46v12M6 32h12M46 32h12"/>',
+      pierce:'<path d="M12 18h28l12 14-12 14H12M30 24l8 8-8 8M5 32h29"/>',
+      shock:'<path d="M37 7 15 35h15l-4 22 23-31H34z"/>',
+      leech:'<circle cx="19" cy="23" r="8"/><circle cx="45" cy="41" r="8"/><path d="m25 29 14 8M32 19l7 5-7 5M32 45l-7-5 7-5"/>',
+      surcharge:'<path d="M14 17h36M14 28h25M14 39h36M14 50h25M44 24v9M40 28h9"/>',
+      counterspell:'<path d="M32 8 51 16v14c0 12-8 20-19 26-11-6-19-14-19-26V16zM24 25l16 16M40 25 24 41"/>',
+      parry:'<path d="M45 17a20 20 0 1 0 5 24M45 17V7M45 17H35M17 32h18l9-9"/>',
+      riposte:'<path d="M14 49 49 14M38 14h11v11M14 38v11h11M20 20l24 24"/>',
+      reserve:'<rect x="13" y="16" width="38" height="33"/><path d="M20 24h24M20 32h24M20 40h12M44 44v-8M40 40h8"/>',
+      quiet:'<path d="M12 42h40M18 34h28M24 26h16M30 18h4M13 49h38"/>',
+      lastLaugh:'<path d="M13 42 25 30l8 7 18-21M41 16h10v10M16 50h32"/>',
+      salvage:'<path d="M16 17h32v34H16zM22 25h20M22 33h14M22 41h8M39 43l5 5 9-12"/>',
+      relay:'<rect x="10" y="17" width="18" height="28"/><rect x="36" y="17" width="18" height="28"/><path d="M23 10 30 17l-7 7M41 52l-7-7 7-7M25 17h14M39 45H25"/>',
+      phase:'<rect x="12" y="12" width="40" height="40"/><path d="M20 20h8v8h-8zM36 36h8v8h-8zM28 24l12 12M34 24l6-6M34 40l-6 6"/>',
+      prism:'<path d="m32 10 23 42H9zM20 40h24M25 31h14M29 22h6M32 10v12M32 32v20"/>',
+      pawnraid:'<circle cx="32" cy="17" r="7"/><path d="M22 29h20l5 16H17zM14 52h36M32 47V27M26 34l6-7 6 7"/>',
+      rookbend:'<path d="M16 51h32M20 47V25h24v22M17 25V15h8v6h8v-6h8v10M23 39h18M26 34l6-6 6 6"/>',
+      stagger:'<path d="M13 46 26 33l8 7 17-20M41 20l10 0 0 10M13 17l10 7M16 52h33"/>',
+      snare:'<path d="M13 18h38M13 46h38M18 18v10l14 9 14-9V18M18 46V36l14-9 14 9v10M32 18v9M32 37v9"/>',
+      sacrifice:'<circle cx="32" cy="16" r="6"/><path d="M23 28h18l5 16H18zM13 51h38M32 34v10M27 39h10"/>',
+      blockade:'<path d="M12 20h40M12 32h40M12 44h40M18 13v38M32 13v38M46 13v38"/>',
+      fortune:'<path d="M14 14h28v36H14zM22 9h28v36M29 4h22v36M35 15v13M42 21v13"/>'
+    };
+
+    const game = {
+      board: null,
+      turn: 'w',
+      castling: null,
+      enPassant: null,
+      energy: 3,
+      hand: [],
+      activeSkill: null,
+      activeSlot: null,
+      activeSkillCost: 0,
+      activeSkillDiscounted: false,
+      knightTargetId: null,
+      tempoArmed: false,
+      pawnStepId: null,
+      pawnRaidId: null,
+      phaseTargetId: null,
+      phaseJokerId: null,
+      prismTargetId: null,
+      prismType: null,
+      rookBendId: null,
+      playerWardPieceId: null,
+      enemyWardPieceId: null,
+      enemyDrainArmed: false,
+      focusCaptureArmed: false,
+      extraMovePending: false,
+      markedEnemyId: null,
+      pierceArmed: false,
+      shockArmed: false,
+      leechArmed: false,
+      enemySurcharge: 0,
+      parryArmed: false,
+      riposteArmed: false,
+      reserveArmed: false,
+      quietArmed: false,
+      pawnBreathArmed: false,
+      pawnPulseArmed: false,
+      freeSkillUsedThisTurn: false,
+      lastLaughArmed: false,
+      salvageArmed: false,
+      staggerId: null,
+      snareId: null,
+      relayFirstId: null,
+      blockadeSquare: null,
+      bonusRerolls: 0,
+      dealtSlot: null,
+      enemyEnergy: 2,
+      enemyPreparedSkill: 'ward',
+      enemySkillIndex: 1,
+      rollsThisTurn: 0,
+      rollingSlot: null,
+      selected: null,
+      pendingPromotion: null,
+      lastMove: null,
+      captureFx: null,
+      history: [],
+      captures: { w:0, b:0 },
+      whiteGraveyard: [],
+      ply: 0,
+      turnNo: 1,
+      thinking: false,
+      gameOver: false,
+      winner: null,
+      status: 'Pilih bidak putih untuk melihat langkah legal.'
+    };
+    let completedTurns = [];
+    let turnStart = null;
+    let focusSquare = [7,0];
+    let botTimer = null;
+    let rollTimer = null;
+    let dealTimer = null;
+    let captureTimer = null;
+    let audioContext = null;
+    let soundEnabled = true;
+    let lastCardHoverAt = 0;
+
+    function drawSkill(excluded) {
+      const options = skillPool.filter(function(skill) { return excluded.indexOf(skill.id) === -1; });
+      const totalWeight = options.reduce(function(total,skill) { return total + (skill.weight || 1); },0);
+      let roll = Math.random() * totalWeight;
+      for (let i = 0; i < options.length; i += 1) {
+        roll -= options[i].weight || 1;
+        if (roll < 0) return options[i].id;
+      }
+      return options[options.length - 1].id;
+    }
+    function makeHand(excludedIds) {
+      const hand = [];
+      const excluded = Array.isArray(excludedIds) ? excludedIds.slice() : [];
+      while (hand.length < 3) {
+        const id = drawSkill(excluded.concat(hand));
+        hand.push(id);
+      }
+      return hand;
+    }
+    function replaceHandSlot(slot, oldId) {
+      if (oldId && skillById[oldId] && skillById[oldId].cost === 0) game.freeSkillUsedThisTurn = true;
+      const excluded = game.hand.filter(function(id,index) { return index !== slot; });
+      if (oldId) excluded.push(oldId);
+      game.hand[slot] = drawSkill(excluded);
+      if (dealTimer) {
+        window.clearTimeout(dealTimer);
+        document.querySelectorAll('.skill-card.dealing').forEach(function(previous) { previous.classList.remove('dealing'); });
+      }
+      game.dealtSlot = slot;
+      dealTimer = window.setTimeout(function() {
+        game.dealtSlot = null;
+        const card = document.querySelectorAll('.skill-card')[slot];
+        if (card) card.classList.remove('dealing');
+        dealTimer = null;
+      },320);
+    }
+    function currentSkillCost(skill) { return Math.max(0,skill.cost - (game.reserveArmed ? 1 : 0)); }
+
+    function emptyBoard() {
+      return Array.from({ length:8 }, function() { return Array(8).fill(null); });
+    }
+    function createPiece(type, color, row, col) {
+      return { type:type, color:color, id:color + '-' + type + '-' + row + '-' + col };
+    }
+    function initialBoard() {
+      const board = emptyBoard();
+      const backRank = ['r','n','b','q','k','b','n','r'];
+      for (let col = 0; col < 8; col += 1) {
+        board[0][col] = createPiece(backRank[col], 'b', 0, col);
+        board[1][col] = createPiece('p', 'b', 1, col);
+        board[6][col] = createPiece('p', 'w', 6, col);
+        board[7][col] = createPiece(backRank[col], 'w', 7, col);
+      }
+      return board;
+    }
+    function setInitialState() {
+      if (botTimer) window.clearTimeout(botTimer);
+      if (rollTimer) window.clearTimeout(rollTimer);
+      if (dealTimer) window.clearTimeout(dealTimer);
+      if (captureTimer) window.clearTimeout(captureTimer);
+      botTimer = null;
+      rollTimer = null;
+      dealTimer = null;
+      captureTimer = null;
+      game.board = initialBoard();
+      game.turn = 'w';
+      game.castling = { w:{ k:true, q:true }, b:{ k:true, q:true } };
+      game.enPassant = null;
+      game.energy = 3;
+      game.hand = makeHand();
+      game.activeSkill = null;
+      game.activeSlot = null;
+      game.activeSkillCost = 0;
+      game.activeSkillDiscounted = false;
+      game.knightTargetId = null;
+      game.tempoArmed = false;
+      game.captureFx = null;
+      game.pawnStepId = null;
+      game.pawnRaidId = null;
+      game.phaseTargetId = null;
+      game.phaseJokerId = null;
+      game.prismTargetId = null;
+      game.prismType = null;
+      game.rookBendId = null;
+      game.playerWardPieceId = null;
+      game.enemyWardPieceId = null;
+      game.enemyDrainArmed = false;
+      game.focusCaptureArmed = false;
+      game.extraMovePending = false;
+      game.markedEnemyId = null;
+      game.pierceArmed = false;
+      game.shockArmed = false;
+      game.leechArmed = false;
+      game.enemySurcharge = 0;
+      game.parryArmed = false;
+      game.riposteArmed = false;
+      game.reserveArmed = false;
+      game.quietArmed = false;
+      game.pawnBreathArmed = false;
+      game.pawnPulseArmed = false;
+      game.freeSkillUsedThisTurn = false;
+      game.lastLaughArmed = false;
+      game.salvageArmed = false;
+      game.staggerId = null;
+      game.snareId = null;
+      game.relayFirstId = null;
+      game.blockadeSquare = null;
+      game.bonusRerolls = 0;
+      game.dealtSlot = null;
+      game.enemyEnergy = 2;
+      game.enemyPreparedSkill = 'ward';
+      game.enemySkillIndex = 1;
+      game.rollsThisTurn = 0;
+      game.rollingSlot = null;
+      game.selected = null;
+      game.pendingPromotion = null;
+      game.lastMove = null;
+      game.history = [];
+      game.captures = { w:0, b:0 };
+      game.whiteGraveyard = [];
+      game.ply = 0;
+      game.turnNo = 1;
+      game.thinking = false;
+      game.gameOver = false;
+      game.winner = null;
+      game.status = 'Pilih bidak putih untuk melihat langkah legal.';
+      completedTurns = [];
+      turnStart = snapshotCore();
+      render();
+    }
+    function snapshotCore() {
+      return JSON.parse(JSON.stringify({
+        board:game.board, turn:game.turn, castling:game.castling, enPassant:game.enPassant,
+        energy:game.energy, hand:game.hand, activeSkill:game.activeSkill, activeSlot:game.activeSlot,
+        activeSkillCost:game.activeSkillCost, activeSkillDiscounted:game.activeSkillDiscounted,
+        knightTargetId:game.knightTargetId, tempoArmed:game.tempoArmed, pawnStepId:game.pawnStepId,
+        pawnRaidId:game.pawnRaidId, phaseTargetId:game.phaseTargetId, phaseJokerId:game.phaseJokerId, prismTargetId:game.prismTargetId,
+        prismType:game.prismType, rookBendId:game.rookBendId, playerWardPieceId:game.playerWardPieceId,
+        enemyWardPieceId:game.enemyWardPieceId, markedEnemyId:game.markedEnemyId,
+        enemyDrainArmed:game.enemyDrainArmed, focusCaptureArmed:game.focusCaptureArmed,
+        pierceArmed:game.pierceArmed, shockArmed:game.shockArmed, leechArmed:game.leechArmed,
+        enemySurcharge:game.enemySurcharge, parryArmed:game.parryArmed, riposteArmed:game.riposteArmed,
+        reserveArmed:game.reserveArmed, quietArmed:game.quietArmed, lastLaughArmed:game.lastLaughArmed,
+        pawnBreathArmed:game.pawnBreathArmed, pawnPulseArmed:game.pawnPulseArmed,
+        freeSkillUsedThisTurn:game.freeSkillUsedThisTurn,
+        salvageArmed:game.salvageArmed, staggerId:game.staggerId, snareId:game.snareId,
+        relayFirstId:game.relayFirstId, blockadeSquare:game.blockadeSquare, bonusRerolls:game.bonusRerolls,
+        extraMovePending:game.extraMovePending,
+        enemyEnergy:game.enemyEnergy, enemyPreparedSkill:game.enemyPreparedSkill, enemySkillIndex:game.enemySkillIndex,
+        rollsThisTurn:game.rollsThisTurn, selected:game.selected, pendingPromotion:game.pendingPromotion,
+        lastMove:game.lastMove, history:game.history, captures:game.captures, whiteGraveyard:game.whiteGraveyard, ply:game.ply,
+        turnNo:game.turnNo, thinking:game.thinking, gameOver:game.gameOver,
+        winner:game.winner, status:game.status
+      }));
+    }
+    function restoreCore(snapshot) {
+      Object.assign(game, JSON.parse(JSON.stringify(snapshot)));
+    }
+    function samePositionForUndo() {
+      if (!turnStart || game.ply !== turnStart.ply) return false;
+      return game.energy === turnStart.energy
+        && JSON.stringify(game.hand) === JSON.stringify(turnStart.hand)
+        && game.activeSkill === turnStart.activeSkill
+        && game.knightTargetId === turnStart.knightTargetId
+        && game.tempoArmed === turnStart.tempoArmed
+        && game.rollsThisTurn === turnStart.rollsThisTurn
+        && game.enemyEnergy === turnStart.enemyEnergy
+        && JSON.stringify(game.blockadeSquare) === JSON.stringify(turnStart.blockadeSquare)
+        && game.enemyDrainArmed === turnStart.enemyDrainArmed
+        && game.playerWardPieceId === turnStart.playerWardPieceId;
+    }
+    function canUndo() {
+      return completedTurns.length > 0 && !game.thinking
+        && (game.turn === 'w' || game.gameOver) && samePositionForUndo();
+    }
+    function undoTurn() {
+      if (!canUndo()) return;
+      const snapshot = completedTurns.pop();
+      restoreCore(snapshot);
+      game.status = 'Giliran terakhir dibatalkan.';
+      turnStart = snapshotCore();
+      render();
+    }
+    function inside(row, col) { return row >= 0 && row < 8 && col >= 0 && col < 8; }
+    function coord(row, col) { return files[col] + String(8 - row); }
+
+    function isSquareAttacked(board, row, col, attacker) {
+      for (let r = 0; r < 8; r += 1) {
+        for (let c = 0; c < 8; c += 1) {
+          const piece = board[r][c];
+          if (!piece || piece.color !== attacker) continue;
+          const dr = row - r;
+          const dc = col - c;
+          const absDr = Math.abs(dr);
+          const absDc = Math.abs(dc);
+          if (piece.type === 'p') {
+            const direction = attacker === 'w' ? -1 : 1;
+            if (dr === direction && absDc === 1) return true;
+          } else if (piece.type === 'n') {
+            if ((absDr === 2 && absDc === 1) || (absDr === 1 && absDc === 2)) return true;
+          } else if (piece.type === 'k') {
+            if (Math.max(absDr, absDc) === 1) return true;
+          } else {
+            const diagonal = absDr === absDc && absDr > 0;
+            const straight = (dr === 0 && dc !== 0) || (dc === 0 && dr !== 0);
+            const canDiagonal = piece.type === 'b' || piece.type === 'q';
+            const canStraight = piece.type === 'r' || piece.type === 'q';
+            if ((diagonal && canDiagonal) || (straight && canStraight)) {
+              const stepRow = Math.sign(dr);
+              const stepCol = Math.sign(dc);
+              let clear = true;
+              for (let step = 1; step < Math.max(absDr, absDc); step += 1) {
+                if (board[r + stepRow * step][c + stepCol * step]) { clear = false; break; }
+              }
+              if (clear) return true;
+            }
+          }
+        }
+      }
+      return false;
+    }
+    function kingPosition(board, color) {
+      for (let row = 0; row < 8; row += 1) {
+        for (let col = 0; col < 8; col += 1) {
+          const piece = board[row][col];
+          if (piece && piece.color === color && piece.type === 'k') return { row:row, col:col };
+        }
+      }
+      return null;
+    }
+    function isInCheck(board, color) {
+      const king = kingPosition(board, color);
+      return !king || isSquareAttacked(board, king.row, king.col, color === 'w' ? 'b' : 'w');
+    }
+
+    function pseudoMoves(board, state, row, col) {
+      const piece = board[row][col];
+      if (!piece) return [];
+      const moves = [];
+      let effectiveType = state.knightTargetId === piece.id ? 'n' : piece.type;
+      if (state.prismTargetId === piece.id) effectiveType = state.prismType;
+      if (state.phaseTargetId === piece.id) {
+        const range = state.phaseJokerId === piece.id ? 7 : 2;
+        for (let r = Math.max(0,row - range); r <= Math.min(7,row + range); r += 1) {
+          for (let c = Math.max(0,col - range); c <= Math.min(7,col + range); c += 1) {
+            if ((r !== row || c !== col) && !board[r][c]) moves.push({ from:[row,col], to:[r,c], phase:true });
+          }
+        }
+        return moves;
+      }
+      const add = function(r, c) {
+        if (!inside(r, c)) return false;
+        const target = board[r][c];
+        if (!target) { moves.push({ from:[row,col], to:[r,c] }); return true; }
+        if (target.color !== piece.color && target.type !== 'k') moves.push({ from:[row,col], to:[r,c] });
+        return false;
+      };
+      const ray = function(dr, dc) {
+        let r = row + dr;
+        let c = col + dc;
+        while (inside(r, c)) {
+          if (!add(r, c)) break;
+          r += dr;
+          c += dc;
+        }
+      };
+
+      if (effectiveType === 'p') {
+        const direction = piece.color === 'w' ? -1 : 1;
+        const startRow = piece.color === 'w' ? 6 : 1;
+        const nextRow = row + direction;
+        if (inside(nextRow, col) && !board[nextRow][col]) {
+          add(nextRow, col);
+          const doubleRow = row + direction * 2;
+          if ((row === startRow || state.pawnStepId === piece.id) && inside(doubleRow,col) && !board[doubleRow][col]) add(doubleRow, col);
+        }
+        if (state.pawnRaidId === piece.id) {
+          const straightTarget = board[nextRow][col];
+          if (straightTarget && straightTarget.color !== piece.color && straightTarget.type !== 'k') add(nextRow,col);
+        }
+        for (const dc of [-1,1]) {
+          const r = row + direction;
+          const c = col + dc;
+          if (!inside(r, c)) continue;
+          const target = board[r][c];
+          if (target && target.color !== piece.color && target.type !== 'k') add(r, c);
+          if (!target && state.enPassant && state.enPassant[0] === r && state.enPassant[1] === c) {
+            moves.push({ from:[row,col], to:[r,c], enPassant:true });
+          }
+        }
+      } else if (effectiveType === 'n') {
+        for (const delta of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]) add(row + delta[0], col + delta[1]);
+      } else if (effectiveType === 'b' || effectiveType === 'q') {
+        ray(-1,-1); ray(-1,1); ray(1,-1); ray(1,1);
+      }
+      if (effectiveType === 'r' || effectiveType === 'q') {
+        ray(-1,0); ray(1,0); ray(0,-1); ray(0,1);
+      }
+      if (piece.type === 'r' && state.rookBendId === piece.id) {
+        for (const dr of [-1,1]) for (const dc of [-1,1]) add(row + dr,col + dc);
+      }
+      if (effectiveType === 'k') {
+        for (let dr = -1; dr <= 1; dr += 1) {
+          for (let dc = -1; dc <= 1; dc += 1) if (dr !== 0 || dc !== 0) add(row + dr, col + dc);
+        }
+        const homeRow = piece.color === 'w' ? 7 : 0;
+        const opponent = piece.color === 'w' ? 'b' : 'w';
+        if (row === homeRow && col === 4 && !isInCheck(board, piece.color)) {
+          if (state.castling[piece.color].k && !board[homeRow][5] && !board[homeRow][6]
+            && !isSquareAttacked(board,homeRow,5,opponent) && !isSquareAttacked(board,homeRow,6,opponent)) {
+            moves.push({ from:[row,col], to:[homeRow,6], castle:'k' });
+          }
+          if (state.castling[piece.color].q && !board[homeRow][1] && !board[homeRow][2] && !board[homeRow][3]
+            && !isSquareAttacked(board,homeRow,3,opponent) && !isSquareAttacked(board,homeRow,2,opponent)) {
+            moves.push({ from:[row,col], to:[homeRow,2], castle:'q' });
+          }
+        }
+      }
+      return moves;
+    }
+
+    function simulateMove(board, move) {
+      const next = board.map(function(row) { return row.slice(); });
+      const fromRow = move.from[0], fromCol = move.from[1];
+      const toRow = move.to[0], toCol = move.to[1];
+      const moving = Object.assign({}, next[fromRow][fromCol]);
+      next[fromRow][fromCol] = null;
+      if (move.enPassant) next[fromRow][toCol] = null;
+      if (move.castle === 'k') { next[fromRow][5] = Object.assign({},next[fromRow][7]); next[fromRow][7] = null; }
+      else if (move.castle === 'q') { next[fromRow][3] = Object.assign({},next[fromRow][0]); next[fromRow][0] = null; }
+      if (moving.type === 'p' && (toRow === 0 || toRow === 7)) {
+        moving.type = ['q','r','b','n'].indexOf(move.promotion) !== -1 ? move.promotion : 'q';
+      }
+      next[toRow][toCol] = moving;
+      return next;
+    }
+    function rawLegalMovesFrom(state, row, col) {
+      const piece = state.board[row][col];
+      if (!piece) return [];
+      return pseudoMoves(state.board,state,row,col).filter(function(move) {
+        return !isInCheck(simulateMove(state.board,move),piece.color);
+      });
+    }
+    function allLegalMoves(state, color) {
+      const result = [];
+      for (let row = 0; row < 8; row += 1) {
+        for (let col = 0; col < 8; col += 1) {
+          const piece = state.board[row][col];
+          if (piece && piece.color === color) result.push.apply(result,rawLegalMovesFrom(state,row,col));
+        }
+      }
+      const allowed = result.filter(function(move) {
+        const moving = state.board[move.from[0]][move.from[1]];
+        const captured = captureAt(state,move);
+        if (color === 'w') {
+          return !captured || captured.id !== state.enemyWardPieceId || state.pierceArmed;
+        }
+        if (state.snareId === moving.id) return false;
+        if (state.staggerId === moving.id && captured) return false;
+        if (state.blockadeSquare && move.to[0] === state.blockadeSquare[0] && move.to[1] === state.blockadeSquare[1]) return false;
+        return !captured || captured.id !== state.playerWardPieceId;
+      });
+      return allowed.length || result.length === 0 || !isInCheck(state.board,color) ? allowed : result;
+    }
+    function legalMovesFrom(state, row, col) {
+      const piece = state.board[row][col];
+      if (!piece) return [];
+      return allLegalMoves(state,piece.color).filter(function(move) {
+        return move.from[0] === row && move.from[1] === col;
+      });
+    }
+    function captureAt(state, move) {
+      return move.enPassant ? state.board[move.from[0]][move.to[1]] : state.board[move.to[0]][move.to[1]];
+    }
+    function updateCastlingRights(piece, fromRow, fromCol, captured, toRow, toCol) {
+      const home = piece.color === 'w' ? 7 : 0;
+      if (piece.type === 'k') { game.castling[piece.color].k = false; game.castling[piece.color].q = false; }
+      if (piece.type === 'r' && fromRow === home) {
+        if (fromCol === 0) game.castling[piece.color].q = false;
+        if (fromCol === 7) game.castling[piece.color].k = false;
+      }
+      if (captured && captured.type === 'r') {
+        const capturedHome = captured.color === 'w' ? 7 : 0;
+        if (toRow === capturedHome && toCol === 0) game.castling[captured.color].q = false;
+        if (toRow === capturedHome && toCol === 7) game.castling[captured.color].k = false;
+      }
+    }
+    function clearPieceEffects(piece) {
+      if (piece.id === game.knightTargetId) game.knightTargetId = null;
+      if (piece.id === game.pawnStepId) game.pawnStepId = null;
+      if (piece.id === game.pawnRaidId) game.pawnRaidId = null;
+      if (piece.id === game.phaseTargetId) game.phaseTargetId = null;
+      if (piece.id === game.phaseJokerId) game.phaseJokerId = null;
+      if (piece.id === game.prismTargetId) { game.prismTargetId = null; game.prismType = null; }
+      if (piece.id === game.rookBendId) game.rookBendId = null;
+      if (piece.id === game.playerWardPieceId) game.playerWardPieceId = null;
+      if (piece.id === game.enemyWardPieceId) game.enemyWardPieceId = null;
+      if (piece.id === game.markedEnemyId) game.markedEnemyId = null;
+      if (piece.id === game.staggerId) game.staggerId = null;
+      if (piece.id === game.snareId) game.snareId = null;
+    }
+    function commitMove(move, color) {
+      const fromRow = move.from[0], fromCol = move.from[1];
+      const toRow = move.to[0], toCol = move.to[1];
+      const moving = game.board[fromRow][fromCol];
+      const originalType = moving.type;
+      const promotion = originalType === 'p' && (toRow === 0 || toRow === 7) ? (move.promotion || 'q') : null;
+      const captured = captureAt(game,move);
+      const capturedType = captured ? captured.type : null;
+      if (captured && color === 'b' && captured.color === 'w' && captured.type !== 'q') {
+        game.whiteGraveyard.push(Object.assign({},captured));
+      }
+      if (captured) {
+        if (captureTimer) window.clearTimeout(captureTimer);
+        game.captureFx = {
+          from:move.from.slice(),
+          to:move.to.slice(),
+          victimAt:move.enPassant ? [fromRow,toCol] : move.to.slice(),
+          piece:captured.type,
+          color:captured.color,
+          attackerId:moving.id
+        };
+        captureTimer = window.setTimeout(function() {
+          game.captureFx = null;
+          captureTimer = null;
+          render();
+        },450);
+      }
+      const wasPawnDouble = moving.type === 'p' && Math.abs(toRow - fromRow) === 2;
+      updateCastlingRights(moving,fromRow,fromCol,captured,toRow,toCol);
+      game.board = simulateMove(game.board,move);
+      game.enPassant = wasPawnDouble ? [(fromRow + toRow) / 2,fromCol] : null;
+      game.lastMove = { from:move.from.slice(), to:move.to.slice() };
+      game.ply += 1;
+      game.history.push({
+        color:color, piece:originalType, from:coord(fromRow,fromCol), to:coord(toRow,toCol),
+        capture:Boolean(captured), captured:capturedType, castle:move.castle || null, promotion:promotion
+      });
+      if (captured) {
+        game.captures[color] += 1;
+        if (color === 'w') {
+          game.energy = Math.min(5,game.energy + 1);
+          if (game.focusCaptureArmed) {
+            game.energy = Math.min(5,game.energy + 1);
+            game.focusCaptureArmed = false;
+          }
+          if (game.markedEnemyId === captured.id) { game.energy = Math.min(5,game.energy + 1); game.markedEnemyId = null; }
+          if (game.leechArmed) {
+            if (game.enemyEnergy > 0) {
+              game.enemyEnergy -= 1;
+              game.energy = Math.min(5,game.energy + 1);
+            }
+            game.leechArmed = false;
+          }
+        } else if (game.riposteArmed) {
+          game.energy = Math.min(5,game.energy + 1);
+          game.riposteArmed = false;
+        }
+        if (game.salvageArmed) { game.energy = Math.min(5,game.energy + 1); game.salvageArmed = false; }
+      }
+      if (game.knightTargetId === moving.id) game.knightTargetId = null;
+      if (game.pawnStepId === moving.id) game.pawnStepId = null;
+      if (game.pawnRaidId === moving.id) game.pawnRaidId = null;
+      if (game.phaseTargetId === moving.id) game.phaseTargetId = null;
+      if (game.phaseJokerId === moving.id) game.phaseJokerId = null;
+      if (game.prismTargetId === moving.id) { game.prismTargetId = null; game.prismType = null; }
+      if (game.rookBendId === moving.id) game.rookBendId = null;
+      if (captured) clearPieceEffects(captured);
+      game.selected = null;
+      game.activeSkill = null;
+      game.activeSlot = null;
+      game.activeSkillCost = 0;
+      game.activeSkillDiscounted = false;
+      playSound(captured ? 'capture' : 'move');
+      return Boolean(captured);
+    }
+    function updateOutcome(side) {
+      const moves = allLegalMoves(game,side);
+      const checked = isInCheck(game.board,side);
+      if (moves.length === 0) {
+        game.gameOver = true;
+        game.winner = checked ? (side === 'w' ? 'b' : 'w') : null;
+        game.status = checked
+          ? (side === 'w' ? 'Skakmat. Raja putih tumbang.' : 'Skakmat. Raja hitam tumbang.')
+          : 'Remis. Tidak ada langkah legal.';
+        return true;
+      }
+      if (checked) game.status = side === 'w' ? 'Skak. Lindungi raja putih.' : 'Skak. Raja lawan terancam.';
+      return false;
+    }
+    function finishFullTurn() {
+      completedTurns.push(turnStart);
+      game.turnNo += 1;
+      game.rollsThisTurn = 0;
+      game.bonusRerolls = 0;
+      if (!game.gameOver) game.freeSkillUsedThisTurn = false;
+      turnStart = snapshotCore();
+    }
+    function afterWhiteMove(captured) {
+      game.turn = 'b';
+      if (game.shockArmed) {
+        if (isInCheck(game.board,'b')) {
+          game.enemyEnergy = Math.max(0,game.enemyEnergy - 1);
+          if (game.enemyEnergy < 2) game.enemyPreparedSkill = null;
+          game.status = 'Pukulan guntur: skak menguras 1 EN lawan.';
+        }
+        game.shockArmed = false;
+      }
+      if (game.quietArmed) {
+        if (!captured) game.energy = Math.min(5,game.energy + 1);
+        game.quietArmed = false;
+      }
+      const lastWhiteMove = game.history[game.history.length - 1];
+      const movedPawn = lastWhiteMove && lastWhiteMove.piece === 'p' && !lastWhiteMove.note;
+      if (game.pawnBreathArmed) {
+        if (movedPawn && !captured) {
+          const before = game.energy;
+          game.energy = Math.min(5,game.energy + 1);
+          if (game.energy > before) game.status = 'Napas pion memulihkan 1 EN.';
+          else game.status = 'Napas pion terpakai; energi sudah penuh.';
+        }
+        game.pawnBreathArmed = false;
+      }
+      if (game.pawnPulseArmed) {
+        if (movedPawn && isInCheck(game.board,'b')) {
+          game.enemyEnergy = Math.max(0,game.enemyEnergy - 1);
+          if (game.enemyEnergy < 2) game.enemyPreparedSkill = null;
+          game.status = 'Denyut pion menguras 1 EN lawan.';
+        }
+        game.pawnPulseArmed = false;
+      }
+      if (game.leechArmed && !captured) game.leechArmed = false;
+      game.pierceArmed = false;
+      if (updateOutcome('b')) { game.enemyWardPieceId = null; game.enemyDrainArmed = false; finishFullTurn(); render(); return; }
+      if (captured && game.tempoArmed) {
+        game.tempoArmed = false;
+        game.extraMovePending = true;
+        game.enemyWardPieceId = null;
+        game.turn = 'w';
+        game.status = 'Tempo ganda aktif. Putih bergerak sekali lagi.';
+        render();
+        return;
+      }
+      game.enemyWardPieceId = null;
+      if (game.extraMovePending) game.extraMovePending = false;
+      if (game.enemyDrainArmed) {
+        game.energy = Math.max(0,game.energy - 1);
+        game.enemyDrainArmed = false;
+      }
+      game.thinking = true;
+      game.status = 'Lawan sedang memilih langkah.';
+      render();
+      botTimer = window.setTimeout(playBlackMove,420);
+    }
+    function chooseComputerMove(moves) {
+      const scored = moves.map(function(move) {
+        const moving = game.board[move.from[0]][move.from[1]];
+        const captured = captureAt(game,move);
+        const next = simulateMove(game.board,move);
+        let score = Math.random() * 2;
+        if (captured) score += 12 + values[captured.type] * 4 - values[moving.type] * .8;
+        if (isInCheck(next,'w')) score += 7;
+        if (move.to[0] === 7 && moving.type === 'p') score += 16;
+        if (move.castle) score += 2;
+        return { move:move, score:score };
+      });
+      scored.sort(function(a,b) { return b.score - a.score; });
+      const top = scored.slice(0,Math.min(4,scored.length));
+      return top[Math.floor(Math.random() * top.length)].move;
+    }
+    function playBlackMove() {
+      botTimer = null;
+      if (game.gameOver) return;
+      const moves = allLegalMoves(game,'b');
+      if (moves.length === 0) {
+        game.thinking = false;
+        updateOutcome('b');
+        finishFullTurn();
+        render();
+        return;
+      }
+      const move = chooseComputerMove(moves);
+      const captured = commitMove(move,'b');
+      resolveEnemySkill(captured);
+      if (game.lastLaughArmed) {
+        if (isInCheck(game.board,'w')) game.energy = Math.min(5,game.energy + 2);
+        game.lastLaughArmed = false;
+      }
+      game.playerWardPieceId = null;
+      game.markedEnemyId = null;
+      game.staggerId = null;
+      game.snareId = null;
+      game.blockadeSquare = null;
+      game.parryArmed = false;
+      game.riposteArmed = false;
+      game.salvageArmed = false;
+      game.thinking = false;
+      game.turn = 'w';
+      if (updateOutcome('w')) {
+        game.enemyDrainArmed = false;
+        game.enemyWardPieceId = null;
+      } else game.status = game.status.indexOf('Skak.') === 0 ? game.status : 'Giliran putih. Pilih langkah berikutnya.';
+      finishFullTurn();
+      render();
+    }
+
+    function resolveEnemySkill(captured) {
+      if (captured) game.enemyEnergy = Math.min(5,game.enemyEnergy + 1);
+      const skill = game.enemyPreparedSkill;
+      const skillCost = 2 + game.enemySurcharge;
+      let activated = false;
+      if (skill && game.enemyEnergy >= skillCost) {
+        if (skill === 'siphon') {
+          if (game.parryArmed) {
+            game.energy = Math.min(5,game.energy + 1);
+            game.parryArmed = false;
+          } else game.enemyDrainArmed = true;
+          activated = true;
+        } else if (skill === 'ward' && !isInCheck(game.board,'b')) {
+          const threatened = allLegalMoves(game,'w').map(function(move) { return captureAt(game,move); })
+            .filter(function(piece) { return piece && piece.color === 'b' && piece.type !== 'k'; });
+          const candidates = threatened.length ? threatened : game.board.flat().filter(function(piece) { return piece && piece.color === 'b' && piece.type !== 'k'; });
+          candidates.sort(function(a,b) { return values[b.type] - values[a.type]; });
+          if (candidates[0]) { game.enemyWardPieceId = candidates[0].id; activated = true; }
+        }
+      }
+      if (activated) {
+        game.enemyEnergy -= skillCost;
+        game.enemySurcharge = 0;
+        game.enemyPreparedSkill = game.enemySkillIndex === 0 ? 'ward' : 'siphon';
+        game.enemySkillIndex = game.enemySkillIndex === 0 ? 1 : 0;
+      } else {
+        game.enemyEnergy = Math.min(5,game.enemyEnergy + 1);
+        game.parryArmed = false;
+        if (!game.enemyPreparedSkill) game.enemyPreparedSkill = game.enemySkillIndex === 0 ? 'ward' : 'siphon';
+      }
+      if (game.enemyEnergy < 2 && !game.enemyPreparedSkill) {
+        game.enemyPreparedSkill = game.enemySkillIndex === 0 ? 'ward' : 'siphon';
+      }
+      if (activated) {
+        pulseSignal();
+        playSound('enemy');
+      }
+    }
+
+    function selectPiece(row, col) {
+      const piece = game.board[row][col];
+      if (!piece || piece.color !== 'w') return;
+      game.status = legalMovesFrom(game,row,col).length ? 'Pilih petak tujuan yang menyala.' : 'Bidak ini belum memiliki langkah legal.';
+      game.selected = [row,col];
+      render();
+    }
+    function completeTargetCard(status, selected) {
+      const slot = game.activeSlot;
+      const oldId = game.hand[slot];
+      game.activeSkill = null;
+      game.activeSlot = null;
+      game.activeSkillCost = 0;
+      game.activeSkillDiscounted = false;
+      game.relayFirstId = null;
+      game.selected = selected || null;
+      replaceHandSlot(slot,oldId);
+      game.status = status;
+      playSound('skill');
+      render();
+    }
+    function findPieceSquare(pieceId) {
+      for (let row = 0; row < 8; row += 1) for (let col = 0; col < 8; col += 1) {
+        if (game.board[row][col] && game.board[row][col].id === pieceId) return [row,col];
+      }
+      return null;
+    }
+    function findRevivalPiece() {
+      let best = null;
+      for (let i = game.whiteGraveyard.length - 1; i >= 0; i -= 1) {
+        const piece = game.whiteGraveyard[i];
+        if (piece.color === 'w' && piece.type !== 'q' && (!best || values[piece.type] > values[best.piece.type])) {
+          best = { index:i, piece:piece };
+        }
+      }
+      return best;
+    }
+    function revivalTargets(revival) {
+      if (!revival) return [];
+      const targets = [];
+      for (let row = 6; row <= 7; row += 1) for (let col = 0; col < 8; col += 1) {
+        if (game.board[row][col]) continue;
+        const next = game.board.map(function(boardRow) { return boardRow.slice(); });
+        next[row][col] = Object.assign({},revival.piece);
+        if (!isInCheck(next,'w') || allLegalMoves(Object.assign({},game,{ board:next }),'w').length) targets.push([row,col]);
+      }
+      return targets;
+    }
+    function canReviveWhitePiece() { return revivalTargets(findRevivalPiece()).length > 0; }
+    function hasWhiteJokerTarget() {
+      return game.board.some(function(row) { return row.some(function(piece) { return piece && piece.color === 'w' && piece.type !== 'k'; }); });
+    }
+    function hasBlackJokerTarget() {
+      return game.board.some(function(row) { return row.some(function(piece) { return piece && piece.color === 'b' && piece.type !== 'k' && piece.type !== 'q'; }); });
+    }
+    function finishRelay(row, col, secondPiece) {
+      if (!game.relayFirstId) {
+        if (!secondPiece || secondPiece.color !== 'w' || secondPiece.type === 'k') {
+          game.status = 'Relay: pilih bidak putih selain raja.';
+          render();
+          return;
+        }
+        game.relayFirstId = secondPiece.id;
+        game.selected = [row,col];
+        game.status = 'Pilih bidak putih kedua untuk bertukar posisi.';
+        render();
+        return;
+      }
+      const from = findPieceSquare(game.relayFirstId);
+      if (!from || !secondPiece || secondPiece.color !== 'w' || secondPiece.type === 'k' || secondPiece.id === game.relayFirstId) {
+        game.status = 'Pilih bidak putih kedua yang berbeda dari raja.';
+        render();
+        return;
+      }
+      const firstPiece = game.board[from[0]][from[1]];
+      const next = game.board.map(function(boardRow) { return boardRow.slice(); });
+      next[from[0]][from[1]] = secondPiece;
+      next[row][col] = firstPiece;
+      if (isInCheck(next,'w')) { game.status = 'Pertukaran itu membiarkan raja dalam skak. Pilih bidak lain.'; render(); return; }
+      updateCastlingRights(firstPiece,from[0],from[1],null,row,col);
+      updateCastlingRights(secondPiece,row,col,null,from[0],from[1]);
+      game.board = next;
+      game.enPassant = null;
+      game.lastMove = { from:from.slice(), to:[row,col] };
+      game.ply += 1;
+      game.history.push({ color:'w', piece:firstPiece.type, from:coord(from[0],from[1]), to:coord(row,col), capture:false, note:'Relay bidak' });
+      completeTargetCard('Relay selesai. Lawan bergerak.',null);
+      afterWhiteMove(false);
+    }
+    function handleSkillTarget(row, col) {
+      const id = game.activeSkill;
+      const piece = game.board[row][col];
+      if (id === 'phoenix') {
+        const revival = findRevivalPiece();
+        if (!revival) { game.status = 'Belum ada bidak putih non-ratu yang gugur untuk dibangkitkan.'; render(); return; }
+        if (row < 6 || game.board[row][col]) { game.status = 'Pilih petak kosong di salah satu dari dua baris awal putih.'; render(); return; }
+        const next = game.board.map(function(boardRow) { return boardRow.slice(); });
+        next[row][col] = Object.assign({},revival.piece);
+        if (isInCheck(next,'w') && !allLegalMoves(Object.assign({},game,{ board:next }),'w').length) {
+          game.status = 'Penempatan itu menghilangkan semua langkah untuk menyelamatkan raja. Pilih petak lain.';
+          render();
+          return;
+        }
+        game.board = next;
+        game.whiteGraveyard.splice(revival.index,1);
+        completeTargetCard(pieceNames[revival.piece.type] + ' putih bangkit di ' + coord(row,col) + '.',null);
+        return;
+      }
+      if (id === 'edict') {
+        if (!piece || piece.color !== 'b' || piece.type === 'k' || piece.type === 'q') { game.status = 'Pilih satu bidak hitam selain raja dan ratu.'; render(); return; }
+        const next = game.board.map(function(boardRow) { return boardRow.slice(); });
+        next[row][col] = null;
+        if (piece.type === 'p' && game.enPassant && row === game.enPassant[0] + 1 && col === game.enPassant[1]) game.enPassant = null;
+        if (piece.type === 'r' && row === 0) {
+          if (col === 0) game.castling.b.q = false;
+          if (col === 7) game.castling.b.k = false;
+        }
+        game.board = next;
+        clearPieceEffects(piece);
+        completeTargetCard(pieceNames[piece.type] + ' hitam dihapus. Ini bukan tangkapan.',null);
+        return;
+      }
+      if (id === 'relay') { finishRelay(row,col,piece); return; }
+      if (id === 'blockade') {
+        if (piece) { game.status = 'Blokade hanya dapat menutup petak kosong.'; render(); return; }
+        game.blockadeSquare = [row,col];
+        completeTargetCard('Blokade dipasang di ' + coord(row,col) + ' untuk balasan lawan.',null);
+        return;
+      }
+      const enemyTarget = id === 'mark' || id === 'stagger' || id === 'snare' || id === 'pawnMark' || id === 'pawnStagger';
+      if (!piece || piece.color !== (enemyTarget ? 'b' : 'w')) {
+        game.status = enemyTarget ? 'Pilih bidak hitam selain raja.' : 'Pilih bidak putih yang sesuai.';
+        render();
+        return;
+      }
+      if (piece.type === 'k' && ['lancer','ward','phase','fold','mark','stagger','snare'].indexOf(id) !== -1) {
+        game.status = 'Skill ini tidak menargetkan raja.';
+        render();
+        return;
+      }
+      if (['pawnGuard','pawnMark','pawnStagger'].indexOf(id) !== -1 && piece.type !== 'p') {
+        game.status = 'Kartu gratis ini hanya menargetkan pion.';
+        render();
+        return;
+      }
+      if (id === 'pawnstep' || id === 'pawnraid') {
+        if (piece.type !== 'p') { game.status = 'Skill ini hanya menargetkan pion.'; render(); return; }
+      }
+      if (id === 'prism' && piece.type !== 'b' && piece.type !== 'r') { game.status = 'Prisma gerak hanya menargetkan gajah atau benteng.'; render(); return; }
+      if (id === 'rookbend' && piece.type !== 'r') { game.status = 'Belok benteng hanya menargetkan benteng.'; render(); return; }
+      if (id === 'sacrifice') {
+        if (piece.type !== 'p') { game.status = 'Tumbal pion hanya dapat mengorbankan pion.'; render(); return; }
+        const next = game.board.map(function(boardRow) { return boardRow.slice(); });
+        next[row][col] = null;
+        if (isInCheck(next,'w')) { game.status = 'Pion itu menjaga raja dari skak. Pilih pion lain.'; render(); return; }
+        game.board = next;
+        game.enPassant = null;
+        game.energy = Math.min(5,game.energy + 3);
+        game.lastMove = null;
+        game.ply += 1;
+        game.history.push({ color:'w', piece:'p', from:coord(row,col), to:coord(row,col), capture:false, note:'Tumbal pion: +3 EN' });
+        completeTargetCard('Pion dikorbankan. Pulih 3 EN, lalu giliran lawan.',null);
+        afterWhiteMove(false);
+        return;
+      }
+      if (id === 'lancer') game.knightTargetId = piece.id;
+      if (id === 'ward') game.playerWardPieceId = piece.id;
+      if (id === 'pawnGuard') game.playerWardPieceId = piece.id;
+      if (id === 'pawnstep') game.pawnStepId = piece.id;
+      if (id === 'mark') game.markedEnemyId = piece.id;
+      if (id === 'pawnMark') game.markedEnemyId = piece.id;
+      if (id === 'phase') game.phaseTargetId = piece.id;
+      if (id === 'fold') { game.phaseTargetId = piece.id; game.phaseJokerId = piece.id; }
+      if (id === 'prism') { game.prismTargetId = piece.id; game.prismType = piece.type === 'b' ? 'r' : 'b'; }
+      if (id === 'pawnraid') game.pawnRaidId = piece.id;
+      if (id === 'rookbend') game.rookBendId = piece.id;
+      if (id === 'stagger') game.staggerId = piece.id;
+      if (id === 'pawnStagger') game.staggerId = piece.id;
+      if (id === 'snare') game.snareId = piece.id;
+      const wantsMoveNow = ['lancer','pawnstep','phase','fold','prism','pawnraid','rookbend'].indexOf(id) !== -1;
+      let message = skillById[id].name + ' siap di ' + coord(row,col) + '. Gerakkan bidak ini.';
+      if (id === 'fold') message = 'Lipatan dimensi siap di ' + coord(row,col) + '. Pindahkan bidak ini ke petak kosong mana pun.';
+      if (id === 'ward' || id === 'pawnGuard') message = 'Perisai melindungi ' + coord(row,col) + ' dari satu tangkapan.';
+      if (id === 'mark') message = 'Tanda buru dipasang di ' + coord(row,col) + '.';
+      if (id === 'pawnMark') message = 'Pion hitam di ' + coord(row,col) + ' ditandai. Tangkap sekarang untuk +1 EN.';
+      if (id === 'stagger') message = 'Bidak di ' + coord(row,col) + ' tak dapat menangkap pada balasan.';
+      if (id === 'pawnStagger') message = 'Pion di ' + coord(row,col) + ' tak dapat menangkap pada balasan.';
+      if (id === 'snare') message = 'Bidak di ' + coord(row,col) + ' terjerat untuk satu balasan.';
+      completeTargetCard(message,wantsMoveNow ? [row,col] : null);
+    }
+    function beginPromotion(move) {
+      game.pendingPromotion = Object.assign({},move,{ from:move.from.slice(), to:move.to.slice() });
+      game.status = 'Pion mencapai baris terakhir. Pilih bidak promosi.';
+      render();
+    }
+    function squareClicked(row, col) {
+      focusSquare = [row,col];
+      if (game.gameOver || game.thinking || game.turn !== 'w' || game.pendingPromotion) return;
+      const piece = game.board[row][col];
+      if (game.activeSkill) { handleSkillTarget(row,col); return; }
+      if (game.selected) {
+        const moves = legalMovesFrom(game,game.selected[0],game.selected[1]);
+        const chosen = moves.find(function(move) { return move.to[0] === row && move.to[1] === col; });
+        if (chosen) {
+          const moving = game.board[chosen.from[0]][chosen.from[1]];
+          if (moving.type === 'p' && (chosen.to[0] === 0 || chosen.to[0] === 7)) { beginPromotion(chosen); return; }
+          afterWhiteMove(commitMove(chosen,'w'));
+          return;
+        }
+      }
+      if (piece && piece.color === 'w') {
+        if (game.selected && game.selected[0] === row && game.selected[1] === col) {
+          game.selected = null;
+          game.status = 'Pilihan dibatalkan. Pilih bidak putih.';
+          render();
+          return;
+        }
+        selectPiece(row,col);
+        return;
+      }
+      game.status = game.selected ? 'Petak itu tidak legal. Pilih petak yang menyala.' : 'Pilih bidak putih terlebih dahulu.';
+      render();
+    }
+    function cancelSkill() {
+      if (!game.activeSkill || game.activeSlot === null) return;
+      const name = skillById[game.activeSkill].name;
+      game.energy = Math.min(5,game.energy + game.activeSkillCost);
+      if (game.activeSkillDiscounted) game.reserveArmed = true;
+      game.activeSkill = null;
+      game.activeSlot = null;
+      game.activeSkillCost = 0;
+      game.activeSkillDiscounted = false;
+      game.relayFirstId = null;
+      game.selected = null;
+      game.status = name + ' dibatalkan. EN dikembalikan.';
+      playSound('toggle');
+      render();
+    }
+    function activateSkill(slot) {
+      const id = game.hand[slot];
+      const skill = skillById[id];
+      if (!skill) return;
+      if (game.activeSkill && game.activeSlot === slot) { cancelSkill(); return; }
+      if (game.gameOver || game.thinking || game.turn !== 'w') return;
+      if (game.activeSkill) { game.status = 'Selesaikan target atau batalkan kartu aktif.'; render(); return; }
+      if (skill.cost === 0 && game.freeSkillUsedThisTurn) { game.status = 'Jatah satu kartu 0 EN per giliran sudah dipakai.'; render(); return; }
+      const cost = currentSkillCost(skill);
+      if (game.energy < cost) { game.status = 'Butuh ' + cost + ' EN; energi sekarang ' + game.energy + '.'; render(); playSound('error'); return; }
+      if (id === 'ration' && game.energy >= 5) { game.status = 'Energi sudah penuh. Simpan Ransum fokus.'; render(); return; }
+      if (id === 'fortune' && game.bonusRerolls) { game.status = 'Bonus putar ulang giliran ini sudah dipakai.'; render(); return; }
+      if (id === 'reserve' && game.reserveArmed) { game.status = 'Fokus cadangan sudah menunggu skill berikutnya.'; render(); return; }
+      if (id === 'surcharge' && game.enemySurcharge) { game.status = 'Pajak mantra sudah terpasang.'; render(); return; }
+      if (id === 'parry' && !game.enemyDrainArmed && game.enemyPreparedSkill !== 'siphon') { game.status = 'Tangkis arus menunggu telegraph Gangguan.'; render(); return; }
+      if (id === 'sacrifice' && !game.board.flat().some(function(piece) { return piece && piece.color === 'w' && piece.type === 'p'; })) { game.status = 'Tidak ada pion putih yang bisa dikorbankan.'; render(); return; }
+      if (id === 'relay' && game.board.flat().filter(function(piece) { return piece && piece.color === 'w' && piece.type !== 'k'; }).length < 2) { game.status = 'Relay membutuhkan dua bidak putih selain raja.'; render(); return; }
+      if (id === 'pawnGuard' && !game.board.flat().some(function(piece) { return piece && piece.color === 'w' && piece.type === 'p'; })) { game.status = 'Tidak ada pion putih yang bisa dilindungi.'; render(); return; }
+      if ((id === 'pawnMark' || id === 'pawnStagger') && !game.board.flat().some(function(piece) { return piece && piece.color === 'b' && piece.type === 'p'; })) { game.status = 'Tidak ada pion hitam yang bisa ditargetkan.'; render(); return; }
+      if (id === 'phoenix' && !canReviveWhitePiece()) { game.status = 'Belum ada bidak putih non-ratu yang bisa dibangkitkan.'; render(); return; }
+      if (id === 'fold' && !hasWhiteJokerTarget()) { game.status = 'Tidak ada bidak putih selain raja untuk dipindahkan.'; render(); return; }
+      if (id === 'edict' && !hasBlackJokerTarget()) { game.status = 'Tidak ada bidak hitam selain raja dan ratu untuk dihapus.'; render(); return; }
+      const oldId = id;
+      const discountUsed = game.reserveArmed;
+      game.energy -= cost;
+      game.reserveArmed = false;
+      const targetSkills = ['lancer','ward','pawnstep','mark','phase','prism','pawnraid','rookbend','stagger','snare','sacrifice','blockade','relay','pawnGuard','pawnMark','pawnStagger','fold','edict','phoenix'];
+      if (targetSkills.indexOf(id) !== -1) {
+        game.activeSkill = id;
+        game.activeSlot = slot;
+        game.activeSkillCost = cost;
+        game.activeSkillDiscounted = discountUsed;
+        game.selected = null;
+        game.relayFirstId = null;
+        const prompts = {
+          lancer:'Pilih bidak putih selain raja untuk bergerak seperti kuda.', ward:'Pilih bidak putih selain raja untuk dilindungi.',
+          pawnstep:'Pilih pion putih untuk langkah ganda.', mark:'Pilih bidak hitam selain raja untuk ditandai.',
+          phase:'Pilih bidak putih selain raja untuk berpindah.', fold:'Pilih bidak putih selain raja untuk Lipatan Dimensi.', prism:'Pilih gajah atau benteng putih.',
+          pawnraid:'Pilih pion putih yang dapat menangkap lurus.', rookbend:'Pilih benteng putih.',
+          stagger:'Pilih bidak hitam selain raja untuk digentarkan.', snare:'Pilih bidak hitam selain raja untuk dijerat.',
+          sacrifice:'Pilih pion putih yang akan dikorbankan. Ini memakai langkahmu.',
+          pawnGuard:'Pilih pion putih untuk ditamengi.', pawnMark:'Pilih pion hitam untuk ditandai.', pawnStagger:'Pilih pion hitam yang tak dapat menangkap pada balasan.',
+          blockade:'Pilih petak kosong untuk ditutup pada balasan lawan.', relay:'Pilih bidak putih pertama untuk ditukar.',
+          edict:'Pilih satu bidak hitam selain raja dan ratu untuk dihapus.', phoenix:'Pilih petak kosong di dua baris awal putih untuk menempatkan bidak yang bangkit.'
+        };
+        game.status = prompts[id] + ' Tekan Batal untuk mengembalikan EN.';
+      } else {
+        if (id === 'tempo') { game.tempoArmed = true; game.status = 'Tempo ganda siap. Tangkapan berikutnya memberi satu langkah tambahan.'; }
+        if (id === 'ration') {
+          const before = game.energy;
+          game.energy = Math.min(5,game.energy + 2);
+          game.status = 'Ransum pulih ' + (game.energy - before) + ' EN; biaya bersih +1 EN.';
+        }
+        if (id === 'disrupt') {
+          game.enemyEnergy = Math.max(0,game.enemyEnergy - 2);
+          if (game.enemyEnergy < 2) game.enemyPreparedSkill = null;
+          game.status = 'Inti lawan kehilangan 2 EN. Skill tertunda bila energinya di bawah 2.';
+        }
+        if (id === 'focus') { game.focusCaptureArmed = true; game.status = 'Taktik presisi siap: tangkapan berikutnya memberi +1 EN.'; }
+        if (id === 'pierce') { game.pierceArmed = true; game.status = 'Tembus perisai siap untuk satu langkah putih.'; }
+        if (id === 'shock') { game.shockArmed = true; game.status = 'Pukulan guntur siap: berikan skak pada langkah berikutnya.'; }
+        if (id === 'leech') { game.leechArmed = true; game.status = 'Lintah arkanum siap pada tangkapan berikutnya.'; }
+        if (id === 'surcharge') { game.enemySurcharge = 1; game.status = 'Skill lawan berikutnya membutuhkan +1 EN.'; }
+        if (id === 'counterspell') {
+          const hadPlan = Boolean(game.enemyPreparedSkill || game.enemyWardPieceId || game.enemyDrainArmed);
+          game.enemyPreparedSkill = null;
+          game.enemyWardPieceId = null;
+          game.enemyDrainArmed = false;
+          if (!hadPlan) game.enemyEnergy = Math.max(0,game.enemyEnergy - 1);
+          game.status = hadPlan ? 'Skill aktif dan rencana lawan dipatahkan.' : 'Tidak ada rencana aktif. Inti lawan kehilangan 1 EN.';
+        }
+        if (id === 'parry') {
+          if (game.enemyDrainArmed) { game.enemyDrainArmed = false; game.energy = Math.min(5,game.energy + 1); game.status = 'Gangguan dipantulkan. Pulih 1 EN.'; }
+          else { game.parryArmed = true; game.status = 'Tangkis arus siap menghadapi Gangguan berikutnya.'; }
+        }
+        if (id === 'riposte') { game.riposteArmed = true; game.status = 'Balas tusuk siap pada tangkapan lawan berikutnya.'; }
+        if (id === 'reserve') { game.reserveArmed = true; game.status = 'Fokus cadangan: kartu skill berikutnya lebih murah 1 EN.'; }
+        if (id === 'quiet') { game.quietArmed = true; game.status = 'Arus sunyi: langkah putih tanpa tangkapan memulihkan 1 EN.'; }
+        if (id === 'pawnBreath') { game.pawnBreathArmed = true; game.status = 'Napas pion siap: langkah pion tanpa tangkapan memulihkan 1 EN.'; }
+        if (id === 'pawnPulse') { game.pawnPulseArmed = true; game.status = 'Denyut pion siap: skak dari pion menguras 1 EN lawan.'; }
+        if (id === 'lastLaugh') { game.lastLaughArmed = true; game.status = 'Bangkit balik siap jika lawan memberi skak.'; }
+        if (id === 'salvage') { game.salvageArmed = true; game.status = 'Rongsokan siap: tangkapan berikutnya memberi +1 EN.'; }
+        if (id === 'fortune') { game.bonusRerolls = 1; game.status = 'Satu putar ulang ekstra tersedia giliran ini.'; }
+        replaceHandSlot(slot,oldId);
+      }
+      playSound('skill');
+      render();
+    }
+    function rerollHand() {
+      if (game.gameOver || game.thinking || game.turn !== 'w' || game.activeSkill || game.rollingSlot !== null) return;
+      const limit = 2 + game.bonusRerolls;
+      if (game.rollsThisTurn >= limit) { game.status = 'Jatah putar ulang seluruh tangan giliran ini sudah habis (' + limit + '/' + limit + ').'; render(); return; }
+      const cost = game.rollsThisTurn === 0 ? 0 : 1;
+      if (game.energy < cost) { game.status = 'Putar ulang seluruh tangan membutuhkan 1 EN; energimu belum cukup.'; render(); playSound('error'); return; }
+      if (dealTimer) {
+        window.clearTimeout(dealTimer);
+        dealTimer = null;
+        document.querySelectorAll('.skill-card.dealing').forEach(function(card) { card.classList.remove('dealing'); });
+      }
+      game.dealtSlot = null;
+      game.energy -= cost;
+      game.rollsThisTurn += 1;
+      game.rollingSlot = 'all';
+      game.status = cost ? 'Mengocok seluruh tangan… biaya 1 EN.' : 'Mengocok seluruh tangan… putaran pertama gratis.';
+      playSound('roll');
+      render();
+      if (rollTimer) window.clearTimeout(rollTimer);
+      rollTimer = window.setTimeout(function() {
+        const previousHand = game.hand.slice();
+        game.hand = makeHand(previousHand);
+        game.dealtSlot = 'all';
+        if (dealTimer) window.clearTimeout(dealTimer);
+        dealTimer = window.setTimeout(function() {
+          game.dealtSlot = null;
+          document.querySelectorAll('.skill-card.dealing').forEach(function(card) { card.classList.remove('dealing'); });
+          dealTimer = null;
+        },320);
+        game.rollingSlot = null;
+        rollTimer = null;
+        game.status = 'Tiga kartu baru dibagikan. Biaya putar tadi ' + (cost ? '1 EN.' : 'gratis.');
+        playSound('reveal');
+        render();
+      },260);
+    }
+    function pulseSignal() {
+      const panel = document.getElementById('enemy-signal');
+      panel.classList.remove('signal-pulse');
+      void panel.offsetWidth;
+      panel.classList.add('signal-pulse');
+      window.setTimeout(function() { panel.classList.remove('signal-pulse'); },260);
+    }
+    function playSound(kind) {
+      if (!soundEnabled) return;
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+      try {
+        if (!audioContext) audioContext = new AudioContextClass();
+        if (audioContext.state === 'suspended') audioContext.resume();
+        const tones = { move:[310,'square',.035], capture:[190,'triangle',.055], skill:[520,'triangle',.045], roll:[220,'square',.025], reveal:[440,'triangle',.04], enemy:[145,'sawtooth',.04], error:[120,'square',.025], toggle:[350,'sine',.025], cardHover:[760,'square',.009,.045] };
+        const sound = tones[kind] || tones.move;
+        const duration = sound[3] || .11;
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        oscillator.type = sound[1];
+        oscillator.frequency.setValueAtTime(sound[0],audioContext.currentTime);
+        gain.gain.setValueAtTime(.0001,audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(sound[2],audioContext.currentTime + .012);
+        gain.gain.exponentialRampToValueAtTime(.0001,audioContext.currentTime + duration);
+        oscillator.connect(gain);
+        gain.connect(audioContext.destination);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + duration + .01);
+        if (kind === 'capture') {
+          [[720,'square',.018,.045,.004],[105,'sine',.042,.13,.006]].forEach(function(layer) {
+            const hit = audioContext.createOscillator();
+            const hitGain = audioContext.createGain();
+            const start = audioContext.currentTime + layer[4];
+            hit.type = layer[1];
+            hit.frequency.setValueAtTime(layer[0],start);
+            if (layer[0] < 150) hit.frequency.exponentialRampToValueAtTime(58,start + layer[3]);
+            hitGain.gain.setValueAtTime(.0001,start);
+            hitGain.gain.exponentialRampToValueAtTime(layer[2],start + .008);
+            hitGain.gain.exponentialRampToValueAtTime(.0001,start + layer[3]);
+            hit.connect(hitGain);
+            hitGain.connect(audioContext.destination);
+            hit.start(start);
+            hit.stop(start + layer[3] + .01);
+          });
+        }
+      } catch (error) { /* Audio is optional and may be unavailable in the browser. */ }
+    }
+
+    function setupSquares() {
+      for (let row = 0; row < 8; row += 1) {
+        squareElements[row] = [];
+        for (let col = 0; col < 8; col += 1) {
+          const square = document.createElement('button');
+          square.type = 'button';
+          square.className = 'square ' + ((row + col) % 2 === 0 ? 'light' : 'dark');
+          square.setAttribute('role','gridcell');
+          square.dataset.row = String(row);
+          square.dataset.col = String(col);
+          square.innerHTML = '<span class="coordinate" aria-hidden="true"></span><span class="piece" aria-hidden="true"></span><span class="capture-effect" aria-hidden="true"><span class="capture-ghost"></span><span class="capture-burst"></span></span><span class="square-status" aria-hidden="true"></span>';
+          square.addEventListener('click',function() { squareClicked(row,col); });
+          square.addEventListener('keydown',function(event) {
+            const movement = { ArrowUp:[-1,0], ArrowDown:[1,0], ArrowLeft:[0,-1], ArrowRight:[0,1] };
+            if (!movement[event.key]) return;
+            event.preventDefault();
+            const nextRow = Math.max(0,Math.min(7,row + movement[event.key][0]));
+            const nextCol = Math.max(0,Math.min(7,col + movement[event.key][1]));
+            focusSquare = [nextRow,nextCol];
+            squareElements[nextRow][nextCol].focus();
+          });
+          boardElement.appendChild(square);
+          squareElements[row][col] = square;
+        }
+      }
+    }
+    function squareMarker(kind) {
+      const marks = {
+        shield:'<path d="M12 2 20 5v6c0 5-3 8-8 11-5-3-8-6-8-11V5zM8 12l3 3 5-6"/>',
+        mark:'<circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/>',
+        stagger:'<path d="m3 17 5-5 4 3 8-9M16 6h4v4M4 5l3 2M4 21h16"/>',
+        snare:'<path d="M4 5h16M4 19h16M6 5v4l6 5 6-5V5M6 19v-4l6-5 6 5v4"/>',
+        block:'<path d="M4 5h16M4 12h16M4 19h16M7 3v18M12 3v18M17 3v18"/>'
+      };
+      return marks[kind] ? '<svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">' + marks[kind] + '</svg>' : '';
+    }
+    function renderBoard() {
+      const selectedMoves = game.selected ? legalMovesFrom(game,game.selected[0],game.selected[1]) : [];
+      for (let row = 0; row < 8; row += 1) {
+        for (let col = 0; col < 8; col += 1) {
+          const square = squareElements[row][col];
+          const piece = game.board[row][col];
+          const position = coord(row,col);
+          const selected = game.selected && game.selected[0] === row && game.selected[1] === col;
+          const move = selectedMoves.find(function(candidate) { return candidate.to[0] === row && candidate.to[1] === col; });
+          const checked = piece && piece.type === 'k' && isInCheck(game.board,piece.color);
+          const enemyProtected = piece && piece.id === game.enemyWardPieceId;
+          const playerProtected = piece && piece.id === game.playerWardPieceId;
+          const marked = piece && piece.id === game.markedEnemyId;
+          const staggered = piece && piece.id === game.staggerId;
+          const snared = piece && piece.id === game.snareId;
+          const blocked = game.blockadeSquare && game.blockadeSquare[0] === row && game.blockadeSquare[1] === col;
+          const captureFx = game.captureFx;
+          const captureOrigin = captureFx && captureFx.from[0] === row && captureFx.from[1] === col;
+          const captureImpact = captureFx && captureFx.to[0] === row && captureFx.to[1] === col && piece && piece.id === captureFx.attackerId;
+          const captureVictim = captureFx && captureFx.victimAt[0] === row && captureFx.victimAt[1] === col;
+          square.classList.toggle('selected',Boolean(selected));
+          square.classList.toggle('last-from',Boolean(game.lastMove && game.lastMove.from[0] === row && game.lastMove.from[1] === col));
+          square.classList.toggle('last-to',Boolean(game.lastMove && game.lastMove.to[0] === row && game.lastMove.to[1] === col));
+          square.classList.toggle('in-check',Boolean(checked));
+          square.classList.toggle('enemy-ward',Boolean(enemyProtected));
+          square.classList.toggle('player-ward',Boolean(playerProtected));
+          square.classList.toggle('marked-piece',Boolean(marked));
+          square.classList.toggle('staggered-piece',Boolean(staggered));
+          square.classList.toggle('snared-piece',Boolean(snared));
+          square.classList.toggle('blocked-target',Boolean(blocked));
+          square.classList.toggle('capture-origin',Boolean(captureOrigin));
+          square.classList.toggle('capture-impact',Boolean(captureImpact));
+          square.classList.toggle('capture-victim',Boolean(captureVictim));
+          square.classList.toggle('move-hint',Boolean(move && !piece));
+          square.classList.toggle('capture-hint',Boolean(move && piece));
+          square.querySelector('.coordinate').textContent = col === 0 ? String(8 - row) : (row === 7 ? files[col] : '');
+          const pieceNode = square.querySelector('.piece');
+          pieceNode.textContent = piece ? symbols[piece.color][piece.type] : '';
+          pieceNode.className = 'piece' + (piece ? ' ' + (piece.color === 'w' ? 'white' : 'black') : '');
+          const statusNode = square.querySelector('.square-status');
+          const marker = enemyProtected || playerProtected ? 'shield' : (marked ? 'mark' : (staggered ? 'stagger' : (snared ? 'snare' : (blocked ? 'block' : null))));
+          statusNode.className = 'square-status' + (marker ? ' active' : '') + (enemyProtected ? ' enemy' : '');
+          statusNode.innerHTML = marker ? squareMarker(marker) : '';
+          const captureEffect = square.querySelector('.capture-effect');
+          captureEffect.classList.toggle('active',Boolean(captureImpact || captureVictim));
+          const captureGhost = captureEffect.querySelector('.capture-ghost');
+          captureGhost.textContent = captureVictim ? symbols[captureFx.color][captureFx.piece] : '';
+          captureGhost.className = 'capture-ghost' + (captureVictim ? ' shattering ' + (captureFx.color === 'w' ? 'white' : 'black') : '');
+          const labels = [];
+          if (enemyProtected || playerProtected) labels.push('terlindungi perisai');
+          if (marked) labels.push('ditandai untuk diburu');
+          if (staggered) labels.push('tak dapat menangkap pada balasan lawan');
+          if (snared) labels.push('terjerat, tak dapat bergerak pada balasan lawan');
+          if (blocked) labels.push('petak diblokade pada balasan lawan');
+          square.setAttribute('aria-label',position + (piece ? ', ' + (piece.color === 'w' ? 'putih ' : 'hitam ') + pieceNames[piece.type] : ', kosong')
+            + (labels.length ? ', ' + labels.join(', ') : ''));
+          square.tabIndex = row === focusSquare[0] && col === focusSquare[1] ? 0 : -1;
+        }
+      }
+    }
+    function renderEnergy() {
+      const track = document.getElementById('energy-track');
+      track.innerHTML = '';
+      for (let i = 0; i < 5; i += 1) {
+        const pip = document.createElement('span');
+        pip.className = 'energy-pip' + (i < game.energy ? ' on' : '');
+        track.appendChild(pip);
+      }
+      document.getElementById('energy-number').textContent = game.energy + ' / 5';
+    }
+    function renderCards() {
+      const list = document.getElementById('skill-list');
+      list.innerHTML = game.hand.map(function(id,slot) {
+        const skill = skillById[id];
+        const targeting = game.activeSlot === slot;
+        const rolling = game.rollingSlot === 'all';
+        const dealing = game.dealtSlot === slot || game.dealtSlot === 'all';
+        const cost = currentSkillCost(skill);
+        const unaffordable = game.energy < cost;
+        const busy = game.thinking || game.gameOver || game.turn !== 'w';
+        const canUse = (skill.id !== 'ration' || game.energy < 5)
+          && (id !== 'phoenix' || canReviveWhitePiece())
+          && (id !== 'fold' || hasWhiteJokerTarget())
+          && (id !== 'edict' || hasBlackJokerTarget());
+        const whitePieces = game.board.flat().filter(function(piece) { return piece && piece.color === 'w'; });
+        const eligiblePawns = whitePieces.filter(function(piece) { return piece.type === 'p'; }).length;
+        const eligibleEnemyPawns = game.board.flat().filter(function(piece) { return piece && piece.color === 'b' && piece.type === 'p'; }).length;
+        const eligibleRelay = whitePieces.filter(function(piece) { return piece.type !== 'k'; }).length;
+        const freeSkillLocked = skill.cost === 0 && game.freeSkillUsedThisTurn && !targeting;
+        let state = 'SIAP';
+        let action = 'KLIK UNTUK AKTIF';
+        if (targeting) {
+          state = id === 'relay' && game.relayFirstId ? 'PILIH BIDAK KEDUA' : 'PILIH TARGET';
+          action = 'KLIK LAGI UNTUK BATAL';
+        } else if (rolling) {
+          state = 'MENGOCOK…';
+          action = 'TUNGGU KARTU BARU';
+        } else if (dealing) {
+          state = 'KARTU BARU';
+          action = 'KLIK UNTUK AKTIF';
+        } else if (freeSkillLocked) {
+          state = 'GRATIS TERPAKAI';
+          action = 'TUNGGU GILIRAN';
+        } else if (id === 'phoenix' && !canReviveWhitePiece()) {
+          state = 'BELUM ADA BIDAK';
+          action = 'TUNGGU KORBAN';
+        } else if (id === 'fold' && !hasWhiteJokerTarget()) {
+          state = 'TAK ADA BIDAK PUTIH';
+          action = 'TAK BISA DIPAKAI';
+        } else if (id === 'edict' && !hasBlackJokerTarget()) {
+          state = 'TAK ADA TARGET SAH';
+          action = 'TAK BISA DIPAKAI';
+        } else if (unaffordable) {
+          state = 'BUTUH ' + cost + ' EN';
+          action = 'ENERGI ' + game.energy + ' / 5';
+        } else if (!canUse) {
+          state = 'ENERGI PENUH';
+          action = 'SIMPAN UNTUK NANTI';
+        } else if (id === 'fortune' && game.bonusRerolls) {
+          state = 'BONUS PUTAR AKTIF';
+          action = 'SUDAH DIPAKAI';
+        } else if (id === 'reserve' && game.reserveArmed) {
+          state = 'CADANGAN AKTIF';
+          action = 'SUDAH MENUNGGU';
+        } else if (id === 'surcharge' && game.enemySurcharge) {
+          state = 'PAJAK TERPASANG';
+          action = 'TARGET SUDAH ADA';
+        } else if (id === 'parry' && !game.enemyDrainArmed && game.enemyPreparedSkill !== 'siphon') {
+          state = 'TUNGGU TELEGRAPH';
+          action = 'GANGGUAN BELUM SIAP';
+        } else if (id === 'sacrifice' && eligiblePawns === 0) {
+          state = 'TAK ADA PION';
+          action = 'TIDAK BISA DIPAKAI';
+        } else if (id === 'relay' && eligibleRelay < 2) {
+          state = 'BUTUH 2 BIDAK';
+          action = 'TIDAK BISA DIPAKAI';
+        } else if (id === 'pawnGuard' && eligiblePawns === 0) {
+          state = 'TAK ADA PION';
+          action = 'TIDAK BISA DIPAKAI';
+        } else if ((id === 'pawnMark' || id === 'pawnStagger') && eligibleEnemyPawns === 0) {
+          state = 'TAK ADA PION HITAM';
+          action = 'TIDAK BISA DIPAKAI';
+        }
+        const unavailable = !canUse || (id === 'fortune' && game.bonusRerolls) || (id === 'reserve' && game.reserveArmed)
+          || (id === 'surcharge' && game.enemySurcharge) || (id === 'parry' && !game.enemyDrainArmed && game.enemyPreparedSkill !== 'siphon')
+          || (id === 'sacrifice' && eligiblePawns === 0) || (id === 'relay' && eligibleRelay < 2)
+          || (id === 'pawnGuard' && eligiblePawns === 0) || ((id === 'pawnMark' || id === 'pawnStagger') && eligibleEnemyPawns === 0)
+          || freeSkillLocked;
+        const locked = busy || game.rollingSlot !== null || (Boolean(game.activeSkill) && !targeting)
+          || (!targeting && (unaffordable || unavailable));
+        const discountLabel = game.reserveArmed ? '<span class="card-discount">CADANGAN −1</span>' : '';
+        const cardState = '<span class="card-state"><span>' + state + '</span><strong>' + action + '</strong></span>';
+        const costLabel = cost === 0 ? '0 EN' : String(cost).padStart(2,'0') + ' EN';
+        return '<article class="skill-card kind-' + skill.kind + (rolling ? ' rolling' : '') + (dealing ? ' dealing' : '') + '" role="listitem">' +
+          '<button class="card-play' + (targeting ? ' active' : '') + (!targeting && (unaffordable || unavailable) ? ' unaffordable' : '') + '" type="button" data-use-slot="' + slot + '" aria-pressed="' + (targeting ? 'true' : 'false') + '" title="' + skill.desc + '" aria-label="' + (targeting ? 'Batalkan ' + skill.name + ' dan kembalikan ' + cost + ' EN' : skill.name + '. ' + skill.desc + ' Biaya ' + cost + ' EN.') + '"' + (locked ? ' disabled' : '') + '>' +
+          '<span class="card-top"><span class="card-kind"><i class="card-kind-mark" aria-hidden="true"></i>' + skill.tag + '</span><span class="card-cost' + (cost === 0 ? ' free' : '') + '" title="Biaya ' + cost + ' EN' + (game.reserveArmed ? ', potongan Fokus cadangan satu EN' : '') + '">' + costLabel + '</span>' + discountLabel + '</span>' +
+          '<span class="card-art" aria-hidden="true"><svg viewBox="0 0 64 64" focusable="false">' + cardArt[skill.icon] + '</svg></span>' +
+          '<span class="card-copy"><span class="card-title" role="heading" aria-level="3">' + skill.name + '</span><span class="card-description">' + skill.desc + '</span></span>' + cardState + '</button></article>';
+      }).join('');
+      document.getElementById('free-skill-state').textContent = game.freeSkillUsedThisTurn ? 'TERPAKAI' : 'SIAP';
+      const rollLimit = 2 + game.bonusRerolls;
+      const rollAvailable = game.rollsThisTurn < rollLimit;
+      const rollCost = game.rollsThisTurn === 0 ? 0 : 1;
+      const rollLabel = !rollAvailable ? 'PUTAR ULANG HABIS' : (rollCost ? 'PUTAR KARTU • 1 EN' : 'PUTAR KARTU • GRATIS');
+      const rollButton = document.getElementById('reroll-hand');
+      document.getElementById('roll-counter').textContent = 'PUTAR KARTU';
+      document.getElementById('roll-caption').textContent = rollAvailable
+        ? (rollCost ? 'Biaya 1 EN • putaran ' + (game.rollsThisTurn + 1) + ' dari ' + rollLimit : 'Gratis • putaran 1 dari ' + rollLimit)
+        : 'Jatah giliran ini habis';
+      rollButton.disabled = game.gameOver || game.thinking || game.turn !== 'w' || Boolean(game.activeSkill)
+        || game.rollingSlot !== null || !rollAvailable || game.energy < rollCost;
+      rollButton.setAttribute('aria-label',rollLabel + (rollAvailable ? (rollCost ? '. Ganti ketiga kartu dengan biaya satu energi.' : '. Ganti ketiga kartu gratis.') : '. Jatah putar ulang habis.'));
+      rollButton.title = rollAvailable
+        ? (rollCost ? 'Ganti ketiga kartu dengan biaya 1 EN. Putaran ' + (game.rollsThisTurn + 1) + ' dari ' + rollLimit + '.' : 'Ganti ketiga kartu gratis. Putaran pertama tiap giliran.')
+        : 'Jatah putar ulang giliran ini sudah habis (' + rollLimit + '/' + rollLimit + ').';
+    }
+    function renderEnemyEnergy() {
+      const track = document.getElementById('enemy-energy-track');
+      track.innerHTML = '';
+      for (let i = 0; i < 5; i += 1) {
+        const pip = document.createElement('span');
+        pip.className = 'energy-pip' + (i < game.enemyEnergy ? ' on enemy-pip' : '');
+        track.appendChild(pip);
+      }
+      document.getElementById('enemy-energy-number').textContent = String(game.enemyEnergy).padStart(2,'0') + ' / 05';
+      const nextSkillCost = 2 + game.enemySurcharge;
+      document.getElementById('enemy-energy-note').textContent = game.enemyPreparedSkill
+        ? 'Butuh ' + nextSkillCost + ' EN • berikutnya: ' + (game.enemyPreparedSkill === 'ward' ? 'Perisai' : 'Gangguan') + (game.enemySurcharge ? ' • Pajak +1' : '')
+        : 'Rencana lawan terganggu • butuh ' + nextSkillCost + ' EN (' + Math.max(0,nextSkillCost - game.enemyEnergy) + ' lagi).';
+    }
+    function renderEnemySignal() {
+      const title = document.getElementById('enemy-skill-title');
+      const copy = document.getElementById('enemy-skill-copy');
+      const state = document.getElementById('enemy-skill-state');
+      if (game.enemyWardPieceId) {
+        const piece = game.board.flat().find(function(item) { return item && item.id === game.enemyWardPieceId; });
+        title.textContent = 'Perisai lawan aktif';
+        copy.textContent = piece ? pieceNames[piece.type] + ' hitam terlindungi sampai langkah putih berakhir, kecuali tangkapan itu satu-satunya jawaban skak.' : 'Bidak hitam terlindungi untuk satu balasan.';
+        state.textContent = 'AKTIF';
+      } else if (game.enemyDrainArmed) {
+        title.textContent = 'Gangguan lawan aktif';
+        copy.textContent = 'Setelah langkah putih berikutnya, lawan menguras 1 EN.' + (game.parryArmed ? ' Tangkis Arus bisa membaliknya.' : '');
+        state.textContent = 'AWAS';
+      } else if (game.enemyPreparedSkill === 'siphon') {
+        title.textContent = 'Lawan menyiapkan Gangguan';
+        copy.textContent = 'Jika memiliki ' + (2 + game.enemySurcharge) + ' EN saat giliran hitam, lawan menguras 1 EN setelah langkahmu.' + (game.parryArmed ? ' Tangkis Arus membalikkan efek ini.' : '');
+        state.textContent = game.enemyEnergy >= 2 + game.enemySurcharge ? 'SIAP' : 'MENGISI';
+      } else if (game.enemyPreparedSkill === 'ward') {
+        title.textContent = 'Lawan menyiapkan Perisai';
+        copy.textContent = 'Jika memiliki ' + (2 + game.enemySurcharge) + ' EN, lawan melindungi bidak hitam bernilai tertinggi yang terancam.';
+        state.textContent = game.enemyEnergy >= 2 + game.enemySurcharge ? 'SIAP' : 'MENGISI';
+      } else {
+        title.textContent = 'Rencana lawan terganggu';
+        copy.textContent = 'Kuras inti menunda skill berikutnya; perhatikan energi lawan.';
+        state.textContent = 'TERTUNDA';
+      }
+    }
+    function renderEffects() {
+      const effects = [];
+      function add(text, enemy) { effects.push({ text:text, enemy:Boolean(enemy) }); }
+      function positionFor(pieceId) {
+        const square = pieceId && findPieceSquare(pieceId);
+        return square ? ' ' + coord(square[0],square[1]) : '';
+      }
+      if (game.knightTargetId) add('Jejak kuda' + positionFor(game.knightTargetId) + ' • langkah berikutnya');
+      if (game.pawnStepId) add('Langkah pion' + positionFor(game.pawnStepId) + ' • maju dua petak');
+      if (game.pawnRaidId) add('Serbu pion' + positionFor(game.pawnRaidId) + ' • tangkap lurus');
+      if (game.phaseTargetId) add(game.phaseJokerId === game.phaseTargetId
+        ? 'Lipatan dimensi' + positionFor(game.phaseTargetId) + ' • jangkauan global'
+        : 'Langkah bayangan' + positionFor(game.phaseTargetId) + ' • pindah maksimal 2');
+      if (game.prismTargetId) add('Prisma gerak' + positionFor(game.prismTargetId) + ' • pola berubah');
+      if (game.rookBendId) add('Belok benteng' + positionFor(game.rookBendId) + ' • diagonal satu petak');
+      if (game.playerWardPieceId) add('Perisai putih' + positionFor(game.playerWardPieceId) + ' • tahan satu tangkapan');
+      if (game.enemyWardPieceId) add('Perisai hitam' + positionFor(game.enemyWardPieceId) + ' • target terlindungi',true);
+      if (game.markedEnemyId) add('Tanda buru' + positionFor(game.markedEnemyId) + ' • tangkap untuk +1 EN');
+      if (game.staggerId) add('Gentar' + positionFor(game.staggerId) + ' • tak dapat menangkap',true);
+      if (game.snareId) add('Jerat' + positionFor(game.snareId) + ' • tak dapat bergerak',true);
+      if (game.blockadeSquare) add('Blokade ' + coord(game.blockadeSquare[0],game.blockadeSquare[1]) + ' • lawan tak bisa mendarat');
+      if (game.tempoArmed) add('Tempo ganda • tunggu tangkapan');
+      if (game.focusCaptureArmed) add('Taktik presisi • tangkapan +1 EN');
+      if (game.pierceArmed) add('Tembus perisai • tangkapan berikutnya');
+      if (game.shockArmed) add('Pukulan guntur • skak berikutnya kuras 1 EN');
+      if (game.leechArmed) add('Lintah arkanum • tangkapan berikutnya');
+      if (game.enemySurcharge) add('Pajak mantra • skill lawan +1 EN');
+      if (game.parryArmed) add('Tangkis arus • siap membalikkan Gangguan');
+      if (game.riposteArmed) add('Balas tusuk • tangkapan lawan memberi +1 EN');
+      if (game.reserveArmed) add('Fokus cadangan • kartu berikutnya −1 EN');
+      if (game.quietArmed) add('Arus sunyi • langkah tanpa tangkapan +1 EN');
+      if (game.pawnBreathArmed) add('Napas pion • langkah pion tanpa tangkapan +1 EN');
+      if (game.pawnPulseArmed) add('Denyut pion • skak pion menguras 1 EN lawan');
+      if (game.lastLaughArmed) add('Bangkit balik • skak lawan memulihkan 2 EN');
+      if (game.salvageArmed) add('Rongsokan • tangkapan memberi +1 EN');
+      if (game.enemyDrainArmed) add('Gangguan • langkahmu berikutnya −1 EN',true);
+      const strip = document.getElementById('effect-strip');
+      strip.replaceChildren();
+      if (!effects.length) {
+        const empty = document.createElement('span');
+        empty.className = 'effect-empty';
+        empty.textContent = 'Tidak ada efek aktif.';
+        strip.appendChild(empty);
+        return;
+      }
+      effects.forEach(function(effect) {
+        const chip = document.createElement('span');
+        chip.className = 'effect-chip' + (effect.enemy ? ' enemy-effect' : '');
+        chip.textContent = effect.text;
+        strip.appendChild(chip);
+      });
+    }
+    function renderLedger() {
+      const list = document.getElementById('move-list');
+      const empty = document.getElementById('empty-ledger');
+      const recent = game.history.slice(-6).reverse();
+      list.innerHTML = '';
+      empty.hidden = game.history.length > 0;
+      document.getElementById('ledger-count').textContent = game.history.length
+        ? String(game.history.length) + ' setengah-langkah' : 'Belum ada langkah';
+      recent.forEach(function(item,index) {
+        const li = document.createElement('li');
+        const number = Math.ceil((game.history.length - index) / 2);
+        const label = document.createElement('span');
+        const notation = document.createElement('span');
+        const detail = (item.note || (item.castle ? (item.castle === 'k' ? 'rokade sisi raja' : 'rokade sisi ratu')
+          : pieceNames[item.piece] + (item.capture ? ' x ' : ' ke ') + item.to))
+          + (item.promotion ? ' = ' + pieceNames[item.promotion] : '');
+        label.textContent = String(number).padStart(2,'0') + (item.color === 'w' ? 'P' : 'H');
+        notation.textContent = detail;
+        li.append(label,notation);
+        list.appendChild(li);
+      });
+    }
+    function render() {
+      renderBoard();
+      const promotionDialog = document.getElementById('promotion-dialog');
+      if (game.pendingPromotion) {
+        document.getElementById('promotion-message').textContent = 'Pion putih mencapai ' + coord(game.pendingPromotion.to[0],game.pendingPromotion.to[1]) + '. Pilih bidak promosi.';
+        if (!promotionDialog.open) promotionDialog.showModal();
+      } else if (promotionDialog.open) promotionDialog.close();
+      renderEnergy();
+      renderCards();
+      renderEnemyEnergy();
+      renderEnemySignal();
+      renderEffects();
+      renderLedger();
+      const whitePieces = game.board.flat().filter(function(piece) { return piece && piece.color === 'w'; }).length;
+      document.getElementById('piece-count').textContent = String(whitePieces).padStart(2,'0');
+      document.getElementById('capture-count').textContent = String(game.captures.w).padStart(2,'0');
+      document.getElementById('enemy-king-state').textContent = isInCheck(game.board,'b') ? 'SKAK' : 'AMAN';
+      document.getElementById('king-state').textContent = isInCheck(game.board,'w') ? 'Raja sedang diskak.' : 'Raja belum terancam.';
+      document.getElementById('army-state').textContent = game.gameOver ? (game.winner === 'w' ? 'MENANG' : 'SELESAI') : 'SIAP';
+      document.getElementById('turn-count').textContent = String(game.turnNo).padStart(2,'0');
+      document.getElementById('board-status').textContent = game.status;
+      document.getElementById('live-message').textContent = game.status;
+      document.getElementById('footer-state').textContent = game.gameOver
+        ? (game.winner === 'w' ? 'Putih menang / mulai ulang untuk bermain lagi'
+          : (game.winner === 'b' ? 'Hitam menang / mulai ulang untuk bermain lagi' : 'Remis / mulai ulang untuk bermain lagi'))
+        : 'Papan standar / lawan sederhana';
+
+      const flag = document.getElementById('turn-flag');
+      flag.className = 'turn-flag' + (game.gameOver ? ' game-over' : (game.thinking ? ' thinking' : (game.turn === 'w' ? ' player-turn' : '')));
+      flag.textContent = game.gameOver ? (game.winner === 'w' ? 'Putih menang' : (game.winner === 'b' ? 'Hitam menang' : 'Remis'))
+        : (game.thinking ? 'Hitam berpikir' : (game.turn === 'w' ? 'Giliran putih' : 'Giliran hitam'));
+      document.getElementById('undo-button').disabled = !canUndo();
+      const soundButton = document.getElementById('sound-button');
+      soundButton.textContent = soundEnabled ? 'Suara: ON' : 'Suara: OFF';
+      soundButton.setAttribute('aria-pressed',soundEnabled ? 'true' : 'false');
+    }
+
+    const skillListElement = document.getElementById('skill-list');
+    const promotionDialogElement = document.getElementById('promotion-dialog');
+    promotionDialogElement.addEventListener('cancel',function(event) {
+      if (game.pendingPromotion) event.preventDefault();
+    });
+    promotionDialogElement.addEventListener('click',function(event) {
+      const choice = event.target.closest('[data-promotion]');
+      if (!choice || !game.pendingPromotion) return;
+      const move = Object.assign({},game.pendingPromotion,{ promotion:choice.dataset.promotion });
+      game.pendingPromotion = null;
+      promotionDialogElement.close();
+      afterWhiteMove(commitMove(move,'w'));
+    });
+    skillListElement.addEventListener('pointerover',function(event) {
+      if (event.pointerType === 'touch') return;
+      const card = event.target.closest('.skill-card');
+      const previous = event.relatedTarget instanceof Element ? event.relatedTarget.closest('.skill-card') : null;
+      if (!card || card === previous) return;
+      const now = Date.now();
+      if (now - lastCardHoverAt < 55) return;
+      lastCardHoverAt = now;
+      playSound('cardHover');
+    });
+    skillListElement.addEventListener('pointermove',function(event) {
+      if (event.pointerType === 'touch' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const card = event.target.closest('.skill-card');
+      const button = card && card.querySelector('.card-play');
+      if (!button) return;
+      const bounds = button.getBoundingClientRect();
+      const x = (event.clientX - bounds.left) / bounds.width - .5;
+      const y = (event.clientY - bounds.top) / bounds.height - .5;
+      button.style.setProperty('--tilt-x',(y * -5).toFixed(2) + 'deg');
+      button.style.setProperty('--tilt-y',(x * 6).toFixed(2) + 'deg');
+    });
+    skillListElement.addEventListener('pointerout',function(event) {
+      const card = event.target.closest('.skill-card');
+      const next = event.relatedTarget instanceof Element ? event.relatedTarget.closest('.skill-card') : null;
+      if (!card || card === next) return;
+      const button = card.querySelector('.card-play');
+      if (button) {
+        button.style.removeProperty('--tilt-x');
+        button.style.removeProperty('--tilt-y');
+      }
+    });
+    skillListElement.addEventListener('click',function(event) {
+      const useButton = event.target.closest('[data-use-slot]');
+      if (useButton) activateSkill(Number(useButton.dataset.useSlot));
+    });
+    document.getElementById('reroll-hand').addEventListener('click',rerollHand);
+    document.addEventListener('keydown',function(event) {
+      if (event.key !== 'Escape') return;
+      if (game.pendingPromotion) { event.preventDefault(); return; }
+      if (game.activeSkill) cancelSkill();
+      else if (game.selected) {
+        game.selected = null;
+        game.status = 'Pilihan dibatalkan. Pilih bidak putih.';
+        render();
+      }
+    });
+    document.getElementById('undo-button').addEventListener('click',undoTurn);
+    document.getElementById('reset-button').addEventListener('click',setInitialState);
+    document.getElementById('sound-button').addEventListener('click',function() {
+      soundEnabled = !soundEnabled;
+      render();
+      if (soundEnabled) playSound('toggle');
+    });
+    setupSquares();
+    setInitialState();
+  </script>
+</body>
+</html>
