@@ -1,0 +1,409 @@
+/* =====================================================================
+   Kartu skill — gaya disalin dari katalog desain `cards.html`.
+   Bingkai kertas krem dengan sudut terpotong, aksen warna per jenis,
+   ikon garis, blok judul/deskripsi, dan baris status.
+   Selector kartu yang sama dipakai katalog dan battle screen; perbedaan
+   hanya pada ukuran (di battle lebih besar agar mudah dibaca).
+   ===================================================================== */
+
+/* Palet katalog (cards.html). Dideklarasikan di lingkup kartu supaya gaya
+   kartu utuh sendiri dan tidak bergantung token app yang berbeda nama. */
+.skill-card {
+  --coral: #f1788f;
+  --lavender: #c6a8d8;
+  --blue: #9dc4e4;
+  --rose: #e6b8d1;
+  --gold: #f1cf70;
+  --paper: #e8d6ad;
+  --navy: #1a2034;
+  --plum: #30283d;
+  --ink: #261f30;
+  --accent: var(--coral);
+  --deep: #43283f;
+  --tint: rgba(241, 120, 143, 0.2);
+  position: relative;
+  height: 100%;
+  min-width: 0;
+  isolation: isolate;
+  container-type: inline-size;
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1), filter 180ms ease;
+}
+.skill-card.kind-defense {
+  --accent: var(--lavender);
+  --deep: #3e3452;
+  --tint: rgba(198, 168, 216, 0.2);
+}
+.skill-card.kind-spell {
+  --accent: var(--blue);
+  --deep: #263d56;
+  --tint: rgba(157, 196, 228, 0.2);
+}
+.skill-card.kind-consumable {
+  --accent: var(--rose);
+  --deep: #493344;
+  --tint: rgba(230, 184, 209, 0.2);
+}
+.skill-card.kind-joker {
+  --accent: var(--gold);
+  --deep: #403326;
+  --tint: rgba(243, 212, 119, 0.22);
+}
+
+/* Wajah kartu: kertas sebagai lapisan luar, bingkai dalam gelap. */
+.card-face {
+  position: relative;
+  isolation: isolate;
+  min-height: var(--card-min-height, 318px);
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto var(--card-art-height, 112px) minmax(var(--card-copy-min, 88px), 1fr) auto;
+  gap: var(--card-gap, 7px);
+  padding: var(--card-pad, 10px);
+  color: var(--cream);
+  background: #e1c9a1;
+  clip-path: var(--card-notch, none);
+  transition: filter 160ms ease, box-shadow 160ms ease;
+}
+.card-face::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: var(--card-inset, 6px);
+  background: var(--deep);
+  box-shadow:
+    inset 0 0 0 2px #98819a,
+    inset 0 0 0 4px #302a42;
+  clip-path: polygon(
+    8px 0,
+    calc(100% - 8px) 0,
+    calc(100% - 8px) 3px,
+    calc(100% - 3px) 3px,
+    calc(100% - 3px) 8px,
+    100% 8px,
+    100% calc(100% - 8px),
+    calc(100% - 8px) calc(100% - 8px),
+    calc(100% - 8px) 100%,
+    8px 100%,
+    8px calc(100% - 3px),
+    3px calc(100% - 3px),
+    3px calc(100% - 8px),
+    0 calc(100% - 8px),
+    0 8px,
+    3px 8px,
+    3px 3px,
+    8px 3px
+  );
+}
+
+.card-top {
+  min-width: 0;
+  min-height: var(--card-top-min, 29px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  padding: 5px 8px;
+  color: #29233a;
+  background: #efe1bf;
+  box-shadow: inset 0 0 0 1px rgba(81, 65, 83, 0.35);
+  clip-path: polygon(
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 2px,
+    100% 2px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 2px),
+    0 calc(100% - 2px),
+    0 4px,
+    4px 4px
+  );
+}
+.card-kind {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--deep);
+  font: 700 var(--card-kind-size, 10px) / 1 'Courier New', monospace;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kind-mark {
+  width: 11px;
+  height: 11px;
+  flex: 0 0 auto;
+  border: 2px solid currentColor;
+  background: var(--accent);
+}
+.card-cost {
+  flex: 0 0 auto;
+  padding: 5px 6px;
+  color: #fff0d0;
+  background: var(--deep);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  font: 700 var(--card-cost-size, 10px) / 1 'Courier New', monospace;
+  white-space: nowrap;
+}
+.card-cost.free {
+  color: #e4f2f1;
+  background: #2e4852;
+  box-shadow: inset 0 0 0 1px var(--blue);
+}
+
+.card-art {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  border: 2px solid var(--accent);
+  background-color: #211d35;
+  background-image:
+    linear-gradient(rgba(17, 19, 39, 0.14), rgba(17, 19, 39, 0.14)),
+    conic-gradient(var(--tint) 25%, transparent 0 50%, var(--tint) 0 75%, transparent 0);
+  background-size: auto, 14px 14px;
+  image-rendering: pixelated;
+}
+.card-art::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px solid rgba(243, 228, 196, 0.58);
+  box-shadow: inset 0 0 0 2px rgba(30, 28, 49, 0.62);
+  pointer-events: none;
+}
+.card-art svg {
+  position: relative;
+  z-index: 1;
+  width: var(--card-icon-size, 72px);
+  height: var(--card-icon-size, 72px);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  shape-rendering: crispEdges;
+  filter: drop-shadow(2px 2px 0 rgba(20, 17, 31, 0.72));
+}
+
+.card-copy {
+  min-width: 0;
+  padding: var(--card-copy-pad, 8px);
+  color: #332a3c;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px rgba(89, 68, 77, 0.26);
+  overflow: hidden;
+  clip-path: polygon(
+    4px 0,
+    calc(100% - 4px) 0,
+    calc(100% - 4px) 2px,
+    100% 2px,
+    100% calc(100% - 4px),
+    calc(100% - 4px) calc(100% - 4px),
+    calc(100% - 4px) 100%,
+    4px 100%,
+    4px calc(100% - 2px),
+    0 calc(100% - 2px),
+    0 4px,
+    4px 4px
+  );
+}
+.card-title {
+  display: block;
+  margin: 0 0 5px;
+  color: #211a2a;
+  font: 700 var(--card-title-size, 13px) / 1.15 'Courier New', monospace;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+.card-description {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--card-desc-lines, 4);
+  color: #433947;
+  font: var(--card-desc-size, 12px) / 1.32 Georgia, 'Times New Roman', serif;
+  overflow-wrap: anywhere;
+}
+.card-state {
+  min-height: var(--card-state-min, 22px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  padding: 6px 3px 2px;
+  border-top: 1px solid rgba(243, 228, 196, 0.48);
+  color: #f1e4ca;
+  font: 700 var(--card-state-size, 9px) / 1.15 'Courier New', monospace;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+.card-state strong {
+  color: var(--accent);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+/* Kartu sempit (tiga kolom di ponsel/tablet): label ditumpuk agar tidak
+   pecah satu huruf per baris dan tidak menutupi biaya. */
+@container (max-width: 186px) {
+  .card-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    text-align: center;
+  }
+  .card-kind { justify-content: center; }
+  .card-cost { text-align: center; }
+  .card-state {
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    text-align: center;
+  }
+  .card-state strong { text-align: center; }
+}
+@container (max-width: 132px) {
+  .card-title { --card-title-size: 10px; }
+  .card-description { --card-desc-size: 9px; --card-desc-lines: 5; }
+}
+
+/* Joker: bingkai emas dan latar kilau. */
+.skill-card.kind-joker .card-face {
+  padding: var(--card-pad, 10px);
+  background: linear-gradient(112deg, #a8712d 0%, #f2d47a 19%, #fff0b0 34%, #bd883c 54%, #f6dc8d 75%, #a8712d 100%);
+  background-size: 100% 100%;
+  box-shadow: inset 0 0 0 2px #f5dfa0;
+}
+.skill-card.kind-joker .card-face::before {
+  background: #352b36;
+  box-shadow:
+    inset 0 0 0 2px #e7c66b,
+    inset 0 0 0 4px #302a42;
+}
+.skill-card.kind-joker .card-top {
+  background: #f5e8c8;
+  box-shadow: inset 0 0 0 1px #d2aa53;
+}
+.skill-card.kind-joker .card-art {
+  border-color: var(--gold);
+  background-color: #29223a;
+  background-image:
+    radial-gradient(2px 2px at 16% 22%, #fff0aa 0 1px, transparent 1.8px),
+    radial-gradient(2px 2px at 81% 28%, #ffe7a0 0 1px, transparent 1.8px),
+    radial-gradient(2px 2px at 72% 79%, #fff2ba 0 1px, transparent 1.8px),
+    linear-gradient(rgba(17, 19, 39, 0.12), rgba(17, 19, 39, 0.12)),
+    conic-gradient(var(--tint) 25%, transparent 0 50%, var(--tint) 0 75%, transparent 0);
+  background-size: 100% 100%, 100% 100%, 100% 100%, auto, 14px 14px;
+}
+.skill-card.kind-joker .card-art::before {
+  border-color: #f3d477;
+}
+.skill-card.kind-joker .card-face::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  inset: -55% -45%;
+  pointer-events: none;
+  opacity: 0.72;
+  background: linear-gradient(112deg, transparent 41%, rgba(255, 255, 220, 0.08) 46%, rgba(255, 245, 190, 0.6) 50%, rgba(255, 255, 220, 0.08) 54%, transparent 59%);
+  transform: translateX(-78%) rotate(12deg);
+  animation: joker-sheen 4.2s ease-in-out infinite;
+}
+.skill-card.kind-joker .card-face > * { position: relative; z-index: 2; }
+@keyframes joker-sheen {
+  0%, 24% { transform: translateX(-78%) rotate(12deg); }
+  70%, 100% { transform: translateX(78%) rotate(12deg); }
+}
+
+/* Tombol aktivasi menutupi seluruh kartu (satu target sentuh/ketikus),
+   sedangkan isi kartu tetap markup non-interaktif supaya heading/p tetap valid. */
+.card-play {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.skill-card.is-targeting .card-play {
+  cursor: pointer;
+}
+.skill-card.is-locked .card-play {
+  cursor: not-allowed;
+}
+.skill-card.is-targeting .card-face {
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+.skill-card.is-targeting .card-state strong {
+  color: #fff0d0;
+}
+.skill-card.is-locked .card-face {
+  filter: saturate(0.72) brightness(0.95);
+}
+.skill-card.is-unaffordable .card-face {
+  filter: grayscale(1) brightness(0.74);
+}
+.skill-card.is-unaffordable .card-state strong,
+.skill-card.is-unaffordable .card-cost {
+  color: #d0cad0;
+}
+.skill-card.is-unaffordable .card-copy { background: #c9c6c1; }
+.skill-card.is-unaffordable .card-copy,
+.skill-card.is-unaffordable .card-description { color: #514f55; }
+.skill-card.is-locked .card-copy,
+.skill-card.is-locked .card-description {
+  color: #6a5f6e;
+}
+.skill-card.is-locked .card-art {
+  filter: saturate(0.7);
+}
+.card-play:focus-visible {
+  outline: 3px solid var(--coral-soft);
+  outline-offset: 4px;
+}
+.skill-card:has(.card-play:focus-visible) .card-face {
+  box-shadow: 0 0 0 3px var(--coral-soft);
+}
+.skill-card:has(.card-play:hover:not(:disabled)) .card-face,
+.skill-card:has(.card-play:active:not(:disabled)) .card-face {
+  filter: brightness(1.07);
+}
+.skill-card.is-unaffordable:has(.card-play:hover:not(:disabled)) .card-face { filter: grayscale(1) brightness(0.74); }
+.skill-card.is-ready:has(.card-play:hover:not(:disabled)) {
+  z-index: 4;
+  transform: perspective(900px) translateY(-8px) scale(1.018) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+}
+.skill-card.is-ready:has(.card-play:active:not(:disabled)) {
+  transform: perspective(900px) translateY(-1px) scale(0.985) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transition-duration: 80ms;
+}
+.skill-card.kind-joker.is-ready:has(.card-play:hover:not(:disabled)) {
+  filter: drop-shadow(0 0 10px rgba(248, 210, 103, 0.62));
+}
+.skill-card.kind-joker.is-ready .card-art {
+  animation: joker-sparkle 2.6s ease-in-out infinite alternate;
+}
+@keyframes joker-sparkle {
+  from { box-shadow: inset 0 0 0 1px rgba(255, 226, 139, 0.18), 0 0 4px rgba(241, 207, 112, 0.12); }
+  to { box-shadow: inset 0 0 0 1px rgba(255, 245, 194, 0.66), 0 0 12px rgba(241, 207, 112, 0.42); }
+}
+.card-play:disabled {
+  cursor: not-allowed;
+}
+
+.icon-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}

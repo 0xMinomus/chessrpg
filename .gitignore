@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.local
+.DS_Store
+.code-graph/
+.playwright-mcp/
+new-ui/
+.env*
+!.env.example
+*.pem
+*.key
