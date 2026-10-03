@@ -8,7 +8,7 @@ import { renderMenuPage } from '../src/ui/screens/menu.ts';
 import { renderDungeonPage } from '../src/ui/screens/dungeon.ts';
 import { renderHeroesPage } from '../src/ui/screens/heroes.ts';
 import { renderHand, renderReroll } from '../src/ui/cards/cards.ts';
-import { renderCardIconDefs, CARD_ICON_SYMBOLS, REROLL_ICON } from '../src/ui/cards/icons.ts';
+import { cardIconSrc, REROLL_ICON } from '../src/ui/cards/icons.ts';
 import { renderBoard } from '../src/ui/board/board.ts';
 import type { BoardGrid } from '../src/ui/board/board.ts';
 import { CHAPTERS, DUNGEON_FLOORS } from '../src/content/dungeon.ts';
@@ -326,7 +326,7 @@ check('kartu: judges-panel', hand.includes('class="card-top"'));
 check('kartu: label jenis', hand.includes('Bertahan'));
 check('kartu: biaya mana', hand.includes('02 MANA'));
 check('kartu: biaya gratis 0 mana', hand.includes('0 MANA'));
-check('kartu: ikon per kartu', hand.includes('<use href="#icon-ward"/>'));
+check('kartu: ikon raster per kartu', hand.includes('class="card-icon"') && hand.includes('src="' + cardIconSrc('ward') + '"'));
 check('kartu: judul', hand.includes('Perisai bidak'));
 check('kartu: deskripsi', hand.includes('Boss tidak dapat menangkapnya'));
 check('kartu: baris status', hand.includes('KLIK UNTUK AKTIF') && hand.includes('PILIH TARGET'));
@@ -375,10 +375,6 @@ const captureMarkup = renderBoard({
 });
 check('tangkapan: ghost menampilkan bidak korban yang tepat', captureMarkup.includes('capture-ghost shattering black">♞'));
 
-const defs = renderCardIconDefs();
-check('ikon: symbol terdefinisi', Object.keys(CARD_ICON_SYMBOLS).length === 29, String(Object.keys(CARD_ICON_SYMBOLS).length));
-check('ikon: blok defs dirender', defs.includes('id="icon-ward"') && defs.includes('viewBox="0 0 64 64"'));
-check('ikon: defs disembunyikan', defs.includes('class="icon-defs"'));
 const reroll = renderReroll({
   available: true,
   label: 'PUTAR KARTU • GRATIS',

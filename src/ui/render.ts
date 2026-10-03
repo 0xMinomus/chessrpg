@@ -11,7 +11,6 @@ import { renderBattlePage } from './screens/battle.ts';
 import type { BattlePageView } from './screens/battle.ts';
 import { renderResultPage } from './screens/result.ts';
 import type { ResultView } from './screens/result.ts';
-import { renderCardIconDefs } from './cards/icons.ts';
 
 export type ScreenName = 'menu' | 'dungeon' | 'heroes' | 'battle' | 'result';
 
@@ -102,7 +101,6 @@ export function renderApp(root: HTMLElement, view: AppShellView): void {
   }
   const dataView = view.screen === 'battle' ? 'battle' : 'hub';
   root.innerHTML =
-    renderCardIconDefs() +
     '<div class="cabinet" data-view="' +
     dataView +
     '">' +

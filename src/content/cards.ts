@@ -60,14 +60,14 @@ export const CARDS: readonly CardDef[] = [
   { id:'sacrifice', name:'Tumbal pion', cost:1, kind:'consumable', tag:'Konsumsi', icon:'sacrifice', desc:'Korbankan satu pion putih untuk memulihkan 3 EN. Memakai langkah.' },
   { id:'blockade', name:'Blokade', cost:2, kind:'defense', tag:'Bertahan', icon:'blockade', desc:'Pilih petak kosong. Lawan tak dapat mendarat di sana selama 2 balasan boss.' },
   { id:'fortune', name:'Kartu keberuntungan', cost:1, kind:'consumable', tag:'Konsumsi', icon:'fortune', desc:'Tambahkan satu putar ulang. Putaran ekstra tetap berbiaya 1 EN.' },
-  { id:'pawnBreath', name:'Napas pion', cost:0, kind:'consumable', tag:'Konsumsi', icon:'quiet', desc:'Pulihkan 1 EN jika langkah putih berikutnya adalah pion tanpa tangkapan.' },
-  { id:'pawnGuard', name:'Tameng pion', cost:0, kind:'defense', tag:'Bertahan', icon:'ward', desc:'Pilih pion putih. Boss tidak dapat menangkapnya selama 2 balasan.' },
-  { id:'pawnMark', name:'Tanda pion', cost:0, kind:'offense', tag:'Serang', icon:'mark', desc:'Tandai pion hitam. Tangkap pada langkah putih berikutnya untuk +1 EN.' },
-  { id:'pawnStagger', name:'Gentar pion', cost:0, kind:'offense', tag:'Serang', icon:'stagger', desc:'Pilih pion hitam. Ia tak dapat menangkap pada balasan berikutnya.' },
-  { id:'pawnPulse', name:'Denyut pion', cost:0, kind:'spell', tag:'Mantra', icon:'shock', desc:'Jika pion putih memberi skak pada langkah berikutnya, kurangi 1 EN lawan.' },
-  { id:'phoenix', name:'Kebangkitan Phoenix', cost:5, kind:'joker', tag:'Joker', icon:'salvage', weight:0.2, desc:'Bangkitkan bidak putih non-ratu bernilai tertinggi yang gugur ke petak kosong di dua baris awal, tanpa menghilangkan jalan keluar dari skak.' },
-  { id:'fold', name:'Lipatan Dimensi', cost:5, kind:'joker', tag:'Joker', icon:'phase', weight:0.2, desc:'Pilih bidak putih selain raja. Pada langkah berikutnya, bidak itu dapat berpindah ke petak kosong mana pun tanpa menangkap.' },
-  { id:'edict', name:'Titah Pemusnah', cost:5, kind:'joker', tag:'Joker', icon:'shock', weight:0.2, desc:'Hapus satu bidak hitam selain raja dan ratu. Ini bukan tangkapan.' },
+  { id:'pawnBreath', name:'Napas pion', cost:0, kind:'consumable', tag:'Konsumsi', icon:'pawnBreath', desc:'Pulihkan 1 EN jika langkah putih berikutnya adalah pion tanpa tangkapan.' },
+  { id:'pawnGuard', name:'Tameng pion', cost:0, kind:'defense', tag:'Bertahan', icon:'pawnGuard', desc:'Pilih pion putih. Boss tidak dapat menangkapnya selama 2 balasan.' },
+  { id:'pawnMark', name:'Tanda pion', cost:0, kind:'offense', tag:'Serang', icon:'pawnMark', desc:'Tandai pion hitam. Tangkap pada langkah putih berikutnya untuk +1 EN.' },
+  { id:'pawnStagger', name:'Gentar pion', cost:0, kind:'offense', tag:'Serang', icon:'pawnStagger', desc:'Pilih pion hitam. Ia tak dapat menangkap pada balasan berikutnya.' },
+  { id:'pawnPulse', name:'Denyut pion', cost:0, kind:'spell', tag:'Mantra', icon:'pawnPulse', desc:'Jika pion putih memberi skak pada langkah berikutnya, kurangi 1 EN lawan.' },
+  { id:'phoenix', name:'Kebangkitan Phoenix', cost:5, kind:'joker', tag:'Joker', icon:'phoenix', weight:0.2, desc:'Bangkitkan bidak putih non-ratu bernilai tertinggi yang gugur ke petak kosong di dua baris awal, tanpa menghilangkan jalan keluar dari skak.' },
+  { id:'fold', name:'Lipatan Dimensi', cost:5, kind:'joker', tag:'Joker', icon:'fold', weight:0.2, desc:'Pilih bidak putih selain raja. Pada langkah berikutnya, bidak itu dapat berpindah ke petak kosong mana pun tanpa menangkap.' },
+  { id:'edict', name:'Titah Pemusnah', cost:5, kind:'joker', tag:'Joker', icon:'edict', weight:0.2, desc:'Hapus satu bidak hitam selain raja dan ratu. Ini bukan tangkapan.' },
 ];
 
 export const cardById: Readonly<Record<string, CardDef>> = Object.fromEntries(

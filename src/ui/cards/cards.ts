@@ -5,7 +5,7 @@
 // Konsumsi/Joker), ikon garis 64×64, blok judul + deskripsi, dan baris status.
 // Kartu tetap satu tombol utuh untuk tetikus, sentuh, dan keyboard.
 
-import { CARD_ICON_SYMBOLS, REROLL_ICON } from './icons.ts';
+import { cardIconSrc, REROLL_ICON } from './icons.ts';
 
 export type CardKind = 'offense' | 'defense' | 'spell' | 'consumable' | 'joker';
 
@@ -39,21 +39,8 @@ export interface RerollView {
   reason: string;
 }
 
-const KIND_FALLBACK: Record<CardKind, string> = {
-  offense: 'shock',
-  defense: 'ward',
-  spell: 'prism',
-  consumable: 'ration',
-  joker: 'salvage',
-};
-
 /** Sudut terpotong (notch) supaya kartu terasa seperti kartu cetak retro. */
 const NOTCH = 'polygon(10px 0,calc(100% - 10px) 0,calc(100% - 10px) 4px,calc(100% - 4px) 4px,calc(100% - 4px) 10px,100% 10px,100% calc(100% - 10px),calc(100% - 10px) calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,10px calc(100% - 4px),4px calc(100% - 4px),4px calc(100% - 10px),0 calc(100% - 10px),0 10px,4px 10px,4px 4px,10px 4px)';
-
-function iconId(card: CardMeta): string {
-  const wanted = CARD_ICON_SYMBOLS[card.icon] ? card.icon : KIND_FALLBACK[card.kind];
-  return 'icon-' + wanted;
-}
 
 function escape(value: string): string {
   return value
@@ -101,9 +88,9 @@ export function renderHand(slots: CardSlotView[]): string {
         '</span>' +
         '</span>' +
         '<span class="card-art" aria-hidden="true">' +
-        '<svg viewBox="0 0 64 64" focusable="false"><use href="#' +
-        iconId(card) +
-        '"/></svg>' +
+        '<img class="card-icon" src="' +
+        cardIconSrc(card.icon) +
+        '" alt="" loading="lazy" decoding="async"/>' +
         '</span>' +
         '<span class="card-copy"><span class="card-title" role="heading" aria-level="3">' +
         escape(card.name) +

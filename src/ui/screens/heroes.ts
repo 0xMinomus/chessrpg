@@ -1,5 +1,7 @@
 // Layar hero dan deck: roster memakai data hero, loadout hanya mengirim intent.
 
+import { cardIconSrc } from '../cards/icons.ts';
+
 export type HeroMenuTab = 'roster' | 'deck';
 export type DeckFilter = 'all' | 'offense' | 'defense' | 'spell' | 'consumable' | 'joker';
 export type DeckCardKind = 'offense' | 'defense' | 'spell' | 'consumable' | 'joker';
@@ -212,7 +214,7 @@ function renderHeroDetails(view: HeroesPageView): string {
 }
 
 function renderCardIcon(card: DeckCardItem): string {
-  return '<svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><use href="#icon-' + escapeHtml(card.icon) + '"/></svg>';
+  return '<img class="card-icon" src="' + cardIconSrc(card.icon) + '" alt="" loading="lazy" decoding="async"/>';
 }
 
 function renderDeckCard(card: DeckCardItem): string {

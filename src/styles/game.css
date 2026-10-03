@@ -1827,7 +1827,7 @@ h1 {
 .deck-card:disabled .deck-card-description, .deck-card:disabled .deck-card-meta { color: #9faac1; }
 .deck-card:disabled .deck-card-meta b { color: #afbdd1; }
 .deck-card-art { grid-column: 1; grid-row: 1; width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid #79738b; color: #e3cfa8; background: #20233a; }
-.deck-card-art svg { width: 34px; height: 34px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: square; stroke-linejoin: miter; }
+.deck-card-art .card-icon { width: 34px; height: 34px; object-fit: contain; image-rendering: pixelated; }
 .deck-card.kind-offense .deck-card-art { color: #ff8994; }
 .deck-card.kind-defense .deck-card-art { color: #8dc8ec; }
 .deck-card.kind-spell .deck-card-art { color: #c39be7; }
@@ -1858,7 +1858,7 @@ h1 {
 .deck-selected-card:hover { border-color: var(--hub-coral); background: #24243a; }
 .deck-selected-index { color: #9faac5; font: 700 9px/1 "Courier New", monospace; font-variant-numeric: tabular-nums; }
 .deck-selected-icon { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid #626985; color: #d8c8a4; }
-.deck-selected-icon svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; }
+.deck-selected-icon .card-icon { width: 24px; height: 24px; object-fit: contain; image-rendering: pixelated; }
 .deck-selected-card.kind-joker .deck-selected-icon { border-color: #a08a52; color: #f0d17e; }
 .deck-selected-copy { min-width: 0; display: grid; gap: 3px; }
 .deck-selected-copy strong { overflow: hidden; color: var(--cream); font: 700 11px/1.1 Georgia, "Times New Roman", serif; text-overflow: ellipsis; white-space: nowrap; }
