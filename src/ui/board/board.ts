@@ -53,6 +53,9 @@ export interface BoardViewState {
   bossSealedSquare: [number, number] | null;
   targeting: boolean;
   disabled: boolean;
+  /** Perintah klik petak (default 'square'; PvP memakai 'pvp-square'). */
+  commandName?: string;
+  markers?: Readonly<Record<string, { kind: 'shield' | 'mark' | 'stagger' | 'snare' | 'block'; labels: string[] }>>;
 }
 
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
@@ -69,6 +72,11 @@ const PIECE_NAMES: Record<PieceType, string> = {
   b: 'gajah',
   n: 'kuda',
   p: 'pion',
+};
+
+const MARKER_CLASSES: Record<string, string> = {
+  shield: 'player-ward', mark: 'marked-piece', stagger: 'staggered-piece',
+  snare: 'snared-piece', block: 'blocked-target',
 };
 
 export function coord(row: number, col: number): string {
@@ -112,6 +120,7 @@ export function renderBoard(state: BoardViewState): string {
     for (let col = 0; col < 8; col += 1) {
       const piece = state.board[row][col];
       const key = row + ',' + col;
+      const extraMarker = state.markers?.[key];
       const isSelected = state.selected !== null && state.selected[0] === row && state.selected[1] === col;
       const isHint = legalByTarget.get(key) === true;
       const isCaptureHint = captureByTarget.get(key) === true;
@@ -149,8 +158,11 @@ export function renderBoard(state: BoardViewState): string {
       if (captureImpact) classes.push('capture-impact');
       if (isHint && !isCaptureHint) classes.push('move-hint');
       if (isHint && isCaptureHint) classes.push('capture-hint');
-      const marker = enemyProtected || playerProtected ? 'shield' : marked ? 'mark' : staggered ? 'stagger' : snared || bossSnared ? 'snare' : blocked ? 'block' : null;
-      const labels: string[] = [];
+      if (extraMarker) {
+        classes.push(MARKER_CLASSES[extraMarker.kind]);
+      }
+      const marker = extraMarker?.kind ?? (enemyProtected || playerProtected ? 'shield' : marked ? 'mark' : staggered ? 'stagger' : snared || bossSnared ? 'snare' : blocked ? 'block' : null);
+      const labels: string[] = extraMarker ? extraMarker.labels.slice() : [];
       if (enemyProtected || playerProtected) labels.push('terlindungi perisai');
       if (marked) labels.push('ditandai untuk diburu');
       if (staggered) labels.push('tak dapat menangkap pada balasan lawan');
@@ -168,7 +180,9 @@ export function renderBoard(state: BoardViewState): string {
       html +=
         '<button type="button" class="' +
         classes.join(' ') +
-        '" role="gridcell" data-command="square" data-row="' +
+        '" role="gridcell" data-command="' +
+        (state.commandName ?? 'square') +
+        '" data-row="' +
         row +
         '" data-col="' +
         col +

@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "check": "tsc --noEmit",
     "smoke": "node --experimental-strip-types scripts/domain-smoke.ts",
+    "pvp": "node --experimental-strip-types scripts/pvp-smoke.ts",
     "parity": "node --experimental-strip-types scripts/chess-parity.ts",
     "verify:dist": "node scripts/verify-build.mjs",
     "render": "node --experimental-strip-types scripts/render-check.ts",
@@ -16,11 +17,12 @@
     "verify:portraits": "node scripts/hero-portrait-check.mjs",
     "shots:card": "node scripts/card-shots.mjs",
     "verify:flow": "node scripts/flow-check.mjs",
+    "verify:pvp-browser": "node scripts/pvp-check.mjs",
     "verify:campaign": "node --experimental-strip-types scripts/campaign-smoke.ts",
     "verify:boss-skills": "node --experimental-strip-types scripts/boss-skills-smoke.ts",
     "verify:combat-fx": "node --experimental-strip-types scripts/combat-fx-smoke.ts",
-    "verify": "npm run check && npm run smoke && npm run verify:campaign && npm run verify:boss-skills && npm run verify:combat-fx && npm run parity && npm run render && npm run build && npm run verify:dist",
-    "verify:browser": "npm run verify && npm run verify:portraits && npm run verify:layout && npm run verify:flow"
+    "verify": "npm run check && npm run smoke && npm run pvp && npm run verify:campaign && npm run verify:boss-skills && npm run verify:combat-fx && npm run parity && npm run render && npm run build && npm run verify:dist",
+    "verify:browser": "npm run verify && npm run verify:portraits && npm run verify:layout && npm run verify:flow && npm run verify:pvp-browser"
   },
   "devDependencies": {
     "typescript": "^5.6.3",

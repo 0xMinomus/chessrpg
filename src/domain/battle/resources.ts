@@ -82,12 +82,12 @@ export function loseEnemyEnergy(state: BattleState, amount: number): BattleState
 }
 
 /** Batas putar ulang giliran ini: 2 + bonus (Kartu Keberuntungan). */
-export function rerollLimit(state: BattleState): number {
+export function rerollLimit(state: Pick<BattleState, 'bonusRerolls'>): number {
   return 2 + state.bonusRerolls;
 }
 
 /** Biaya EN putar ulang: putaran pertama gratis, berikutnya 1 EN. */
-export function rerollCost(state: BattleState): number {
+export function rerollCost(state: Pick<BattleState, 'rollsThisTurn'>): number {
   return state.rollsThisTurn === 0 ? 0 : 1;
 }
 

@@ -2084,3 +2084,115 @@ h1 {
   }
   .combat-cast-fx > i { animation: cast-fx-life 120ms ease-out both !important; }
 }
+
+/* =====================================================================
+   PvP 1v1: lobby + duel simetris (WebRTC peer-to-peer).
+   ===================================================================== */
+
+/* PvP board plus both hands exceed one desktop viewport; keep the page scrollable. */
+html:has(.pvp-duel-layout), body:has(.pvp-duel-layout) { height: auto; overflow: auto; overscroll-behavior-y: contain; }
+.cabinet:has(.pvp-duel-layout) { height: auto; min-height: 100vh; min-height: 100dvh; overflow: visible; }
+.pvp-page { gap: 12px; min-width: 0; }
+.pvp-page > h2 { margin: 0; color: var(--cream); font: 700 clamp(23px, 3vw, 32px)/1.15 Georgia, serif; }
+.pvp-intro { max-width: 76ch; color: #c2cbe1; font-size: 13px; line-height: 1.5; margin: 0; }
+.pvp-status, .pvp-error { padding: 10px 12px; margin: 0; border: 1px solid #59627f; color: var(--cream); background: #161d33; font: 700 12px/1.5 "Courier New", monospace; overflow-wrap: anywhere; }
+.pvp-error { border-color: var(--coral-soft); color: #ffd7dc; background: #38243b; }
+.pvp-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; }
+.pvp-panel { min-width: 0; padding: 12px; }
+.pvp-panel h3 { margin: 0 0 12px; color: var(--cream); font: 700 16px/1.25 Georgia, "Times New Roman", serif; }
+.pvp-role-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.pvp-role-note, .pvp-signal-help { margin: 10px 0 0; color: #c2cbe1; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.pvp-role-note strong { color: var(--hub-gold); }
+.pvp-hero-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; }
+.pvp-hero { min-width: 0; min-height: 44px; display: grid; gap: 5px; justify-items: center; padding: 10px 6px; border: 1px solid #59627f; color: var(--cream); background: #171f35; cursor: pointer; text-align: center; }
+.pvp-hero:hover:not(:disabled), .pvp-hero.selected { border-color: #e1b879; background: #26243b; }
+.pvp-hero:disabled { cursor: not-allowed; }
+.pvp-hero-face { width: 56px; height: 56px; }
+.pvp-hero strong { font: 700 12px/1.25 Georgia, serif; overflow-wrap: anywhere; }
+.pvp-hero small { color: #c2cbe1; font-size: 11px; }
+.pvp-deck-summary { display: grid; gap: 4px; margin-top: 14px; color: #c2cbe1; font-size: 12px; }
+.pvp-deck-summary strong { color: var(--cream); }
+.pvp-signal-fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+.pvp-signal-field { min-width: 0; }
+.pvp-signal-label { display: block; min-height: 36px; margin: 0 0 6px; color: var(--cream); font: 700 12px/1.5 "Courier New", monospace; }
+.pvp-signal { display: block; width: 100%; max-width: 100%; min-width: 0; min-height: 140px; padding: 10px; border: 1px solid #59627f; color: #e6edfb; background: #0e1424; font: 12px/1.5 "Courier New", monospace; resize: vertical; overflow-wrap: anywhere; caret-color: var(--coral-soft); }
+.pvp-signal::placeholder { color: #b5bfd6; opacity: 1; }
+.pvp-signal:disabled { color: #b5bfd6; background: #171f35; cursor: not-allowed; }
+.pvp-signal:focus-visible { outline: 3px solid var(--coral-soft); outline-offset: 2px; }
+.pvp-panel .hub-button { width: 100%; min-width: 0; min-height: 44px; margin-top: 8px; white-space: normal; overflow-wrap: anywhere; }
+.pvp-page .hub-footnote { margin: 0; color: #c2cbe1; line-height: 1.5; }
+.pvp-page button:active:not(:disabled) { background-color: #382c42; }
+
+/* Explicit areas prevent single-player grid placement leaking into PvP. */
+.pvp-topbar { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.pvp-topbar .brand { grid-column: auto; grid-row: auto; }
+.pvp-topbar .hud-box { display: none; }
+.pvp-topbar .top-actions { grid-column: auto; grid-row: auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.pvp-topbar .top-actions .utility-button { width: auto; min-width: 0; min-height: 44px; padding: 8px; font-size: 11px; line-height: 1.3; white-space: normal; }
+.pvp-topbar .sound-button::after { content: none; }
+.pvp-duel-layout { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "status" "board" "self" "hand" "opponent"; grid-template-rows: auto; gap: 12px; padding: 10px 0; align-items: start; min-width: 0; }
+.pvp-duel-layout > * { min-width: 0; }
+.pvp-duel-status { grid-area: status; display: grid; gap: 8px; }
+.pvp-side { display: grid; gap: 10px; padding: 12px; border: 1px solid #414963; background: #121a30; }
+.pvp-side-self { grid-area: self; }
+.pvp-side-opponent { grid-area: opponent; }
+.pvp-side h2, .pvp-side h3, .pvp-hand-heading h2 { margin: 0; color: var(--cream); font: 700 15px/1.3 Georgia, serif; }
+.pvp-side h3 { margin-top: 6px; }
+.pvp-hero-profile { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.pvp-hero-profile > div { min-width: 0; display: grid; gap: 4px; }
+.pvp-hero-profile strong { color: var(--cream); font: 700 16px/1.25 Georgia, serif; overflow-wrap: anywhere; }
+.pvp-hero-profile small { color: #c2cbe1; font-size: 12px; }
+.pvp-opp-face { width: 64px; height: 64px; }
+.pvp-resource { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 8px; color: #c2cbe1; font-size: 12px; }
+.pvp-resource-mana { grid-template-columns: minmax(0, 1fr) auto; }
+.pvp-resource .energy-track { gap: 4px; }
+.pvp-resource .energy-pip { width: 13px; height: 10px; }
+.pvp-resource strong { font: 700 13px/1.3 "Courier New", monospace; color: var(--hub-gold); }
+.pvp-resource-note { margin: 0; color: #c2cbe1; font-size: 12px; }
+.pvp-side-self .hero-action-button { width: 100%; min-height: 54px; white-space: normal; overflow-wrap: anywhere; animation: none; }
+.pvp-opponent-actions { display: grid; gap: 8px; padding: 10px 0; border-block: 1px solid #414963; }
+.pvp-opponent-actions > div { display: grid; gap: 4px; }
+.pvp-opponent-actions span { color: #c2cbe1; font: 700 11px/1.4 "Courier New", monospace; }
+.pvp-opponent-actions strong { color: var(--cream); font-size: 12px; overflow-wrap: anywhere; }
+.pvp-opponent-hand { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.pvp-opponent-card { padding: 10px; border: 1px solid #7b6d84; background: #29233a; min-width: 0; }
+.pvp-opponent-card > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 10px; }
+.pvp-opponent-card strong { color: var(--cream); font: 700 12px/1.4 "Courier New", monospace; overflow-wrap: anywhere; }
+.pvp-opponent-card span { color: var(--hub-gold); font: 700 11px/1.5 "Courier New", monospace; }
+.pvp-opponent-card p { margin: 6px 0 0; color: #c2cbe1; font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+.pvp-board-panel { grid-area: board; grid-template-rows: auto auto auto auto; align-items: start; padding: 8px; overflow: visible; }
+.pvp-board-panel > .board-stage { width: min(100%, 76dvh, 860px); height: auto; min-height: 0; aspect-ratio: 1; container-type: inline-size; }
+.pvp-board-panel .board-frame { width: 100%; padding: 4px; }
+.pvp-board-panel .board { gap: 2px; }
+.pvp-board-panel .board-heading { margin-bottom: 8px; flex-wrap: wrap; }
+.pvp-board-panel .board-heading small { color: #c2cbe1; font-size: 11px; }
+.pvp-board-panel .board-status-row { flex-wrap: wrap; padding: 8px 0 0; }
+.pvp-board-panel .board-status { flex: 1 1 180px; font-size: 12px; white-space: normal; overflow: visible; overflow-wrap: anywhere; }
+.pvp-board-panel .target-cancel { min-height: 44px; margin: 0; }
+.pvp-hand-rail { grid-area: hand; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 12px; }
+.pvp-hand-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.pvp-hand-heading .roll-availability { grid-column: auto; grid-row: auto; height: auto; min-height: 44px; margin: 0; padding: 8px 12px; flex: 0 1 auto; gap: 4px; font-size: 12px; border-width: 2px; outline: none; }
+.pvp-hand-rail .skill-list { grid-column: auto; grid-row: auto; grid-template-columns: minmax(0, 1fr); width: 100%; max-width: none; padding: 0; gap: 12px; --card-min-height: 270px; --card-art-height: 76px; --card-copy-min: 84px; --card-title-size: 13px; --card-desc-size: 12px; }
+.pvp-hand-rail .card-description { display: block; overflow: visible; -webkit-line-clamp: unset; }
+.pvp-hand-rail .card-copy { overflow: visible; }
+.pvp-winner { margin-top: 10px; padding: 10px; border: 1px solid var(--hub-gold); color: var(--hub-gold); background: #29223a; font: 700 14px/1.4 "Courier New", monospace; text-align: center; overflow-wrap: anywhere; }
+.pvp-promotion-dialog { max-height: calc(100dvh - 40px); overflow-y: auto; }
+
+@media (min-width: 660px) {
+  .pvp-layout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pvp-role-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pvp-signals-panel { grid-column: 1 / -1; }
+  .pvp-signal-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pvp-topbar { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+  .pvp-topbar .top-actions { grid-column: 2; grid-row: 1; }
+  .pvp-duel-layout { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "status status" "board board" "self opponent" "hand hand"; }
+  .pvp-hand-rail .skill-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1160px) {
+  .pvp-layout { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); }
+  .pvp-topbar { grid-template-columns: minmax(0, 1fr) auto auto; }
+  .pvp-topbar .hud-box { display: flex; }
+  .pvp-topbar .top-actions { grid-column: 3; grid-template-columns: repeat(4, auto); }
+  .pvp-duel-layout { grid-template-columns: minmax(210px, .7fr) minmax(0, 1.8fr) minmax(210px, .7fr); grid-template-areas: "status status status" "opponent board self" "hand hand hand"; padding: 12px; }
+}

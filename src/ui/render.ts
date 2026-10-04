@@ -11,8 +11,10 @@ import { renderBattlePage } from './screens/battle.ts';
 import type { BattlePageView } from './screens/battle.ts';
 import { renderResultPage } from './screens/result.ts';
 import type { ResultView } from './screens/result.ts';
+import { renderPvpLobby, renderPvpDuel } from './screens/pvp.ts';
+import type { PvpLobbyView, PvpDuelView } from './screens/pvp.ts';
 
-export type ScreenName = 'menu' | 'dungeon' | 'heroes' | 'battle' | 'result';
+export type ScreenName = 'menu' | 'dungeon' | 'heroes' | 'battle' | 'result' | 'pvp-lobby' | 'pvp-duel';
 
 export interface AppShellView {
   screen: ScreenName;
@@ -23,6 +25,8 @@ export interface AppShellView {
   heroes: HeroesPageView | null;
   battle: BattlePageView | null;
   result: ResultView | null;
+  pvpLobby: PvpLobbyView | null;
+  pvpDuel: PvpDuelView | null;
 }
 
 function hubNav(active: ScreenName): string {
@@ -41,6 +45,11 @@ function hubNav(active: ScreenName): string {
       screen: 'heroes',
       label: 'Hero',
       icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M6.5 20l1.2-6.2c.4-1.7 1.6-2.7 3.1-3.2l3.7-2.8c.6-.5.5-1.3-.1-1.7l-3.1-1.8c-.7-.4-1.5.2-1.3 1l.7 2-2.8 1.5-2.1 4.1L6.5 20Z"/><circle cx="13.7" cy="6.8" r=".65"/></svg>',
+    },
+    {
+      screen: 'pvp-lobby',
+      label: '1vs1',
+      icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-2V8a4 4 0 0 0-4-4Z"/></svg>',
     },
   ];
   return (
@@ -63,7 +72,9 @@ function hubNav(active: ScreenName): string {
         );
       })
       .join('') +
-    '<p>Permainan berjalan lokal di perangkat ini.</p></nav>'
+    '<p>' +
+    (active === 'pvp-lobby' ? 'Duel PvP terhubung langsung antarbrowser.' : 'Permainan berjalan lokal di perangkat ini.') +
+    '</p></nav>'
   );
 }
 
@@ -72,7 +83,9 @@ function renderHubShell(view: AppShellView, content: string): string {
     '<section class="hub-shell" aria-label="Menu utama Crown &amp; Catalyst">' +
     '<header class="hub-topbar"><div class="hub-wordmark">' +
     '<span class="hub-mark" aria-hidden="true">♔</span>' +
-    '<div><strong>Crown &amp; Catalyst</strong><small>Takhta taktis / mode dungeon</small></div></div>' +
+    '<div><strong>Crown &amp; Catalyst</strong><small>' +
+    (view.screen === 'pvp-lobby' ? 'Takhta taktis / mode 1vs1' : 'Takhta taktis / mode dungeon') +
+    '</small></div></div>' +
     '<div class="hub-wallet"><span>Koin</span><strong>' +
     view.coins +
     '</strong></div></header>' +
@@ -96,10 +109,14 @@ export function renderApp(root: HTMLElement, view: AppShellView): void {
     body = renderHubShell(view, renderHeroesPage(view.heroes));
   } else if (view.screen === 'result' && view.result) {
     body = renderHubShell(view, renderResultPage(view.result));
+  } else if (view.screen === 'pvp-lobby' && view.pvpLobby) {
+    body = renderHubShell(view, renderPvpLobby(view.pvpLobby));
+  } else if (view.screen === 'pvp-duel' && view.pvpDuel) {
+    body = renderPvpDuel(view.pvpDuel);
   } else {
     body = renderHubShell(view, '<section class="hub-page"><p>Memuat…</p></section>');
   }
-  const dataView = view.screen === 'battle' ? 'battle' : 'hub';
+  const dataView = view.screen === 'battle' || view.screen === 'pvp-duel' ? 'battle' : 'hub';
   root.innerHTML =
     '<div class="cabinet" data-view="' +
     dataView +

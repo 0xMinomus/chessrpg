@@ -50,7 +50,7 @@ function escape(value: string): string {
     .replace(/"/g, '&quot;');
 }
 
-export function renderHand(slots: CardSlotView[]): string {
+export function renderHand(slots: CardSlotView[], commandName = 'card'): string {
   return slots
     .map(function (slot, index) {
       const card = slot.card;
@@ -103,7 +103,9 @@ export function renderHand(slots: CardSlotView[]): string {
         escape(slot.actionLabel) +
         '</strong></span>' +
         '</div>' +
-        '<button class="card-play" type="button" data-command="card" data-slot="' +
+        '<button class="card-play" type="button" data-command="' +
+        commandName +
+        '" data-slot="' +
         index +
         '" aria-pressed="' +
         (slot.targeting ? 'true' : 'false') +

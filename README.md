@@ -1,6 +1,6 @@
 # Crown & Catalyst
 
-Crown & Catalyst is a local, single-player game combining chess, skill cards, heroes, and dungeon bosses. The app is built with Vite, TypeScript, and vanilla DOM APIs; no backend is required to play.
+Crown & Catalyst is a chess RPG with an offline single-player dungeon campaign and an optional direct 1v1 PvP mode. PvP uses WebRTC between two browsers; the app has no accounts or game backend.
 
 ## Run locally
 
@@ -24,7 +24,24 @@ npm run verify
 
 This runs TypeScript checks, domain smoke tests, chess parity tests, UI render checks, a production build, and a scan of the generated files for remote network references.
 
-The browser checks are available with `npm run verify:browser` when `playwright-core` and a local Chromium installation are available. They cover hero portrait atlas alignment and cropping, viewport layout, and gameplay flow. The preview-based checks expect the app at `http://localhost:4173/`.
+Browser checks require `playwright-core` and a local Chromium installation. `npm run verify:browser` covers portraits, responsive layouts, campaign gameplay, and a two-browser PvP duel; `npm run verify:pvp-browser` runs only the PvP walkthrough against a local preview.
+
+The optional PvP mode connects two browser tabs/devices directly with WebRTC.
+Both players choose a hero and an 11-card deck, then exchange the generated
+offer and answer by copy/paste. It uses a public STUN server for connectivity;
+it does not provide matchmaking, accounts, a game server, or a TURN relay.
+Restrictive NATs and firewalls may prevent a direct connection. A completed
+duel is driven by the white peer and mirrored to black over a data channel.
+
+Run the standalone PvP walkthrough with a preview server:
+
+```sh
+npm run preview
+# In a second terminal:
+npm run verify:pvp-browser
+```
+
+Preview checks default to `http://localhost:4173/`; set `APP_URL` to use another local preview URL.
 
 ## Project layout
 

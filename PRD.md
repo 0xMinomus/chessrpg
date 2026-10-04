@@ -1,8 +1,8 @@
-# PRD Crown & Catalyst: Single-player offline
+# PRD Crown & Catalyst
 
 ## Ringkasan
 
-Crown & Catalyst adalah game strategi single-player yang menggabungkan catur, kartu skill, hero, dan boss dungeon. Pemain mengendalikan bidak putih melawan AI hitam. Produk tahap ini berfokus pada pengalaman frontend yang utuh, bisa dimainkan offline, menyimpan progres lokal, dan mempertahankan art style prototipe.
+Crown & Catalyst mempertahankan campaign dungeon single-player yang dapat dimainkan offline. Mode PvP 1v1 opsional menghubungkan dua browser langsung melalui WebRTC. Pemain mengendalikan putih atau hitam dengan hero, deck, kartu, resource, dan aturan catur yang simetris. Aplikasi tidak membutuhkan akun atau backend.
 
 ## Tujuan produk
 
@@ -10,11 +10,11 @@ Crown & Catalyst adalah game strategi single-player yang menggabungkan catur, ka
 2. Memisahkan layar, aturan, dan data agar konten bisa dikembangkan tanpa menulis ulang game.
 3. Menjaga pertandingan adil dan dapat dipahami: biaya, resource, efek, giliran, target, dan hasil tampil konsisten.
 4. Mendukung desktop dan layar sentuh melalui web app responsif.
-5. Menyediakan permainan lokal tanpa akun, server, atau koneksi jaringan.
+5. Menyediakan campaign lokal tanpa akun/server; mode PvP opsional berjalan langsung antara dua browser.
 
 ## Bukan tujuan tahap ini
 
-- Multiplayer, invite link, matchmaking, ranking, chat, akun, dan sinkronisasi cloud.
+- Matchmaking, ranking, chat, akun, dan sinkronisasi cloud. PvP terbatas pada duel langsung yang dimulai dan disinyalkan pemain sendiri.
 - Pembayaran nyata, iklan, analitik online, atau layanan backend.
 - Mengganti art direction pixel/retro navy, plum/lavender, krem, dengan aksen merah muda dan biru lembut.
 - Menambah hero, kartu, atau fitur gameplay di luar permintaan eksplisit. Campaign sepuluh boss ini mengikuti permintaan terbaru.
@@ -46,7 +46,7 @@ Pemain kasual yang menyukai catur, kombinasi taktis, dan progres RPG; ingin dapa
 
 ### Pertarungan
 
-- **FR-06:** Pertahankan aturan catur legal: langkah, skak, skakmat, kebuntuan, rokade, en passant, dan promosi. Pemain memilih promosi pion putih menjadi ratu, benteng, gajah, atau kuda.
+- **FR-06:** Pertahankan aturan catur legal: langkah, skak, skakmat, kebuntuan, rokade, en passant, dan promosi. Campaign mempromosikan pion putih menjadi ratu, benteng, gajah, atau kuda; PvP mendukung promosi untuk kedua warna.
 - **FR-07:** AI boss hanya memilih langkah legal. Perilaku dan aturan khusus boss berjalan setelah giliran putih sesuai prototipe.
 - **FR-08:** Tangan berisi tiga kartu acak tanpa duplikat dalam tangan. Tiga Joker tetap langka dengan bobot tarik 0,2 dibanding kartu biasa berbobot 1.
 - **FR-09:** Kartu membayar mana. Mana dimulai pada 0, bertambah 1 per langkah catur putih yang selesai, dan maksimal 6. Biaya kartu ditampilkan sebagai mana. Biaya dasar Joker adalah 5 mana.
@@ -68,6 +68,16 @@ Pemain kasual yang menyukai catur, kombinasi taktis, dan progres RPG; ingin dapa
 - **FR-22:** Animasi menghormati preferensi reduced motion dan tidak menjadi satu-satunya pembawa informasi.
 - **FR-23:** Perisai bidak, Jerat, Blokade, Segel Petak, Benteng Prisma, Jerat Senyap, dan Embun Pelindung bertahan selama dua fase balasan boss. Saat Beku dan Mata Air tetap satu balasan. Efek menampilkan sisa balasan; penghitungan berkurang setelah fase boss selesai, termasuk saat balasan dilewati.
 
+## Mode PvP 1v1
+
+- **FR-26:** Mode PvP opsional tidak mengubah campaign single-player; campaign tetap dapat dimainkan offline.
+- **FR-27:** Kedua pemain memilih satu dari enam hero dan deck valid berisi 10 kartu non-Joker serta 1 Joker sebelum memilih warna. Host bermain putih, tamu bermain hitam.
+- **FR-28:** Koneksi dimulai lewat SDP offer/answer yang disalin-tempel manual. Aplikasi memakai STUN dan WebRTC DataChannel langsung; tidak ada akun, backend, matchmaking, server signaling, atau TURN relay.
+- **FR-29:** Host mengelola state otoritatif dan random source; tamu mengirim command pada gilirannya dan menerima snapshot state setelah command diterapkan.
+- **FR-30:** Kedua sisi memakai aturan catur legal yang sama, termasuk skak, skakmat, remis, rokade, en passant, promosi, target kartu/hero, pembatalan, undo, dan restart.
+- **FR-31:** Semua 37 kartu dan seluruh aksi keenam hero berlaku untuk kedua warna. Kartu memakai mana, sedangkan skill/ultimate hero memakai EN; biaya dan efek mengikuti sumber data serta aturan domain bersama.
+- **FR-32:** Status koneksi, kode SDP, error, giliran, resource kedua sisi, tangan lawan, aksi yang tersedia, target aktif, dan hasil duel dapat dibaca tanpa mengandalkan warna saja.
+
 ## Aturan resource yang terlihat pemain
 
 | Resource | Digunakan untuk | Diperoleh | Batas |
@@ -82,7 +92,7 @@ Biaya target tahap ini: skill hero 2 EN, ultimate hero 5 EN, dan Joker 5 mana se
 - **NFR-01:** Bisa dijalankan dari build statis dan tidak membutuhkan backend untuk bermain.
 - **NFR-02:** Aturan inti dapat dipanggil tanpa membuat DOM atau mengakses browser global.
 - **NFR-03:** Save lokal dinormalisasi, berversi, dan aman terhadap JSON yang rusak atau field yang hilang.
-- **NFR-04:** Tidak ada request jaringan saat menjalankan loop gameplay. Aset game tersedia dari paket lokal.
+- **NFR-04:** Campaign tidak membuat request jaringan saat gameplay. Saat pemain memulai PvP, koneksi langsung memakai STUN dan WebRTC DataChannel tanpa API pertandingan atau server signaling.
 - **NFR-05:** Gunakan semantik HTML, navigasi keyboard, dan status teks yang dapat dibaca teknologi bantu.
 - **NFR-06:** Perubahan struktur mempertahankan aset dan prototipe lama selama migrasi.
 
@@ -95,11 +105,13 @@ Biaya target tahap ini: skill hero 2 EN, ultimate hero 5 EN, dan Joker 5 mana se
 5. Tampilan tetap mengikuti prototipe aktif dan dapat digunakan dengan mouse, keyboard, dan layar sentuh.
 6. `chess-rpg.html` dan `chess-rpg-dungeon.html` tetap tersedia sebagai referensi selama migrasi.
 7. Hero roster dan deck builder memakai data konten yang ada; pemain dapat memilih 10 kartu biasa + 1 Joker, menyimpan pilihan setelah reload, dan hanya melihat kartu loadout itu saat duel.
-
 8. Campaign berisi 50 lantai berurutan; boss kelima membuka chapter berikutnya, semua marker berada di darat, dan tidak ada marker di air.
+9. Dua browser dapat memulai duel lewat pertukaran SDP manual, membentuk koneksi WebRTC, menjalankan command bergantian, dan menerima state papan/resource yang sama.
+10. PvP memakai loadout dan resource per warna serta menyelesaikan kartu, aksi hero, promosi, undo, restart, remis, dan skakmat dengan aturan yang sama untuk kedua sisi.
+11. PvP tidak menambahkan backend, akun, matchmaking, TURN relay, atau layanan signaling; kampanye tidak memerlukan jaringan.
 
 ## Ukuran keberhasilan tahap
 
-- Alur menu → duel → reward/progres berjalan lokal.
+- Alur menu → duel → reward/progres campaign berjalan lokal.
 - Tidak ada fitur multiplayer atau backend yang menjadi dependency agar mode single-player berfungsi.
 - Pengembang dapat menambah atau mengubah data hero/kartu/boss di satu sumber konten tanpa menyalin angka ke UI.

@@ -5,7 +5,7 @@
 
 import { renderApp } from './ui/render.ts';
 import type { AppShellView, ScreenName } from './ui/render.ts';
-import type { CaptureFx, LegalMoveRef } from './ui/board/board.ts';
+import type { CaptureFx, LegalMoveRef, BoardViewState } from './ui/board/board.ts';
 import type { CardMeta, CardSlotView, RerollView } from './ui/cards/cards.ts';
 import { HERO_MANA_CAP, HERO_SKILL_COST, HERO_ULTIMATE_COST } from './ui/hero/hero.ts';
 import type { MenuView } from './ui/screens/menu.ts';
@@ -13,6 +13,7 @@ import type { DungeonPageView } from './ui/dungeon/dungeon.ts';
 import type { DeckFilter, HeroMenuTab, HeroesPageView } from './ui/screens/heroes.ts';
 import type { BattlePageView, LedgerEntryView } from './ui/screens/battle.ts';
 import type { ResultView } from './ui/screens/result.ts';
+import type { PvpLobbyView, PvpDuelView } from './ui/screens/pvp.ts';
 import type { ChapterMapItem, FloorListItem } from './ui/dungeon/dungeon.ts';
 import { playCardCastFx, playHeroCastFx } from './ui/combat-fx.ts';
 
@@ -57,6 +58,14 @@ import { createBrowserAudio } from './adapters/browser-audio.ts';
 import { createCampaignStore, createLocalStorageBacking } from './adapters/browser-storage.ts';
 import { MathRandom } from './adapters/random.ts';
 import { chessRulesAdapter } from './adapters/chess-rules.ts';
+
+import { PvpController } from './application/pvp.ts';
+import {
+  legalMovesFrom as pvpLegalMovesFrom,
+  canPlayCard as canPlayPvpCard,
+  heroActionCost as pvpHeroActionCost,
+} from './domain/pvp/commands.ts';
+import type { PvpState, PvpDeps } from './domain/pvp/state.ts';
 
 // ---------- Dependency wiring (satu sumber data; tidak ada angka di UI) ----------
 
@@ -142,6 +151,9 @@ interface AppState {
   /** Efek tangkapan sesaat untuk animasi papan (state visual, bukan aturan). */
   captureFx: CaptureFx | null;
   captureFxTimer: number | null;
+  /** Sesi PvP 1v1 aktif (null = tidak sedang di PvP). */
+  pvp: PvpController | null;
+  pvpSignalInput: string;
 }
 
 const PIECE_NAMES: Record<string, string> = {
@@ -784,6 +796,11 @@ function buildResultView(state: AppState): ResultView | null {
 
 function statusFor(state: AppState): string {
   if (state.battle && (state.screen === 'battle' || state.screen === 'result')) return state.battle.status;
+  if (state.pvp) {
+    const model = state.pvp.getModel();
+    if (model.phase === 'duel' && model.pvp) return model.pvp.status;
+    return model.status;
+  }
   if (state.screen === 'dungeon') {
     return (
       'Peta campaign. ' + state.campaign.clearedFloorIds.length + ' dari ' + DUNGEON_FLOORS.length + ' lantai ditaklukkan.'
@@ -799,6 +816,206 @@ function statusFor(state: AppState): string {
   return 'Menu utama. ' + state.campaign.clearedFloorIds.length + ' dari ' + DUNGEON_FLOORS.length + ' lantai ditaklukkan.';
 }
 
+function buildPvpLobbyView(state: AppState): PvpLobbyView {
+  const model = state.pvp ? state.pvp.getModel() : null;
+  const deckReady = deckSelectionStatus(state.campaign.deckCardIds, DECK_CATALOG).complete;
+  return {
+    role: model?.role ?? null,
+    color: model?.color ?? null,
+    signal: model?.signal ?? null,
+    signalKind: model?.signalKind ?? null,
+    status: model?.status ?? 'Belum terhubung.',
+    busy: model?.connectionStatus === 'creating-offer' || model?.connectionStatus === 'creating-answer' || model?.connectionStatus === 'connecting',
+    error: model?.error ?? null,
+    remoteSignal: state.pvpSignalInput,
+    heroes: HEROES.map(function (hero) {
+      return { id: hero.id, name: hero.name, portrait: hero.portrait, role: hero.role };
+    }),
+    selectedHeroId: state.campaign.selectedHero,
+    deckReady,
+    connected: model?.connectionStatus === 'connected',
+    deckCount: state.campaign.deckCardIds.length,
+    loadoutLocked: model?.role !== null && model?.role !== undefined,
+  };
+}
+
+function pvpCardSlots(pvp: PvpState, sideColor: 'w' | 'b'): CardSlotView[] {
+  const side = pvp.sides[sideColor];
+  const hero = contentHeroById(side.heroId);
+  return side.hand.map(function (cardId, index) {
+    const card = cardById[cardId];
+    const myTurn = pvp.turn === sideColor && !pvp.gameOver;
+    if (!card) {
+      return {
+        card: { id: cardId, name: 'Kartu rusak', cost: 0, kind: 'spell', tag: 'Mantra', desc: 'Kartu tidak dikenal.', icon: 'shock' },
+        cost: 0,
+        targeting: false,
+        locked: true,
+        stateLabel: 'BUTUH MANA',
+        actionLabel: 'TIDAK TERSEDIA',
+      };
+    }
+    const cost = currentCardCost(card, hero, side.reserveArmed);
+    const affordability = canPlayPvpCard(side, card, hero);
+    const affordable = affordability.ok;
+    const targeting = myTurn && pvp.activeSlot === index && pvp.activeSkill != null;
+    const locked = !myTurn || pvp.pendingPromotion !== null ||
+      (!targeting && (!affordable || pvp.activeSkill !== null));
+    return {
+      card: {
+        id: card.id, name: card.name, cost: card.cost, kind: card.kind, tag: card.tag,
+        desc: card.desc.replace(/\b(putih|hitam)\b/g, (color) => color === 'putih' ? (sideColor === 'w' ? 'putih' : 'hitam') : (sideColor === 'w' ? 'hitam' : 'putih')).replace(/boss/gi, 'lawan'),
+        icon: card.icon,
+      },
+      cost,
+      targeting,
+      locked,
+      stateLabel: targeting ? 'PILIH TARGET' : !myTurn ? 'MENUNGGU GILIRAN' : affordable ? 'SIAP' : affordability.reason,
+      actionLabel: targeting ? 'BATALKAN' : 'KLIK UNTUK AKTIF',
+      unaffordable: !affordable,
+    };
+  });
+}
+
+function buildPvpDuelView(state: AppState): PvpDuelView | null {
+  const model = state.pvp ? state.pvp.getModel() : null;
+  if (!model || !model.pvp) return null;
+  const pvp = model.pvp;
+  const myColor = model.color ?? 'w';
+  const oppColor = myColor === 'w' ? 'b' : 'w';
+  const me = pvp.sides[myColor];
+  const opp = pvp.sides[oppColor];
+  const myHero = contentHeroById(me.heroId);
+  const oppHero = contentHeroById(opp.heroId);
+  const myTurn = pvp.turn === myColor && !pvp.gameOver;
+  const skillTargeting = (pvp.activeSkill ?? '').indexOf('hero:skill:') === 0;
+  const ultimateTargeting = (pvp.activeSkill ?? '').indexOf('hero:ultimate:') === 0;
+  const whiteInCheck = deps.chess.isInCheck(pvp.board, 'w');
+  const blackInCheck = deps.chess.isInCheck(pvp.board, 'b');
+  const legalMoves = pvpLegalMovesFrom(pvp, deps, pvp.selected ? pvp.selected[0] : -1, pvp.selected ? pvp.selected[1] : -1);
+  const markers: Record<string, NonNullable<BoardViewState['markers']>[string]> = {};
+  const squaresByPiece = new Map<string, string>();
+  for (let row = 0; row < 8; row += 1) {
+    for (let col = 0; col < 8; col += 1) {
+      const piece = pvp.board[row][col];
+      if (piece) squaresByPiece.set(piece.id, row + ',' + col);
+    }
+  }
+  function addMarker(key: string | undefined, kind: 'shield' | 'mark' | 'stagger' | 'snare' | 'block', label: string): void {
+    if (!key) return;
+    const marker = markers[key];
+    if (marker) marker.labels.push(label);
+    else markers[key] = { kind, labels: [label] };
+  }
+  for (const ward of pvp.effects.wards) addMarker(squaresByPiece.get(ward.pieceId), 'shield', 'Perisai: ' + ward.turns + ' balasan lawan');
+  for (const snare of pvp.effects.snares) addMarker(squaresByPiece.get(snare.pieceId), 'snare', 'Jerat: ' + snare.turns + ' balasan lawan');
+  for (const stagger of pvp.effects.staggers) addMarker(squaresByPiece.get(stagger.pieceId), 'stagger', 'Gentar: ' + stagger.turns + ' balasan lawan');
+  for (const mark of pvp.effects.marks) addMarker(squaresByPiece.get(mark.pieceId), 'mark', 'Ditandai untuk diburu');
+  for (const blockade of pvp.effects.blockades) addMarker(blockade.square.join(','), 'block', 'Blokade: ' + blockade.turns + ' balasan lawan');
+  for (const aegis of pvp.effects.aegis) {
+    for (const row of pvp.board) for (const piece of row) {
+      if (piece?.color === aegis.color && piece.type !== 'k') addMarker(squaresByPiece.get(piece.id), 'shield', 'Kebal tangkapan: ' + aegis.turns + ' balasan lawan');
+    }
+  }
+  const mySkillCost = pvpHeroActionCost(pvp, false, myColor);
+  const myUltimateCost = pvpHeroActionCost(pvp, true, myColor);
+  const board: BoardViewState = {
+    board: pvp.board,
+    selected: pvp.selected,
+    legalMoves: legalMoves.map(function (move) { return { from: move.from, to: move.to }; }),
+    lastMove: pvp.lastMove,
+    captureFx: null,
+    focusSquare: state.focusSquare,
+    whiteInCheck,
+    blackInCheck,
+    enemyWardPieceId: null,
+    playerWardPieceId: null,
+    markedEnemyId: null,
+    staggerId: null,
+    snareId: null,
+    snareTurns: 0,
+    blockadeSquare: null,
+    blockadeTurns: 0,
+    heroBlockadeSquares: [],
+    heroBlockadeTurns: 0,
+    heroBlockadeName: 'Blokade',
+    bossSealedSquare: null,
+    bossSnareId: null,
+    targeting: pvp.activeSkill !== null,
+    disabled: !myTurn || pvp.pendingPromotion !== null,
+    commandName: 'pvp-square',
+    markers,
+  };
+  const sideForReroll = me;
+  const rerollAvailable = myTurn && !pvp.activeSkill && !pvp.pendingPromotion &&
+    sideForReroll.rollsThisTurn < rerollLimit(sideForReroll) && sideForReroll.energy >= rerollCost(sideForReroll);
+  return {
+    turnLabel: String(pvp.turnNo).padStart(2, '0'),
+    turnFlag: pvp.gameOver
+      ? pvp.winner === myColor
+        ? 'Kamu menang'
+        : pvp.winner === null
+          ? 'Remis'
+          : 'Kamu kalah'
+      : myTurn
+        ? 'Giliranmu'
+        : 'Giliran lawan',
+    turnFlagClass: pvp.gameOver ? 'game-over' : myTurn ? 'player-turn' : 'thinking',
+    boardStatus: pvp.status,
+    board,
+    self: {
+      color: myColor,
+      role: myHero.role,
+      name: myHero.name,
+      portrait: myHero.portrait,
+      energy: me.energy,
+      mana: me.mana,
+      skillName: myHero.skillName,
+      skillCost: mySkillCost,
+      ultimateName: myHero.ultimateName,
+      ultimateCost: myUltimateCost,
+      skillDisabled: !myTurn || pvp.pendingPromotion !== null || (!skillTargeting && pvp.activeSkill !== null) || me.energy < mySkillCost,
+      ultimateDisabled: !myTurn || pvp.pendingPromotion !== null || (!ultimateTargeting && pvp.activeSkill !== null) || me.energy < myUltimateCost,
+      skillTargeting: myTurn && skillTargeting,
+      ultimateTargeting: myTurn && ultimateTargeting,
+    },
+    opponent: {
+      color: oppColor,
+      name: oppHero.name,
+      portrait: oppHero.portrait,
+      role: oppHero.role,
+      energy: opp.energy,
+      mana: opp.mana,
+      skillName: oppHero.skillName,
+      skillCost: pvpHeroActionCost(pvp, false, oppColor),
+      ultimateName: oppHero.ultimateName,
+      ultimateCost: pvpHeroActionCost(pvp, true, oppColor),
+    },
+    slots: pvpCardSlots(pvp, myColor),
+    opponentSlots: pvpCardSlots(pvp, oppColor),
+    rerollAvailable,
+    rerollLabel: sideForReroll.rollsThisTurn === 0 ? 'Gratis · putaran 1 dari ' + rerollLimit(sideForReroll) : '1 EN · putaran ' + (sideForReroll.rollsThisTurn + 1) + ' dari ' + rerollLimit(sideForReroll),
+    rerollCost: rerollCost(sideForReroll),
+    canUndo: model.canUndo && (myTurn || pvp.gameOver),
+    canRestart: model.connectionStatus === 'connected',
+    canCancelTarget: myTurn && pvp.activeSkill !== null,
+    connectionStatus: model.connectionStatus === 'connected' ? 'Terhubung' : model.status,
+    error: model.error,
+    soundEnabled: state.soundEnabled,
+    localTurn: myTurn,
+    gameOver: pvp.gameOver,
+    winnerText: pvp.gameOver
+      ? pvp.winner === myColor
+        ? 'Kamu menang!'
+        : pvp.winner === null
+          ? 'Remis.'
+          : 'Lawan menang.'
+      : '',
+    promotionOpen: myTurn && pvp.pendingPromotion !== null,
+    promotionMessage: pvp.pendingPromotion ? 'Pion mencapai baris terakhir. Pilih bidak promosi.' : '',
+  };
+}
+
 function buildShell(state: AppState): AppShellView {
   return {
     screen: state.screen,
@@ -809,6 +1026,8 @@ function buildShell(state: AppState): AppShellView {
     heroes: state.screen === 'heroes' ? buildHeroesView(state) : null,
     battle: state.screen === 'battle' ? buildBattleView(state) : null,
     result: state.screen === 'result' ? buildResultView(state) : null,
+    pvpLobby: state.screen === 'pvp-lobby' ? buildPvpLobbyView(state) : null,
+    pvpDuel: state.screen === 'pvp-duel' ? buildPvpDuelView(state) : null,
   };
 }
 
@@ -835,10 +1054,37 @@ function main(): void {
     blackTimer: null,
     captureFx: null,
     captureFxTimer: null,
+    pvp: null,
+    pvpSignalInput: '',
   };
 
   function render(): void {
     renderApp(root as HTMLElement, buildShell(state));
+    const promotion = (root as HTMLElement).querySelector<HTMLDialogElement>('#pvp-promotion-dialog');
+    if (promotion && !promotion.open) promotion.showModal();
+  }
+
+  function pvpDepsFor(): PvpDeps {
+    return {
+      chess: chessRulesAdapter,
+      rng: new MathRandom(),
+      cards: deps.cards,
+      heroes: deps.heroes,
+    };
+  }
+
+  function createPvpController(): PvpController {
+    return new PvpController(
+      pvpDepsFor(),
+      { onUpdate: function (model) {
+        if (state.screen === 'pvp-lobby' || state.screen === 'pvp-duel') {
+          state.screen = model.phase === 'duel' ? 'pvp-duel' : 'pvp-lobby';
+        }
+        render();
+      } },
+      state.campaign.selectedHero,
+      state.campaign.deckCardIds,
+    );
   }
 
   function clearBlackTimer(): void {
@@ -983,6 +1229,11 @@ function main(): void {
       case 'nav': {
         const next = target.dataset['screen'];
         if (next === 'menu' || next === 'dungeon' || next === 'heroes') {
+          if (state.pvp) {
+            state.pvp.close();
+            state.pvp = null;
+          }
+          state.pvpSignalInput = '';
           clearBlackTimer();
           audio.play('toggle');
           state.screen = next;
@@ -990,6 +1241,16 @@ function main(): void {
             state.heroesTab = 'roster';
             state.deckNotice = null;
           }
+          render();
+          return true;
+        }
+        if (next === 'pvp-lobby') {
+          clearBlackTimer();
+          audio.play('toggle');
+          if (!state.pvp) {
+            state.pvp = createPvpController();
+          }
+          state.screen = 'pvp-lobby';
           render();
           return true;
         }
@@ -1115,6 +1376,122 @@ function main(): void {
     }
   }
 
+  function handlePvpCommand(command: string, target: HTMLElement): boolean {
+    if (!state.pvp) return false;
+    switch (command) {
+      case 'pvp-copy-signal':
+        void state.pvp.copySignal();
+        return true;
+      case 'pvp-select-deck':
+        state.pvp.close();
+        state.pvp = null;
+        state.pvpSignalInput = '';
+        state.screen = 'heroes';
+        state.heroesTab = 'deck';
+        render();
+        return true;
+      case 'pvp-restart':
+        state.pvp.dispatch('restart', []);
+        render();
+        return true;
+      case 'pvp-host': {
+        state.pvp.host();
+        render();
+        return true;
+      }
+      case 'pvp-join': {
+        state.pvp.join();
+        render();
+        return true;
+      }
+      case 'pvp-apply-signal': {
+        const textarea = target.parentElement?.querySelector<HTMLTextAreaElement>('textarea.pvp-signal-input');
+        const sdp = textarea?.value ?? '';
+        state.pvp.applySignal(sdp);
+        render();
+        return true;
+      }
+      case 'pvp-hero': {
+        const id = target.dataset['heroId'];
+        if (state.pvp.getModel().role !== null) return true;
+        if (id) {
+          state.campaign = chooseHeroProgress(state.campaign, id, HERO_IDS);
+          store.save(state.campaign);
+          if (!state.pvp || state.pvp.getModel().role == null) {
+            state.pvp = createPvpController();
+          }
+          audio.play('select');
+          render();
+        }
+        return true;
+      }
+      case 'pvp-leave': {
+        state.pvp.close();
+        state.pvp = null;
+        state.pvpSignalInput = '';
+        state.screen = 'menu';
+        render();
+        return true;
+      }
+      case 'pvp-square': {
+        const row = Number(target.dataset['row']);
+        const col = Number(target.dataset['col']);
+        state.focusSquare = [row, col];
+        state.pvp.dispatch('square', [row, col]);
+        render();
+        focusSquareButton(row, col);
+        return true;
+      }
+      case 'pvp-card': {
+        const slot = Number(target.dataset['slot']);
+        state.pvp.dispatch('card', [slot]);
+        render();
+        return true;
+      }
+      case 'pvp-hero-skill': {
+        state.pvp.dispatch('hero-skill', []);
+        render();
+        return true;
+      }
+      case 'pvp-hero-ultimate': {
+        state.pvp.dispatch('hero-ultimate', []);
+        render();
+        return true;
+      }
+      case 'pvp-reroll': {
+        state.pvp.dispatch('reroll', []);
+        render();
+        return true;
+      }
+      case 'pvp-cancel-target': {
+        state.pvp.dispatch('cancel-target', []);
+        render();
+        return true;
+      }
+      case 'pvp-promotion': {
+        const choice = target.dataset['promotion'];
+        if (choice === 'q' || choice === 'r' || choice === 'b' || choice === 'n') {
+          state.pvp.dispatch('promotion', [choice]);
+          render();
+        }
+        return true;
+      }
+      case 'pvp-undo': {
+        state.pvp.dispatch('undo', []);
+        render();
+        return true;
+      }
+      default:
+        return false;
+    }
+  }
+
+  root.addEventListener('input', function (event) {
+    if (event.target instanceof HTMLTextAreaElement && event.target.id === 'pvp-remote-signal') {
+      state.pvpSignalInput = event.target.value;
+    }
+  });
+
   let lastCardHoverAt = 0;
   root.addEventListener('pointerover', function (event) {
     if (event.pointerType === 'touch' || !(event.target instanceof Element)) return;
@@ -1156,6 +1533,7 @@ function main(): void {
     const command = target.dataset['command'];
     if (!command) return;
     if (handleHubCommand(command, target)) return;
+    if (handlePvpCommand(command, target)) return;
 
     const battle = state.battle;
     if (!battle) {
@@ -1261,6 +1639,19 @@ function main(): void {
 
   document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
+      if (state.screen === 'pvp-duel' && state.pvp) {
+        const model = state.pvp.getModel();
+        const pvp = model.pvp;
+        if (pvp?.pendingPromotion && pvp.turn === model.color) {
+          event.preventDefault();
+          return;
+        }
+        if (pvp?.activeSkill && pvp.turn === model.color) {
+          event.preventDefault();
+          state.pvp.dispatch('cancel-target', []);
+        }
+        return;
+      }
       if (state.screen !== 'battle' || !state.battle) return;
       const battle = state.battle;
       if (battle.pendingPromotion) {

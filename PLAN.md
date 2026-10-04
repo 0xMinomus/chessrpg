@@ -1,4 +1,4 @@
-# Rencana implementasi frontend single-player
+# Rencana implementasi frontend
 
 ## Cara menggunakan rencana ini
 
@@ -6,7 +6,7 @@ Saat pengguna menyebut `PLAN.md` sebagai tugas, termasuk hanya mengirim nama fil
 
 ## Sasaran
 
-Pindahkan prototipe dungeon aktif menjadi aplikasi frontend single-player offline yang modular, tetap mempertahankan perilaku dan art style yang ada, serta tidak membutuhkan layanan online.
+Pindahkan prototipe dungeon aktif menjadi aplikasi frontend modular dengan campaign single-player offline dan duel PvP langsung opsional tanpa backend game, tetap mempertahankan perilaku dan art style yang ada.
 
 ## Batas
 
@@ -14,7 +14,7 @@ Pindahkan prototipe dungeon aktif menjadi aplikasi frontend single-player offlin
 - Pembanding aturan catur dasar: `chess-rpg.html` dan `GAMES.md`.
 - Jangan menimpa atau menghapus kedua prototipe.
 - Jangan mengubah aturan game atau konten kecuali diperlukan untuk menjaga kesesuaian eksplisit dengan `PRD.md` dan permintaan terbaru.
-- Tidak ada backend, akun, multiplayer, atau request jaringan saat gameplay.
+- Tidak ada backend, akun, matchmaking, chat, atau game server. Campaign tetap offline. PvP yang diminta pengguna memakai jaringan hanya setelah dimulai, melalui STUN dan WebRTC langsung.
 
 ## Fase
 
@@ -140,4 +140,16 @@ Verifikasi perubahan: `npm run verify:browser` melewati typecheck, 95 domain, 26
 - Kerjakan fase secara berurutan dalam sesi eksekusi yang sama. Gunakan commit boundary alami pada perubahan besar jika pengguna meminta commit; jangan membuat commit sendiri tanpa permintaan.
 - Pertahankan perilaku dan konten saat memindahkan. Jika ditemukan bug yang tidak tercakup permintaan atau PRD, catat dan jangan diam-diam mengubah aturan.
 - Tandai checkbox hanya setelah kriteria fase benar-benar tercapai. Jika alat atau lingkungan menghalangi fase, lanjutkan pekerjaan independen dan laporkan blocker spesifik.
-- Jangan menambah layanan online atau mengubah ruang lingkup menjadi multiplayer.
+- Jangan menambah layanan akun/server/matchmaking/chat atau membuat campaign bergantung pada jaringan; PvP langsung WebRTC adalah pengecualian yang diminta eksplisit pengguna.
+
+## Addendum: duel PvP 1v1
+
+Permintaan pengguna memperluas target setelah penyelesaian campaign. Duel bersifat opsional, memakai koneksi WebRTC langsung, dan tidak mengubah alur single-player offline.
+
+- [x] State, giliran, resource, kartu, skill, ultimate, promosi, undo, restart, skakmat, dan remis berlaku simetris untuk kedua warna.
+- [x] Kedua pemain memilih hero/deck, lalu membuat koneksi dengan pertukaran SDP offer/answer manual melalui STUN dan DataChannel.
+- [x] Host putih menjalankan state otoritatif; tamu hitam mengirim intent dan menerima snapshot.
+- [x] Layar lobby dan duel menampilkan status koneksi, kesalahan, papan, resource, kartu, dan aksi kedua sisi.
+- [x] Domain PvP diuji; walkthrough browser menghubungkan dua konteks Chromium tanpa signaling server.
+
+Catatan: `npm run verify` PASS (TypeScript, domain 95, PvP 674, campaign 26, skill boss 11, parity catur 8, render UI 51, build/dist). `npm run verify:flow` PASS 98; simulasi 60 langkah tidak mencapai hasil alami dan dicatat sebagai catatan, bukan gagal. `npm run verify:pvp-browser` PASS 30 pemeriksaan pada dua konteks Chromium; desktop, ponsel 390px, dan ponsel 320px ditinjau dari screenshot; tidak ada error browser. `npm run verify:browser` masih berhenti pada assertion layout campaign yang sudah tercatat untuk 320/360/390/430px; PvP diuji mandiri melalui target browser tersebut. Koneksi memakai STUN publik tanpa TURN; NAT/firewall tertentu dapat menghalangi duel.
