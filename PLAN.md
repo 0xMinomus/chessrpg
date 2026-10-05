@@ -1,4 +1,4 @@
-# Rencana implementasi frontend single-player
+# Rencana implementasi campaign offline dan duel PvP online
 
 ## Cara menggunakan rencana ini
 
@@ -6,7 +6,7 @@ Saat pengguna menyebut `PLAN.md` sebagai tugas, termasuk hanya mengirim nama fil
 
 ## Sasaran
 
-Pindahkan prototipe dungeon aktif menjadi aplikasi frontend single-player offline yang modular, tetap mempertahankan perilaku dan art style yang ada, serta tidak membutuhkan layanan online.
+Pindahkan prototipe dungeon aktif menjadi aplikasi campaign single-player offline yang modular, lalu sediakan PvP online 1v1 sebagai mode terpisah tanpa mengubah kebutuhan jaringan campaign.
 
 ## Batas
 
@@ -14,7 +14,7 @@ Pindahkan prototipe dungeon aktif menjadi aplikasi frontend single-player offlin
 - Pembanding aturan catur dasar: `chess-rpg.html` dan `GAMES.md`.
 - Jangan menimpa atau menghapus kedua prototipe.
 - Jangan mengubah aturan game atau konten kecuali diperlukan untuk menjaga kesesuaian eksplisit dengan `PRD.md` dan permintaan terbaru.
-- Tidak ada backend, akun, multiplayer, atau request jaringan saat gameplay.
+- Campaign tidak memerlukan backend atau request jaringan. Mode PvP online pilihan memakai signaling PeerJS dan kanal WebRTC.
 
 ## Fase
 
@@ -135,9 +135,22 @@ Walkthrough visual/interaksi: screenshot desktop 1568×882 dan ponsel 390×844 d
 Verifikasi perubahan: `npm run verify:browser` melewati typecheck, 95 domain, 26 campaign, 11 skill boss, 4 combat FX, 8 parity, 54 render, build/dist, dan pemeriksaan portrait. `verify:layout` gagal pada layar dungeon untuk 320×780, 360×740, 390×844, dan 430×932: marker/floor assertion tidak muat; screenshot menunjukkan shell memakai kolom 190px + 151px pada ponsel. Saya tidak mengubah layout dungeon karena ruang lingkup permintaan hanya Beranda. Viewport 768px ke atas pada pemeriksaan tersebut lolos. `npm run verify:flow` dijalankan terpisah dan lulus 105/105.
 
 
+### 8. Duel PvP online 1v1
+
+- [x] Bangun domain simetris untuk putih dan hitam, termasuk resource, kartu, efek hero, promosi, serah, dan premove yang divalidasi ulang.
+- [x] Tambahkan antrean matchmaking, ruang privat lima digit, pilihan warna, pertukaran profil, seed bersama, dan validasi pesan.
+- [x] Integrasikan PeerJS/WebRTC sebagai adapter yang baru dimuat setelah pemain memilih mode online.
+- [x] Hubungkan layar online ke command domain; tampilkan state lawan, status koneksi, promosi, target, dan premove.
+- [x] Pertahankan akses campaign tanpa jaringan; uji alur dua browser dan layout desktop/ponsel.
+- [x] Perbarui PRD, arsitektur, README, dan catatan Obsidian.
+
+**Selesai bila:** kedua pemain dapat memulai pertandingan melalui antrean atau kode ruang, memainkan aksi yang tervalidasi dengan state yang sama, dan campaign tetap berjalan tanpa jaringan.
+
+Catatan implementasi: [[notes/online-1v1|Duel online 1v1]].
+
 ## Keputusan implementasi untuk agent
 
 - Kerjakan fase secara berurutan dalam sesi eksekusi yang sama. Gunakan commit boundary alami pada perubahan besar jika pengguna meminta commit; jangan membuat commit sendiri tanpa permintaan.
 - Pertahankan perilaku dan konten saat memindahkan. Jika ditemukan bug yang tidak tercakup permintaan atau PRD, catat dan jangan diam-diam mengubah aturan.
 - Tandai checkbox hanya setelah kriteria fase benar-benar tercapai. Jika alat atau lingkungan menghalangi fase, lanjutkan pekerjaan independen dan laporkan blocker spesifik.
-- Jangan menambah layanan online atau mengubah ruang lingkup menjadi multiplayer.
+- Jaga campaign tetap dapat dimainkan offline; kegagalan layanan PeerJS tidak boleh memblokir mode single-player.

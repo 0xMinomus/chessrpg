@@ -24,3 +24,5 @@ export type { BlackReplyResult } from './submit-move.ts';
 export { canUndoFlow, undoTurnFlow } from './undo-turn.ts';
 export { claimBattleRewardFlow, restartBattleFlow, startBattle } from './start-battle.ts';
 export type { RewardFlowResult, StartBattleResult } from './start-battle.ts';
+export { OnlineSessionController } from './online-session.ts';
+export type { OnlinePlayerProfile, OnlineSessionSnapshot } from './online-session.ts';

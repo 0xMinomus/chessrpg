@@ -53,6 +53,9 @@ export interface BoardViewState {
   bossSealedSquare: [number, number] | null;
   targeting: boolean;
   disabled: boolean;
+  perspective?: PieceColor;
+  remoteSelection?: { from: [number, number]; to: [number, number] } | null;
+  premove?: { from: [number, number]; to: [number, number] } | null;
 }
 
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
@@ -108,8 +111,10 @@ export function renderBoard(state: BoardViewState): string {
     if (target) captureByTarget.set(key, true);
   }
   let html = '';
-  for (let row = 0; row < 8; row += 1) {
-    for (let col = 0; col < 8; col += 1) {
+  for (let visualRow = 0; visualRow < 8; visualRow += 1) {
+    for (let visualCol = 0; visualCol < 8; visualCol += 1) {
+      const row = state.perspective === 'b' ? 7 - visualRow : visualRow;
+      const col = state.perspective === 'b' ? 7 - visualCol : visualCol;
       const piece = state.board[row][col];
       const key = row + ',' + col;
       const isSelected = state.selected !== null && state.selected[0] === row && state.selected[1] === col;
@@ -136,6 +141,10 @@ export function renderBoard(state: BoardViewState): string {
       const classes = ['square', (row + col) % 2 === 0 ? 'light' : 'dark'];
       if (isSelected) classes.push('selected');
       if (state.lastMove !== null && state.lastMove.from[0] === row && state.lastMove.from[1] === col) classes.push('last-from');
+      const remoteFrom = state.remoteSelection !== undefined && state.remoteSelection !== null && sameSquare(state.remoteSelection.from, row, col);
+      const remoteTo = state.remoteSelection !== undefined && state.remoteSelection !== null && sameSquare(state.remoteSelection.to, row, col);
+      const premoveFrom = state.premove !== undefined && state.premove !== null && sameSquare(state.premove.from, row, col);
+      const premoveTo = state.premove !== undefined && state.premove !== null && sameSquare(state.premove.to, row, col);
       if (state.lastMove !== null && state.lastMove.to[0] === row && state.lastMove.to[1] === col) classes.push('last-to');
       if (inCheck) classes.push('in-check');
       if (enemyProtected) classes.push('enemy-ward');
@@ -145,6 +154,10 @@ export function renderBoard(state: BoardViewState): string {
       if (snared) classes.push('snared-piece');
       if (bossSnared) classes.push('boss-snared-piece');
       if (blocked) classes.push('blocked-target');
+      if (remoteFrom) classes.push('remote-selection-from');
+      if (remoteTo) classes.push('remote-selection-to');
+      if (premoveFrom) classes.push('premove-from');
+      if (premoveTo) classes.push('premove-to');
       if (captureOrigin) classes.push('capture-origin');
       if (captureImpact) classes.push('capture-impact');
       if (isHint && !isCaptureHint) classes.push('move-hint');
@@ -159,6 +172,10 @@ export function renderBoard(state: BoardViewState): string {
       if (cardBlocked) labels.push('petak diblokade selama ' + state.blockadeTurns + ' balasan boss');
       if (heroBlocked) labels.push(state.heroBlockadeName + ' diblokade selama ' + state.heroBlockadeTurns + ' balasan boss');
       if (bossSealed) labels.push('petak disegel boss untuk langkah berikutnya');
+      if (remoteFrom) labels.push('asal pilihan langkah lawan');
+      if (remoteTo) labels.push('tujuan pilihan langkah lawan');
+      if (premoveFrom) labels.push('asal premove lokal');
+      if (premoveTo) labels.push('tujuan premove lokal');
       const position = coord(row, col);
       const ariaLabel =
         position +
@@ -180,7 +197,7 @@ export function renderBoard(state: BoardViewState): string {
         (state.disabled ? ' disabled' : '') +
         '>' +
         '<span class="coordinate" aria-hidden="true">' +
-        (col === 0 ? String(8 - row) : row === 7 ? FILES[col] : '') +
+        (visualCol === 0 ? String(8 - row) : visualRow === 7 ? FILES[col] : '') +
         '</span>' +
         '<span class="piece' +
         (piece ? (piece.color === 'w' ? ' white' : ' black') : '') +

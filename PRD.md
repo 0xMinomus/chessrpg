@@ -1,8 +1,8 @@
-# PRD Crown & Catalyst: Single-player offline
+# PRD Crown & Catalyst: campaign offline dan duel PvP online
 
 ## Ringkasan
 
-Crown & Catalyst adalah game strategi single-player yang menggabungkan catur, kartu skill, hero, dan boss dungeon. Pemain mengendalikan bidak putih melawan AI hitam. Produk tahap ini berfokus pada pengalaman frontend yang utuh, bisa dimainkan offline, menyimpan progres lokal, dan mempertahankan art style prototipe.
+Crown & Catalyst adalah game strategi catur, kartu, hero, dan dungeon. Campaign tetap berjalan offline tanpa server; mode PvP online pilihan menghubungkan dua pemain melalui PeerJS dan WebRTC.
 
 ## Tujuan produk
 
@@ -10,18 +10,19 @@ Crown & Catalyst adalah game strategi single-player yang menggabungkan catur, ka
 2. Memisahkan layar, aturan, dan data agar konten bisa dikembangkan tanpa menulis ulang game.
 3. Menjaga pertandingan adil dan dapat dipahami: biaya, resource, efek, giliran, target, dan hasil tampil konsisten.
 4. Mendukung desktop dan layar sentuh melalui web app responsif.
-5. Menyediakan permainan lokal tanpa akun, server, atau koneksi jaringan.
+5. Kampanye lokal tetap tersedia tanpa jaringan; PvP online baru membuka koneksi saat dipilih pemain.
+6. Mendukung duel 1v1 melalui matchmaking terbuka atau kode ruang, dengan pilihan warna dan loadout masing-masing.
 
 ## Bukan tujuan tahap ini
 
-- Multiplayer, invite link, matchmaking, ranking, chat, akun, dan sinkronisasi cloud.
-- Pembayaran nyata, iklan, analitik online, atau layanan backend.
+- Akun, sinkronisasi cloud, chat, leaderboard, pembayaran, dan backend otoritatif.
+- Iklan atau analitik online.
 - Mengganti art direction pixel/retro navy, plum/lavender, krem, dengan aksen merah muda dan biru lembut.
 - Menambah hero, kartu, atau fitur gameplay di luar permintaan eksplisit. Campaign sepuluh boss ini mengikuti permintaan terbaru.
 
 ## Pengguna utama
 
-Pemain kasual yang menyukai catur, kombinasi taktis, dan progres RPG; ingin dapat memulai permainan cepat, memahami efek sebelum menggunakannya, lalu melanjutkan dungeon dari perangkat yang sama.
+Pemain kasual yang menyukai catur dan strategi. Mereka dapat bermain campaign lokal atau menantang pemain lain dalam duel online dengan hero dan deck masing-masing.
 
 ## Alur utama
 
@@ -59,6 +60,14 @@ Pemain kasual yang menyukai catur, kombinasi taktis, dan progres RPG; ingin dapa
 - **FR-16:** Suara dapat dinyalakan/dimatikan. Preferensi suara berlaku di sesi berikutnya jika penyimpanan lokal tersedia.
 - **FR-17 (P1):** Pemain dapat melanjutkan duel aktif setelah reload dengan state yang konsisten, termasuk efek tertunda dan posisi papan.
 
+### Pertandingan PvP online
+
+- **FR-26:** Pemain dapat mencari lawan melalui antrean terbuka atau membuat ruang berkode tepat lima digit, termasuk kode yang diawali nol. Pemain memilih putih, hitam, atau acak.
+- **FR-27:** Duel memakai hero aktif dan loadout 10 kartu non-Joker + 1 Joker. Kedua klien menerima profil dan seed yang sama, lalu menarik tangan secara deterministik.
+- **FR-28:** Kedua warna memakai aturan catur, resource, kartu, efek hero, promosi, dan menyerah yang simetris. Penerima memvalidasi ulang setiap aksi berurutan sebelum memperbarui state.
+- **FR-29:** Papan menampilkan pilihan bidak lawan dan premove. Premove diperiksa kembali setelah lawan bergerak; langkah yang tidak lagi legal dibatalkan.
+- **FR-30:** Pemain dapat menyerah dan kembali ke lobi setelah pertandingan berakhir. Koneksi putus atau reload mengakhiri duel; state pertandingan online tidak dipulihkan.
+
 ### Antarmuka dan aksesibilitas
 
 - **FR-18:** Pertahankan struktur dan art style pixel/retro dari salinan dungeon aktif; perubahan arsitektur tidak menjadi alasan untuk redesign.
@@ -79,12 +88,13 @@ Biaya target tahap ini: skill hero 2 EN, ultimate hero 5 EN, dan Joker 5 mana se
 
 ## Kebutuhan nonfungsional
 
-- **NFR-01:** Bisa dijalankan dari build statis dan tidak membutuhkan backend untuk bermain.
+- **NFR-01:** Campaign dapat dijalankan dari build statis tanpa backend. PvP online memerlukan koneksi ke layanan signaling PeerJS dan kanal WebRTC.
 - **NFR-02:** Aturan inti dapat dipanggil tanpa membuat DOM atau mengakses browser global.
 - **NFR-03:** Save lokal dinormalisasi, berversi, dan aman terhadap JSON yang rusak atau field yang hilang.
-- **NFR-04:** Tidak ada request jaringan saat menjalankan loop gameplay. Aset game tersedia dari paket lokal.
+- **NFR-04:** Mode offline tidak mengirim request jaringan. Mode online hanya memulai signaling setelah pemain memilih matchmaking, membuat ruang, atau memasukkan kode ruang.
 - **NFR-05:** Gunakan semantik HTML, navigasi keyboard, dan status teks yang dapat dibaca teknologi bantu.
 - **NFR-06:** Perubahan struktur mempertahankan aset dan prototipe lama selama migrasi.
+- **NFR-07:** Peer pemilik `cc-arena-1` mengoordinasikan matchmaking dan meneruskan pesan. Tidak ada backend otoritatif untuk mencegah kecurangan; koneksi WebRTC/TURN tidak dijamin.
 
 ## Kriteria penerimaan
 
@@ -97,9 +107,13 @@ Biaya target tahap ini: skill hero 2 EN, ultimate hero 5 EN, dan Joker 5 mana se
 7. Hero roster dan deck builder memakai data konten yang ada; pemain dapat memilih 10 kartu biasa + 1 Joker, menyimpan pilihan setelah reload, dan hanya melihat kartu loadout itu saat duel.
 
 8. Campaign berisi 50 lantai berurutan; boss kelima membuka chapter berikutnya, semua marker berada di darat, dan tidak ada marker di air.
+9. Dua browser dapat tersambung lewat antrean dan kode ruang, memilih warna, memulai duel, lalu melihat state papan yang sama setelah aksi.
+10. Premove yang legal saat antrean dibuat dijalankan setelah giliran tiba atau dibatalkan bila perubahan papan membuatnya tidak legal.
+11. Campaign offline tidak mengirim request jaringan; pencarian lawan atau ruang hanya memakai signaling setelah dipilih pemain.
+
 
 ## Ukuran keberhasilan tahap
 
 - Alur menu → duel → reward/progres berjalan lokal.
-- Tidak ada fitur multiplayer atau backend yang menjadi dependency agar mode single-player berfungsi.
+- PvP online bersifat pilihan dan tidak boleh menjadi dependency campaign single-player.
 - Pengembang dapat menambah atau mengubah data hero/kartu/boss di satu sumber konten tanpa menyalin angka ke UI.

@@ -1,6 +1,6 @@
 # Crown & Catalyst
 
-Crown & Catalyst is a local, single-player game combining chess, skill cards, heroes, and dungeon bosses. The app is built with Vite, TypeScript, and vanilla DOM APIs; no backend is required to play.
+Crown & Catalyst is a chess strategy game with cards, heroes, and dungeon bosses. The campaign runs offline; optional 1v1 PvP uses PeerJS signaling and WebRTC data channels.
 
 ## Run locally
 
@@ -22,9 +22,9 @@ npm run preview
 npm run verify
 ```
 
-This runs TypeScript checks, domain smoke tests, chess parity tests, UI render checks, a production build, and a scan of the generated files for remote network references.
+This runs TypeScript checks, campaign and PvP domain smoke tests, chess parity, UI render checks, a production build, and a scan of the generated files for remote network references.
 
-The browser checks are available with `npm run verify:browser` when `playwright-core` and a local Chromium installation are available. They cover hero portrait atlas alignment and cropping, viewport layout, and gameplay flow. The preview-based checks expect the app at `http://localhost:4173/`.
+The browser checks are available with `npm run verify:browser` when Playwright and Chromium are available. They cover portrait alignment, viewport layout, and offline gameplay flow. The preview-based checks expect `http://localhost:4173/`. The online mode needs internet access to the PeerJS signaling service; its architecture and limits are documented in [[notes/online-1v1|Duel online 1v1]].
 
 ## Project layout
 
@@ -33,4 +33,4 @@ The browser checks are available with `npm run verify:browser` when `playwright-
 - `src/ui/` and `src/styles/` contain the screens and presentation.
 - `public/assets/` contains the local game artwork.
 - `chess-rpg.html` and `chess-rpg-dungeon.html` are retained prototypes for comparison.
-- `ARCHITECTURE.md`, `PRD.md`, `PLAN.md`, and `GAMES.md` document the design and game rules.
+- `ARCHITECTURE.md`, `PRD.md`, `PLAN.md`, `GAMES.md`, and `notes/` document design, game rules, and implementation notes.

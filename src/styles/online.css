@@ -1,0 +1,198 @@
+/* Online screens share the cabinet's navy/plum surfaces; brass marks the primary action. */
+.online-page {
+  width: min(100%, 1060px);
+  min-height: 0;
+  margin: 0 auto;
+  padding: clamp(14px, 2vw, 26px);
+  color: var(--cream);
+}
+.online-home {
+  min-height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, .78fr);
+  align-content: center;
+  align-items: center;
+  gap: clamp(20px, 5vw, 72px);
+}
+.online-intro { max-width: 560px; }
+.online-intro .eyebrow, .online-page-head .eyebrow { color: var(--coral-soft); }
+.online-intro h1, .online-page-head h1, .online-match-title h1 {
+  margin: 7px 0 10px;
+  color: var(--cream);
+  font: 700 clamp(28px, 4vw, 48px)/1.04 Georgia, "Times New Roman", serif;
+}
+.online-intro > p:not(.online-status) { max-width: 42ch; margin: 0; color: var(--muted); font-size: 15px; line-height: 1.55; }
+.online-status, .online-connection { color: #d9cfdf; font-size: 13px; line-height: 1.4; }
+.online-status { margin: 20px 0 0; }
+.online-error { margin: 12px 0 0; padding: 9px 11px; border: 1px solid var(--coral); color: #ffd0d7; background: #2a1b2c; font-size: 12px; line-height: 1.4; }
+.online-actions { display: grid; gap: 9px; }
+.online-action {
+  min-height: 80px;
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid #64576e;
+  color: var(--cream);
+  background: #1b2038;
+  cursor: pointer;
+  text-align: left;
+}
+.online-action:hover, .online-action:focus-visible, .online-action-button:hover:not(:disabled) { border-color: var(--coral-soft); background: #30283d; }
+.online-action strong { font: 700 17px/1.15 Georgia, "Times New Roman", serif; }
+.online-action span { color: var(--muted); font-size: 12px; }
+.online-action-primary { border-color: #c9af7e; background: #27253a; }
+.online-join { display: grid; gap: 7px; padding: 13px; border: 1px solid var(--line); background: var(--panel-deep); }
+.online-join > label, .online-color-picker legend, .online-code-label { color: var(--cream); font: 700 12px/1.25 "Courier New", monospace; }
+.online-join > div { display: flex; gap: 7px; }
+.online-join input { width: 100%; min-width: 0; min-height: 42px; padding: 8px 10px; border: 1px solid #746a7d; color: var(--cream); background: #0d1225; font: 700 16px/1 "Courier New", monospace; letter-spacing: .12em; }
+.online-join small { color: var(--muted); font-size: 11px; }
+.online-action-button {
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid #72677c;
+  color: var(--cream);
+  background: #29253b;
+  cursor: pointer;
+  font: 700 11px/1.2 "Courier New", monospace;
+}
+.online-action-button:disabled { color: #b4adbe; cursor: not-allowed; opacity: .72; }
+.online-primary { border-color: #f0d6a6; color: #201d2c; background: #ead7b3; }
+.online-primary:hover:not(:disabled) { color: #201d2c; background: #f5e7c9; }
+.online-secondary { background: #211f34; }
+.online-danger { border-color: #a66072; color: #ffd0d7; background: #321d2d; }
+.online-setup { max-width: 920px; }
+.online-page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 22px; margin-bottom: 20px; }
+.online-page-head h1 { margin-bottom: 0; font-size: clamp(24px, 3vw, 36px); }
+.online-page-head .online-status { max-width: 38ch; margin: 0; text-align: right; }
+.online-setup-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, .8fr); gap: 12px; }
+.online-setup-panel { min-width: 0; padding: clamp(14px, 2vw, 22px); border: 1px solid var(--line); background: #191e35; }
+.online-color-picker { display: flex; flex-wrap: wrap; gap: 7px; margin: 0; padding: 0; border: 0; }
+.online-color-picker legend { width: 100%; margin-bottom: 9px; }
+.online-color-option { min-height: 42px; display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #625a70; color: var(--muted); background: #14192f; cursor: pointer; font-size: 12px; }
+.online-color-option.selected { border-color: var(--gold); color: var(--cream); background: #282538; }
+.online-color-option input { width: 15px; height: 15px; margin: 0; accent-color: var(--gold); }
+.online-color-option:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.online-color-swatch { width: 15px; height: 15px; border: 1px solid #c8c0d0; background: #f3e4c4; }
+.online-color-swatch.b { background: #252338; }
+.online-color-swatch.random { background: linear-gradient(135deg, #f3e4c4 50%, #252338 50%); }
+.online-connection { margin: 17px 0 0; padding: 9px 10px; border-left: 2px solid var(--mauve); background: #151a31; }
+.online-button-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 17px; }
+.online-loadout { display: grid; gap: 12px; margin: 0; }
+.online-loadout > div { display: grid; gap: 4px; padding-bottom: 10px; border-bottom: 1px solid #454157; }
+.online-loadout dt { color: var(--muted); font: 700 10px/1.2 "Courier New", monospace; text-transform: uppercase; }
+.online-loadout dd { margin: 0; color: var(--cream); font: 700 18px/1.2 Georgia, "Times New Roman", serif; overflow-wrap: anywhere; }
+.online-note { margin: 14px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.online-room-code-panel { display: grid; justify-items: start; align-content: center; }
+.online-code-label { margin: 0 0 10px; color: var(--muted); }
+.online-room-code { display: block; margin: 0 0 14px; color: var(--gold); font: 700 clamp(42px, 7vw, 68px)/1 "Courier New", monospace; letter-spacing: .18em; font-variant-numeric: tabular-nums; }
+.online-room-code-panel .online-connection { width: 100%; }
+
+.online-battle {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 7px;
+  padding: 8px clamp(8px, 1vw, 14px) 10px;
+  overflow: hidden;
+  color: var(--cream);
+}
+.online-battle-head { min-width: 0; display: grid; grid-template-columns: minmax(150px, 1fr) minmax(180px, 1.3fr) auto; align-items: center; gap: 12px; padding: 0 3px 6px; border-bottom: 1px solid #514a64; }
+.online-match-title .eyebrow { color: var(--coral-soft); font-size: 10px; }
+.online-match-title h1 { margin: 2px 0 0; font-size: 21px; }
+.online-battle-head .online-connection { margin: 0; color: #d7cedd; font-size: 11px; }
+.online-turn { display: grid; gap: 3px; text-align: right; }
+.online-turn span { color: var(--muted); font: 700 9px/1 "Courier New", monospace; text-transform: uppercase; }
+.online-turn strong { color: var(--gold); font: 700 12px/1.2 "Courier New", monospace; }
+.online-player-strip { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) 34px minmax(0, 1fr); align-items: center; gap: 7px; }
+.online-player { min-width: 0; min-height: 46px; display: flex; align-items: center; gap: 8px; padding: 5px 9px; border: 1px solid #4c465e; background: #191e35; }
+.online-player > div { min-width: 0; display: grid; gap: 2px; }
+.online-player small { color: var(--muted); font: 700 9px/1.1 "Courier New", monospace; text-transform: uppercase; }
+.online-player strong { overflow: hidden; color: var(--cream); font: 700 13px/1.15 Georgia, "Times New Roman", serif; text-overflow: ellipsis; white-space: nowrap; }
+.online-piece-color { width: 15px; height: 15px; flex: 0 0 auto; border: 1px solid #f3e4c4; background: #f3e4c4; }
+.online-piece-color.b { background: #29253b; }
+.online-resource { margin-left: auto; color: var(--muted); font: 700 9px/1 "Courier New", monospace; white-space: nowrap; }
+.online-resource b { color: var(--cream); font-size: 12px; }
+.online-versus { color: var(--coral-soft); font: 700 10px/1 "Courier New", monospace; text-align: center; }
+.online-battle-grid { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, .58fr); gap: 10px; }
+.online-board-panel, .online-hand-panel { min-width: 0; min-height: 0; border: 1px solid var(--line); background: #191e35; }
+.online-board-panel { display: grid; grid-template-rows: minmax(0, 1fr) auto auto auto; justify-items: center; align-items: center; gap: 4px; padding: 6px; }
+.online-board-frame { width: min(100%, calc(100dvh - 190px)); max-height: 100%; aspect-ratio: 1; padding: 4px; border: 1px solid #897a91; background: #11162b; }
+.online-board-frame .board { width: 100%; height: 100%; }
+.online-board-status { max-width: 100%; margin: 0; overflow: hidden; color: var(--cream); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.online-annotation-key { margin: 0; color: var(--muted); font-size: 9px; line-height: 1.2; text-align: center; }
+.online-board-actions { width: 100%; display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; }
+.online-board-actions .online-action-button { min-height: 31px; padding: 5px 8px; font-size: 9px; }
+.online-board-panel > .online-secondary { min-height: 30px; padding: 4px 9px; }
+.online-hand-panel { display: flex; flex-direction: column; gap: 6px; padding: 8px; overflow: auto; }
+.online-hand-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 7px; }
+.online-hand-heading h2 { margin: 0; color: var(--cream); font: 700 15px/1.1 Georgia, "Times New Roman", serif; }
+.online-hand-heading span { color: var(--muted); font: 700 10px/1 "Courier New", monospace; }
+.online-card-hand { min-width: 0; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; }
+.online-card-hand .skill-card { height: auto; min-height: 0; --card-min-height: 165px; --card-art-height: 40px; --card-copy-min: 44px; --card-gap: 4px; --card-pad: 6px; }
+.online-card-hand .card-face { min-height: var(--card-min-height); }
+.online-hand-panel .roll-availability { min-height: 40px; flex: 0 0 auto; }
+
+/* Dashed outlines are remote intent; double outlines are the local queued move. */
+.online-battle .square.remote-selection-from, .online-battle .square.remote-selection-to {
+  z-index: 2;
+  outline: 2px dashed #fff0bf;
+  outline-offset: -5px;
+}
+.online-battle .square.remote-selection-to { outline-style: dotted; }
+.online-battle .square.premove-from, .online-battle .square.premove-to {
+  z-index: 2;
+  box-shadow: inset 0 0 0 2px #14192f, inset 0 0 0 5px #a7d1a0;
+}
+.online-battle .square.premove-to { box-shadow: inset 0 0 0 2px #14192f, inset 0 0 0 5px #a7d1a0, inset 0 0 0 8px rgba(20, 25, 47, .72); }
+
+@media (max-width: 760px) {
+  .online-home { grid-template-columns: minmax(0, 1fr); gap: 24px; align-content: start; }
+  .online-intro h1 { font-size: 34px; }
+  .online-actions { max-width: 560px; }
+  .online-setup-grid { grid-template-columns: minmax(0, 1fr); }
+  .online-page-head { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .online-page-head .online-status { text-align: left; }
+  .online-battle { height: auto; min-height: 100%; overflow: visible; }
+  .online-battle-head { grid-template-columns: minmax(0, 1fr) auto; }
+  .online-battle-head .online-connection { grid-column: 1 / -1; grid-row: 2; }
+  .online-battle-grid { grid-template-columns: minmax(0, 1fr); }
+  .online-board-frame { width: min(100%, calc(100vw - 36px)); }
+  .online-hand-panel { overflow: visible; }
+  .online-card-hand { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 480px) {
+  .online-page { padding: 14px 12px; }
+  .online-player-strip { grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr); gap: 4px; }
+  .online-player { min-height: 54px; flex-wrap: wrap; gap: 5px; padding: 5px; }
+  .online-player strong { font-size: 11px; }
+  .online-resource { margin-left: 0; }
+  .online-card-hand .skill-list { grid-template-columns: minmax(0, 1fr); }
+}
+.cabinet[data-view="online-battle"] { grid-template-rows: minmax(0, 1fr); }
+.online-action-button { min-height: 44px; }
+.online-color-option { min-height: 44px; }
+.online-join input { min-height: 44px; }
+.online-battle-grid { grid-template-columns: minmax(0, 1.25fr) minmax(300px, .9fr); }
+.online-hand-panel { overflow: hidden; }
+.online-card-hand { grid-template-columns: repeat(3, minmax(0, 1fr)); align-content: start; }
+.online-card-hand .skill-card {
+  --card-min-height: clamp(148px, 22vh, 180px);
+  --card-art-height: 30px;
+  --card-copy-min: 34px;
+  --card-gap: 4px;
+  --card-pad: 5px;
+}
+.online-board-actions .online-action-button { min-height: 44px; }
+.online-board-panel > .online-secondary { min-height: 44px; }
+.online-hand-panel .roll-availability { min-height: 44px; }
+
+@media (max-width: 900px) {
+  .online-battle { height: auto; min-height: calc(100dvh - 12px); overflow: visible; }
+  .online-battle-grid { grid-template-columns: minmax(0, 1fr); }
+  .online-board-frame { width: min(100%, calc(100vw - 36px)); }
+  .online-hand-panel { overflow: visible; }
+  .online-card-hand { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

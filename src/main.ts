@@ -14,6 +14,22 @@ import type { DeckFilter, HeroMenuTab, HeroesPageView } from './ui/screens/heroe
 import type { BattlePageView, LedgerEntryView } from './ui/screens/battle.ts';
 import type { ResultView } from './ui/screens/result.ts';
 import type { ChapterMapItem, FloorListItem } from './ui/dungeon/dungeon.ts';
+import type { OnlinePageView } from './ui/screens/online.ts';
+import type { BoardGrid } from './ui/board/board.ts';
+
+import { OnlineSessionController } from './application/index.ts';
+import type { OnlinePlayerProfile, OnlineSessionSnapshot } from './application/index.ts';
+import type { PvpAction } from './domain/online/protocol.ts';
+import { isInCheck as isPvpInCheck } from './domain/chess/moves.ts';
+import {
+  canPlayPvpCard,
+  currentPvpCardCost,
+  pvpLegalMovesFrom,
+  pvpRerollCost,
+  pvpRerollLimit,
+} from './domain/pvp/rules.ts';
+import { heroActionCost } from './domain/pvp/hero.ts';
+import { heroOf, otherColor as otherPvpColor, sideOf, type PvpDeps, type PvpState } from './domain/pvp/state.ts';
 import { playCardCastFx, playHeroCastFx } from './ui/combat-fx.ts';
 
 import { CARDS, cardById } from './content/cards.ts';
@@ -120,6 +136,20 @@ const deps: BattleDeps = {
   ),
 };
 
+const pvpDeps: PvpDeps = {
+  cards: deps.cards,
+  heroes: Object.fromEntries(
+    HEROES.map((hero) => [
+      hero.id,
+      {
+        ...deps.heroes[hero.id],
+        skillName: hero.skillName,
+        ultimateName: hero.ultimateName,
+      },
+    ]),
+  ),
+};
+
 const store = createCampaignStore(createLocalStorageBacking(), LEGACY_BOSS_IDS);
 const audio = createBrowserAudio(createLocalStorageBacking());
 
@@ -135,6 +165,8 @@ interface AppState {
   selectedChapterId: string;
   selectedFloorId: string;
   battle: BattleState | null;
+  onlineSelectedSquare: [number, number] | null;
+  onlinePremoveDraft: boolean;
   focusSquare: [number, number];
   soundEnabled: boolean;
   rewardText: string | null;
@@ -782,7 +814,217 @@ function buildResultView(state: AppState): ResultView | null {
   };
 }
 
-function statusFor(state: AppState): string {
+function onlineCardSlots(battle: PvpState, color: 'w' | 'b'): CardSlotView[] {
+  const side = sideOf(battle, color);
+  const hero = heroOf(battle, pvpDeps, color);
+  return side.hand.map(function (id, slot) {
+    const card = pvpDeps.cards[id];
+    const targeting = battle.activeSide === color && battle.activeSkill === id && battle.activeSlot === slot;
+    const playable = card ? canPlayPvpCard(battle, color, card, hero) : { ok: false, reason: 'Kartu tidak dikenal.' };
+    const cost = card ? currentPvpCardCost(card, hero, side.effects.reserveArmed) : 0;
+    const freeLocked = card !== undefined && card.cost === 0 && side.freeSkillUsedThisTurn && !targeting;
+    const unaffordable = card !== undefined && side.mana < cost;
+    const locked =
+      battle.gameOver ||
+      battle.turn !== color ||
+      battle.pendingPromotion !== null ||
+      (battle.activeSide !== null && !targeting) ||
+      (!targeting && !playable.ok);
+    let stateLabel = 'SIAP';
+    let actionLabel = 'AKTIFKAN';
+    if (targeting) {
+      stateLabel = 'PILIH TARGET';
+      actionLabel = 'BATALKAN';
+    } else if (freeLocked) {
+      stateLabel = 'GRATIS TERPAKAI';
+      actionLabel = 'TUNGGU GILIRAN';
+    } else if (unaffordable) {
+      stateLabel = 'BUTUH ' + cost + ' MANA';
+      actionLabel = 'MANA ' + side.mana + '/6';
+    } else if (card && card.cost === 0) {
+      stateLabel = 'GRATIS · 1 GILIRAN';
+    } else if (card && cost !== card.cost) {
+      stateLabel = 'SURCHARGE ' + (cost - card.cost) + ' MANA';
+    }
+    return {
+      card: cardMeta(id),
+      cost,
+      targeting,
+      locked,
+      stateLabel,
+      actionLabel,
+      unaffordable: unaffordable && !targeting,
+    };
+  });
+}
+
+function onlineRerollView(battle: PvpState, color: 'w' | 'b'): RerollView {
+  const side = sideOf(battle, color);
+  const limit = pvpRerollLimit(battle, color);
+  const available = side.rollsThisTurn < limit;
+  const cost = pvpRerollCost(battle, color);
+  const busy = battle.gameOver || battle.turn !== color || battle.activeSide !== null || battle.pendingPromotion !== null;
+  return {
+    available,
+    label: !available ? 'PUTAR ULANG HABIS' : cost > 0 ? 'PUTAR KARTU • 1 EN' : 'PUTAR KARTU • GRATIS',
+    caption: available
+      ? cost > 0
+        ? 'Biaya 1 EN • putaran ' + (side.rollsThisTurn + 1) + ' dari ' + limit
+        : 'Gratis • putaran 1 dari ' + limit
+      : 'Jatah giliran ini habis',
+    disabled: busy || !available || side.energy < cost,
+    reason: available
+      ? cost > 0
+        ? 'Ganti ketiga kartu dengan biaya 1 EN.'
+        : 'Ganti ketiga kartu gratis.'
+      : 'Jatah putar ulang giliran ini sudah habis (' + limit + '/' + limit + ').',
+  };
+}
+
+function buildOnlineView(state: AppState, session: OnlineSessionSnapshot): OnlinePageView {
+  if (session.mode === 'battle' && session.battle && session.localColor && session.opponent) {
+    const battle = session.battle;
+    const color = session.localColor;
+    const other = otherPvpColor(color);
+    const local = sideOf(battle, color);
+    const opponent = sideOf(battle, other);
+    const localHero = heroOf(battle, pvpDeps, color);
+    const opponentHero = heroOf(battle, pvpDeps, other);
+    const skillCost = heroActionCost(battle, color, false);
+    const ultimateCost = heroActionCost(battle, color, true);
+    const localTurn = battle.turn === color;
+    const selected = state.onlineSelectedSquare;
+    const selectedPiece = selected ? battle.board[selected[0]][selected[1]] : null;
+    const legalMoves =
+      selected && selectedPiece?.side === color && battle.activeSide === null && !battle.pendingPromotion
+        ? pvpLegalMovesFrom(battle, selected[0], selected[1]).map((move) => ({
+            from: [move.from[0], move.from[1]] as [number, number],
+            to: [move.to[0], move.to[1]] as [number, number],
+          }))
+        : [];
+    const board: BoardGrid = battle.board.map((row) =>
+      row.map((piece) => (piece ? { type: piece.type, color: piece.side, id: String(piece.id) } : null)),
+    );
+    const skillTargeting = battle.activeSkill?.startsWith('hero:skill:') ?? false;
+    const ultimateTargeting = battle.activeSkill?.startsWith('hero:ultimate:') ?? false;
+    const remote = session.remoteSelection;
+    const remoteSelection = remote?.from
+      ? { from: remote.from, to: remote.to ?? remote.from }
+      : session.remotePremove;
+    const terminal = battle.gameOver || session.error !== null;
+    return {
+      mode: 'battle',
+      board: {
+        board,
+        selected,
+        legalMoves,
+        lastMove: battle.lastMove,
+        captureFx: null,
+        focusSquare: selected ?? (color === 'w' ? [7, 0] : [0, 7]),
+        whiteInCheck: isPvpInCheck(battle.board, 'w'),
+        blackInCheck: isPvpInCheck(battle.board, 'b'),
+        enemyWardPieceId: opponent.effects.wardPieceId === null ? null : String(opponent.effects.wardPieceId),
+        playerWardPieceId: local.effects.wardPieceId === null ? null : String(local.effects.wardPieceId),
+        markedEnemyId: local.effects.markedPieceId === null ? null : String(local.effects.markedPieceId),
+        staggerId: local.effects.staggerPieceId === null ? null : String(local.effects.staggerPieceId),
+        snareId: local.effects.snarePieceId === null ? null : String(local.effects.snarePieceId),
+        snareTurns: local.effects.snareTurns,
+        bossSnareId: null,
+        blockadeSquare: local.effects.blockadeSquare,
+        blockadeTurns: local.effects.blockadeTurns,
+        heroBlockadeSquares: local.effects.heroBlockadeSquares,
+        heroBlockadeTurns: local.effects.heroBlockadeTurns,
+        heroBlockadeName: local.effects.heroBlockadeName,
+        bossSealedSquare: null,
+        targeting: battle.activeSide === color && battle.activeSkill !== null,
+        disabled: battle.gameOver || session.error !== null,
+        perspective: color,
+        remoteSelection,
+        premove: session.localPremove,
+      },
+      localHeroName: localHero.name,
+      localColor: color,
+      opponentHeroName: opponentHero.name,
+      opponentColor: other,
+      mana: local.mana,
+      energy: local.energy,
+      turn: battle.gameOver
+        ? battle.winner === null
+          ? 'Remis'
+          : battle.winner === color
+            ? 'Anda menang'
+            : 'Lawan menang'
+        : localTurn
+          ? 'Giliran Anda'
+          : 'Giliran lawan',
+      status: session.status || battle.status,
+      connectionText: session.error ?? session.connectionText,
+      roomCode: session.roomCode,
+      slots: onlineCardSlots(battle, color),
+      reroll: onlineRerollView(battle, color),
+      promotion: {
+        open: battle.pendingPromotion !== null,
+        message: battle.pendingPromotion
+          ? 'Pion mencapai ' + coord(battle.pendingPromotion.move.to[0], battle.pendingPromotion.move.to[1]) + '. Pilih bidak promosi.'
+          : 'Pilih bidak untuk promosi pion.',
+      },
+      localPremove: session.localPremove,
+      remoteSelection,
+      skillLabel: localHero.skillName + ' · ' + skillCost + ' EN',
+      ultimateLabel: localHero.ultimateName + ' · ' + ultimateCost + ' EN',
+      skillDisabled:
+        !localTurn ||
+        battle.gameOver ||
+        battle.pendingPromotion !== null ||
+        battle.activeSide !== null ||
+        local.energy < skillCost,
+      ultimateDisabled:
+        !localTurn ||
+        battle.gameOver ||
+        battle.pendingPromotion !== null ||
+        battle.activeSide !== null ||
+        local.energy < ultimateCost,
+      skillTargeting,
+      ultimateTargeting,
+      canExit: terminal,
+    };
+  }
+  const deck = deckSelectionStatus(state.campaign.deckCardIds, DECK_CATALOG);
+  const setupPlayer = {
+    heroName: activeHeroOf(state).name,
+    deckStatus: deck.complete
+      ? deck.regularCount + '/' + DECK_REGULAR_LIMIT + ' kartu · ' + deck.jokerCount + '/' + DECK_JOKER_LIMIT + ' Joker'
+      : deck.regularCount + '/' + DECK_REGULAR_LIMIT + ' kartu · ' + deck.jokerCount + '/' + DECK_JOKER_LIMIT + ' Joker · belum lengkap',
+  };
+  const status = session.status || (session.mode === 'home' ? 'Pilih mode pertandingan.' : '');
+  if (session.mode === 'matchmaking') {
+    return {
+      mode: 'matchmaking',
+      status,
+      connectionText: session.connectionText,
+      color: session.colorPick,
+      player: setupPlayer,
+      error: session.error ?? undefined,
+      busy: session.busy,
+    };
+  }
+  if (session.mode === 'room') {
+    return {
+      mode: 'room',
+      status,
+      connectionText: session.connectionText,
+      roomCode: session.roomCode,
+      color: session.colorPick,
+      player: setupPlayer,
+      error: session.error ?? undefined,
+      busy: session.busy,
+    };
+  }
+  return { mode: 'home', status, error: session.error ?? undefined };
+}
+
+function statusFor(state: AppState, session: OnlineSessionSnapshot): string {
+  if (state.screen === 'online') return session.battle ? session.status || session.battle.status : session.error ?? session.status;
   if (state.battle && (state.screen === 'battle' || state.screen === 'result')) return state.battle.status;
   if (state.screen === 'dungeon') {
     return (
@@ -799,15 +1041,16 @@ function statusFor(state: AppState): string {
   return 'Menu utama. ' + state.campaign.clearedFloorIds.length + ' dari ' + DUNGEON_FLOORS.length + ' lantai ditaklukkan.';
 }
 
-function buildShell(state: AppState): AppShellView {
+function buildShell(state: AppState, session: OnlineSessionSnapshot): AppShellView {
   return {
     screen: state.screen,
     coins: state.campaign.coins,
-    statusText: statusFor(state),
+    statusText: statusFor(state, session),
     menu: state.screen === 'menu' ? buildMenuView(state) : null,
     dungeon: state.screen === 'dungeon' ? buildDungeonView(state) : null,
     heroes: state.screen === 'heroes' ? buildHeroesView(state) : null,
     battle: state.screen === 'battle' ? buildBattleView(state) : null,
+    online: state.screen === 'online' ? buildOnlineView(state, session) : null,
     result: state.screen === 'result' ? buildResultView(state) : null,
   };
 }
@@ -829,6 +1072,8 @@ function main(): void {
     selectedChapterId: nextFloor.chapterId,
     selectedFloorId: nextFloor.id,
     battle: null,
+    onlineSelectedSquare: null,
+    onlinePremoveDraft: false,
     focusSquare: [7, 0],
     soundEnabled: audio.isEnabled(),
     rewardText: null,
@@ -836,9 +1081,24 @@ function main(): void {
     captureFx: null,
     captureFxTimer: null,
   };
+  const onlineSession = new OnlineSessionController(pvpDeps, function () {
+    render();
+  });
+
 
   function render(): void {
-    renderApp(root as HTMLElement, buildShell(state));
+    const snapshot = onlineSession.snapshot;
+    if (
+      state.onlinePremoveDraft &&
+      snapshot.battle &&
+      snapshot.localColor &&
+      snapshot.battle.turn === snapshot.localColor &&
+      !snapshot.localPremove
+    ) {
+      state.onlineSelectedSquare = null;
+      state.onlinePremoveDraft = false;
+    }
+    renderApp(root as HTMLElement, buildShell(state, snapshot));
   }
 
   function clearBlackTimer(): void {
@@ -978,12 +1238,220 @@ function main(): void {
     window.scrollTo(0, 0);
   }
 
+  function onlineProfile(): OnlinePlayerProfile | null {
+    const deck = deckSelectionStatus(state.campaign.deckCardIds, DECK_CATALOG);
+    if (!deck.complete) {
+      state.screen = 'heroes';
+      state.heroesTab = 'deck';
+      state.deckNotice =
+        'Loadout harus berisi ' +
+        DECK_REGULAR_LIMIT +
+        ' kartu non-Joker dan ' +
+        DECK_JOKER_LIMIT +
+        ' Joker sebelum duel online.';
+      render();
+      window.scrollTo(0, 0);
+      return null;
+    }
+    return {
+      heroId: state.campaign.selectedHero,
+      deckCardIds: state.campaign.deckCardIds.slice(),
+    };
+  }
+
+  function clearOnlineSelection(): void {
+    state.onlineSelectedSquare = null;
+    state.onlinePremoveDraft = false;
+    onlineSession.setSelection({ from: null, to: null });
+  }
+
+  function submitOnlineAction(action: PvpAction): void {
+    state.onlineSelectedSquare = null;
+    state.onlinePremoveDraft = false;
+    onlineSession.setSelection({ from: null, to: null });
+    onlineSession.submitAction(action);
+    render();
+  }
+
+  function selectOnlineSquare(square: [number, number], premove: boolean): void {
+    state.onlineSelectedSquare = square;
+    state.onlinePremoveDraft = premove;
+    onlineSession.setSelection({ from: square, to: null });
+    render();
+    focusSquareButton(square[0], square[1]);
+  }
+
+  function handleOnlineSquare(row: number, col: number): void {
+    const session = onlineSession.snapshot;
+    const battle = session.battle;
+    const color = session.localColor;
+    if (!battle || !color || session.error || battle.gameOver || battle.pendingPromotion) {
+      render();
+      return;
+    }
+    state.focusSquare = [row, col];
+    if (battle.activeSide === color && battle.activeSkill) {
+      submitOnlineAction({ kind: 'card-target', row, col });
+      return;
+    }
+    const piece = battle.board[row][col];
+    const selected = state.onlineSelectedSquare;
+    if (battle.turn !== color) {
+      if (!state.onlinePremoveDraft || !selected) {
+        if (piece?.side === color) selectOnlineSquare([row, col], true);
+        else render();
+        return;
+      }
+      if (selected[0] === row && selected[1] === col) {
+        clearOnlineSelection();
+        render();
+        return;
+      }
+      if (piece?.side === color) {
+        selectOnlineSquare([row, col], true);
+        return;
+      }
+      const legal = pvpLegalMovesFrom(battle, selected[0], selected[1]).some(
+        (move) => move.to[0] === row && move.to[1] === col,
+      );
+      if (!legal) {
+        render();
+        return;
+      }
+      onlineSession.setSelection({ from: selected, to: [row, col] });
+      const result = onlineSession.queuePremove(selected, [row, col]);
+      if (!result.ok) {
+        onlineSession.setSelection({ from: selected, to: null });
+      }
+      render();
+      return;
+    }
+    if (selected && !state.onlinePremoveDraft) {
+      if (selected[0] === row && selected[1] === col) {
+        clearOnlineSelection();
+        render();
+        return;
+      }
+      const legal = pvpLegalMovesFrom(battle, selected[0], selected[1]).some(
+        (move) => move.to[0] === row && move.to[1] === col,
+      );
+      if (legal) {
+        submitOnlineAction({ kind: 'move', from: selected, to: [row, col] });
+        return;
+      }
+    }
+    if (piece?.side === color) {
+      selectOnlineSquare([row, col], false);
+      return;
+    }
+    clearOnlineSelection();
+    render();
+  }
+
+  function handleOnlineCommand(command: string, target: HTMLElement): boolean {
+    if (command === 'online-color-pick') {
+      const pick = target.dataset['pick'];
+      if (pick === 'w' || pick === 'b' || pick === 'random') onlineSession.setColorPick(pick);
+      return true;
+    }
+    if (command === 'online-matchmaking' || command === 'online-create-room') {
+      const profile = onlineProfile();
+      if (!profile) return true;
+      state.screen = 'online';
+      state.onlineSelectedSquare = null;
+      state.onlinePremoveDraft = false;
+      if (command === 'online-matchmaking') onlineSession.openMatchmaking(profile);
+      else void onlineSession.createRoom(profile);
+      render();
+      window.scrollTo(0, 0);
+      return true;
+    }
+    if (command === 'online-ready') {
+      const session = onlineSession.snapshot;
+      if (session.mode === 'room') onlineSession.readyRoom();
+      else if (session.mode === 'matchmaking') void onlineSession.findMatch();
+      return true;
+    }
+    if (command === 'online-cancel' || command === 'online-exit') {
+      onlineSession.cancel();
+      state.onlineSelectedSquare = null;
+      state.onlinePremoveDraft = false;
+      state.screen = 'online';
+      render();
+      return true;
+    }
+    if (command === 'online-copy-code') {
+      const roomCode = onlineSession.snapshot.roomCode;
+      if (roomCode && navigator.clipboard) {
+        void navigator.clipboard.writeText(roomCode).then(function () {
+          const live = root?.querySelector<HTMLElement>('#live-message');
+          if (live) live.textContent = 'Kode ruang disalin.';
+        }).catch(function () {});
+      }
+      return true;
+    }
+    if (command === 'online-clear-premove') {
+      onlineSession.clearPremove();
+      state.onlineSelectedSquare = null;
+      state.onlinePremoveDraft = false;
+      render();
+      return true;
+    }
+    if (state.screen !== 'online' || !onlineSession.snapshot.battle) return false;
+    switch (command) {
+      case 'square': {
+        const row = Number(target.dataset['row']);
+        const col = Number(target.dataset['col']);
+        if (!Number.isInteger(row) || !Number.isInteger(col) || row < 0 || row > 7 || col < 0 || col > 7) {
+          render();
+          return true;
+        }
+        handleOnlineSquare(row, col);
+        return true;
+      }
+      case 'card': {
+        const slot = Number(target.dataset['slot']);
+        if (Number.isInteger(slot) && slot >= 0 && slot <= 2) submitOnlineAction({ kind: 'card', slot });
+        return true;
+      }
+      case 'reroll':
+        submitOnlineAction({ kind: 'reroll' });
+        return true;
+      case 'hero-skill':
+        submitOnlineAction({ kind: 'hero-skill' });
+        return true;
+      case 'hero-ultimate':
+        submitOnlineAction({ kind: 'hero-ultimate' });
+        return true;
+      case 'promotion': {
+        const piece = target.dataset['promotion'];
+        if (piece === 'q' || piece === 'r' || piece === 'b' || piece === 'n') {
+          submitOnlineAction({ kind: 'promotion', piece });
+        }
+        return true;
+      }
+      case 'cancel-target':
+        submitOnlineAction({ kind: 'cancel-target' });
+        return true;
+      case 'resign':
+        submitOnlineAction({ kind: 'resign' });
+        return true;
+      default:
+        return false;
+    }
+  }
+
   function handleHubCommand(command: string, target: HTMLElement): boolean {
     switch (command) {
       case 'nav': {
         const next = target.dataset['screen'];
-        if (next === 'menu' || next === 'dungeon' || next === 'heroes') {
+        if (next === 'menu' || next === 'dungeon' || next === 'heroes' || next === 'online') {
           clearBlackTimer();
+          if (state.screen === 'online' && next !== 'online') {
+            onlineSession.cancel();
+            state.onlineSelectedSquare = null;
+            state.onlinePremoveDraft = false;
+          }
           audio.play('toggle');
           state.screen = next;
           if (next === 'heroes') {
@@ -1115,6 +1583,32 @@ function main(): void {
     }
   }
 
+  root.addEventListener('submit', function (event) {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement) || !form.matches('[data-online-join]')) return;
+    event.preventDefault();
+    const input = form.elements.namedItem('roomCode');
+    const profile = onlineProfile();
+    if (!(input instanceof HTMLInputElement) || !profile) return;
+    state.screen = 'online';
+    state.onlineSelectedSquare = null;
+    state.onlinePremoveDraft = false;
+    void onlineSession.joinRoom(input.value.trim(), profile);
+    render();
+  });
+  root.addEventListener('change', function (event) {
+    const target = event.target;
+    if (
+      target instanceof HTMLElement &&
+      target.dataset['command'] === 'online-color-pick'
+    ) {
+      handleOnlineCommand('online-color-pick', target);
+    }
+  });
+  window.addEventListener('pagehide', function () {
+    onlineSession.dispose();
+  }, { once: true });
+
   let lastCardHoverAt = 0;
   root.addEventListener('pointerover', function (event) {
     if (event.pointerType === 'touch' || !(event.target instanceof Element)) return;
@@ -1155,6 +1649,8 @@ function main(): void {
     if (!(target instanceof HTMLElement)) return;
     const command = target.dataset['command'];
     if (!command) return;
+    if (command === 'online-join-room' || command === 'online-color-pick') return;
+    if (state.screen === 'online' && handleOnlineCommand(command, target)) return;
     if (handleHubCommand(command, target)) return;
 
     const battle = state.battle;
@@ -1261,6 +1757,32 @@ function main(): void {
 
   document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
+      if (state.screen === 'online') {
+        const session = onlineSession.snapshot;
+        if (session.battle && session.localColor) {
+          if (session.battle.pendingPromotion) {
+            event.preventDefault();
+            return;
+          }
+          if (session.battle.activeSide === session.localColor && session.battle.activeSkill) {
+            event.preventDefault();
+            submitOnlineAction({ kind: 'cancel-target' });
+            return;
+          }
+          if (state.onlineSelectedSquare) {
+            event.preventDefault();
+            clearOnlineSelection();
+            render();
+          }
+        } else if (session.mode !== 'home') {
+          event.preventDefault();
+          onlineSession.cancel();
+          state.onlineSelectedSquare = null;
+          state.onlinePremoveDraft = false;
+          render();
+        }
+        return;
+      }
       if (state.screen !== 'battle' || !state.battle) return;
       const battle = state.battle;
       if (battle.pendingPromotion) {
@@ -1298,8 +1820,9 @@ function main(): void {
     const fromCol = Number(square.dataset['col']);
     const anchor =
       Number.isInteger(fromRow) && Number.isInteger(fromCol) ? ([fromRow, fromCol] as [number, number]) : state.focusSquare;
-    const row = Math.max(0, Math.min(7, anchor[0] + delta[0]));
-    const col = Math.max(0, Math.min(7, anchor[1] + delta[1]));
+    const orientation = state.screen === 'online' && onlineSession.snapshot.localColor === 'b' ? -1 : 1;
+    const row = Math.max(0, Math.min(7, anchor[0] + delta[0] * orientation));
+    const col = Math.max(0, Math.min(7, anchor[1] + delta[1] * orientation));
     state.focusSquare = [row, col];
     render();
     focusSquareButton(row, col);

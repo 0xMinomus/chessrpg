@@ -11,8 +11,10 @@ import { renderBattlePage } from './screens/battle.ts';
 import type { BattlePageView } from './screens/battle.ts';
 import { renderResultPage } from './screens/result.ts';
 import type { ResultView } from './screens/result.ts';
+import { renderOnlinePage } from './screens/online.ts';
+import type { OnlinePageView } from './screens/online.ts';
 
-export type ScreenName = 'menu' | 'dungeon' | 'heroes' | 'battle' | 'result';
+export type ScreenName = 'menu' | 'dungeon' | 'heroes' | 'online' | 'battle' | 'result';
 
 export interface AppShellView {
   screen: ScreenName;
@@ -22,6 +24,7 @@ export interface AppShellView {
   dungeon: DungeonPageView | null;
   heroes: HeroesPageView | null;
   battle: BattlePageView | null;
+  online: OnlinePageView | null;
   result: ResultView | null;
 }
 
@@ -41,6 +44,11 @@ function hubNav(active: ScreenName): string {
       screen: 'heroes',
       label: 'Hero',
       icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M6.5 20l1.2-6.2c.4-1.7 1.6-2.7 3.1-3.2l3.7-2.8c.6-.5.5-1.3-.1-1.7l-3.1-1.8c-.7-.4-1.5.2-1.3 1l.7 2-2.8 1.5-2.1 4.1L6.5 20Z"/><circle cx="13.7" cy="6.8" r=".65"/></svg>',
+    },
+    {
+      screen: 'online',
+      label: 'Online',
+      icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5a12 12 0 0 1 16 0M7 11.5a7.5 7.5 0 0 1 10 0M10 14.5a3 3 0 0 1 4 0M12 18h.01"/></svg>',
     },
   ];
   return (
@@ -63,7 +71,7 @@ function hubNav(active: ScreenName): string {
         );
       })
       .join('') +
-    '<p>Permainan berjalan lokal di perangkat ini.</p></nav>'
+    '<p>Campaign tetap lokal. Duel memakai koneksi PeerJS/WebRTC.</p></nav>'
   );
 }
 
@@ -88,18 +96,27 @@ export function renderApp(root: HTMLElement, view: AppShellView): void {
   let body = '';
   if (view.screen === 'battle' && view.battle) {
     body = renderBattlePage(view.battle);
+  } else if (view.screen === 'online' && view.online?.mode === 'battle') {
+    body = renderOnlinePage(view.online);
   } else if (view.screen === 'menu' && view.menu) {
     body = renderHubShell(view, renderMenuPage(view.menu));
   } else if (view.screen === 'dungeon' && view.dungeon) {
     body = renderHubShell(view, renderDungeonPage(view.dungeon));
   } else if (view.screen === 'heroes' && view.heroes) {
     body = renderHubShell(view, renderHeroesPage(view.heroes));
+  } else if (view.screen === 'online' && view.online) {
+    body = renderHubShell(view, renderOnlinePage(view.online));
   } else if (view.screen === 'result' && view.result) {
     body = renderHubShell(view, renderResultPage(view.result));
   } else {
     body = renderHubShell(view, '<section class="hub-page"><p>Memuat…</p></section>');
   }
-  const dataView = view.screen === 'battle' ? 'battle' : 'hub';
+  const dataView =
+    view.screen === 'battle'
+      ? 'battle'
+      : view.screen === 'online' && view.online?.mode === 'battle'
+        ? 'online-battle'
+        : 'hub';
   root.innerHTML =
     '<div class="cabinet" data-view="' +
     dataView +

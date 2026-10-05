@@ -951,7 +951,9 @@ h1 {
   background: #151b30;
   color: var(--hub-gold);
 }
-.hub-body { grid-template-columns: minmax(150px, 190px) minmax(0, 1fr); gap: 9px; }
+@media (min-width: 721px) {
+  .hub-body { grid-template-columns: minmax(150px, 190px) minmax(0, 1fr); gap: 9px; }
+}
 .hub-nav {
   padding: 8px;
   gap: 5px;

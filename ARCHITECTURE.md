@@ -2,7 +2,7 @@
 
 ## Tujuan
 
-Dokumen ini menetapkan arah teknis untuk menjadikan `chess-rpg-dungeon.html` aplikasi game single-player yang terstruktur, tetap bisa dimainkan offline, dan lebih mudah dikembangkan. Multiplayer, akun online, dan layanan backend berada di luar cakupan.
+Dokumen ini menetapkan arah teknis untuk aplikasi campaign single-player yang tetap dapat dimainkan offline, dengan duel PvP online sebagai mode pilihan. Domain game tidak bergantung pada DOM, penyimpanan browser, atau jaringan.
 
 ## Kondisi dan keputusan utama
 
@@ -34,16 +34,27 @@ src/
       result.ts
     campaign/
       progress.ts
+    pvp/
+      state.ts
+      rules.ts
+      cards.ts
+      hero.ts
+      commands.ts
+    online/
+      protocol.ts
+      matchmaking.ts
   application/
     start-battle.ts
     play-card.ts
     use-hero-action.ts
     submit-move.ts
     undo-turn.ts
+    online-session.ts
   adapters/
     browser-storage.ts
     browser-audio.ts
     random.ts
+    peerjs-network.ts
   ui/
     screens/
     board/
@@ -54,6 +65,7 @@ src/
   styles/
     tokens.css
     game.css
+    online.css
 public/
   assets/
 ```
@@ -66,7 +78,8 @@ Sesuaikan pemecahan file dengan ukuran modul saat implementasi; daftar ini batas
 2. `domain` menerima state, command, dan dependency eksplisit seperti sumber angka acak; domain tidak membaca global browser.
 3. `application` mengorkestrasi domain dengan penyimpanan dan audio melalui adapter.
 4. `ui` menampilkan state dan mengirim command. UI tidak menetapkan sendiri hasil langkah atau biaya resource.
-5. `adapters` menjadi satu-satunya pemilik akses ke browser API seperti `localStorage`, Web Audio, dan random source.
+5. `adapters` menjadi pemilik akses ke API browser dan jaringan; adaptor jaringan hanya dimuat setelah pemain memilih mode online.
+6. `online-session` mengelola matchmaking, ruang, relay, urutan pesan, dan sinkronisasi; domain PvP memvalidasi setiap aksi di kedua klien.
 
 ## Model permainan
 
@@ -76,11 +89,13 @@ Sesuaikan pemecahan file dengan ukuran modul saat implementasi; daftar ini batas
 - Pengundian kartu dan pilihan AI menerima random source eksplisit. Ini menjaga jalur acak dapat direproduksi saat debugging dan tidak mengikat domain ke `Math.random` global.
 - Data kartu, hero, dan boss tinggal di `content`; angka biaya, rarity, skill, kelemahan, aturan boss, dan hadiah tidak disalin ke komponen UI.
 - UI papan menerima snapshot state dan memancarkan input pemain. Renderer hanya menerjemahkan state menjadi DOM; renderer tidak mengubah state permainan.
+- `domain/pvp` menjalankan putih dan hitam sebagai pemain simetris, termasuk resource, kartu, aksi hero, promosi, dan menyerah. Seed pertandingan dan aksi berurutan membuat kedua klien membangun state yang sama serta memvalidasi ulang langkah yang diterima.
+- Pemilihan petak dan premove dikirim sebagai pesan UI/sesi; domain memvalidasi ulang langkah saat giliran tiba. PeerJS membawa pesan ruang dan matchmaking melalui data channel WebRTC.
 
 - Data campaign mendefinisikan 10 chapter dan 50 lantai berurutan pada satu sumber. Tiap chapter memiliki empat lantai standar dan boss di lantai kelima; boss yang dikalahkan membuka chapter berikutnya.
 - Progres campaign menyimpan ID lantai yang telah ditaklukkan sebagai prefiks berurutan. `startBattle` menolak lantai terkunci; adapter browser memigrasikan save lama tiga boss serta mempertahankan proyeksi kompatibilitasnya.
 
-## Resource dan aturan acuan
+## Resource dan aturan acuan campaign
 
 Aturan berikut mengikuti permintaan terbaru dan prototipe dungeon aktif:
 
@@ -97,7 +112,8 @@ Jika biaya atau aturan berubah melalui permintaan pengguna, perbarui sumber data
 
 - Progres kampanye menyimpan clear lantai berurutan (`clearedFloorIds`), hero aktif, deck kartu, dan koin melalui adapter browser dengan key berversi. Adapter memigrasikan save lama yang berisi boss kalah dan mempertahankan kompatibilitas baca mundur untuk tiga boss lama.
 - Penyimpanan battle aktif/resume setelah reload adalah fitur P1, bukan alasan untuk mengikat domain pada `localStorage`.
-- Semua aset yang diperlukan untuk bermain harus tersedia lokal atau dicache oleh aplikasi statis; gameplay tidak membuat request ke API.
+- Semua aset permainan tersedia lokal. Mode offline tidak mengirim request; mode online baru membuka signaling PeerJS dan kanal data WebRTC setelah pemain memulai pencarian atau membuat/menggabungkan ruang.
+- Pertandingan online tidak disimpan; memuat ulang atau menutup tab mengakhiri sesi dan memutus peer.
 
 ## Struktur dan migrasi
 
@@ -105,4 +121,4 @@ Mulai dari fondasi aplikasi baru di dalam repository. Pindahkan perilaku dari `c
 
 ## Batas yang sengaja ditunda
 
-Tidak ada akun, sinkronisasi cloud, multiplayer, matchmaking, chat, leaderboard online, pembayaran, atau backend pada target ini. Kode domain tetap dapat dipakai ulang oleh mode lain kelak, tetapi jangan menambahkan abstraksi jaringan sebelum mode tersebut diminta.
+Campaign tetap bisa dimainkan tanpa akun, server, atau koneksi jaringan. Duel online memakai PeerJS/WebRTC tanpa backend otoritatif: satu peer tetap menjadi koordinator/relay matchmaking, kedua klien memvalidasi aksi dengan domain deterministik yang sama, dan tidak ada perlindungan terhadap klien curang atau jaminan koneksi TURN. Akun, sinkronisasi cloud, chat, leaderboard, dan pembayaran tetap di luar cakupan.
