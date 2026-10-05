@@ -39,8 +39,29 @@ page.on('console', (m) => {
 });
 page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
 const remoteRequests = [];
+const peerTransportRequests = [];
+const peerChunkRequests = [];
+const remoteSockets = [];
+function isPeerTransportUrl(url) {
+  try {
+    const parsed = new URL(url);
+    return (parsed.protocol === 'https:' || parsed.protocol === 'wss:') && parsed.hostname === '0.peerjs.com';
+  } catch {
+    return false;
+  }
+}
 page.on('request', (r) => {
-  if (!r.url().startsWith(URL) && !r.url().startsWith('data:')) remoteRequests.push(r.url());
+  const url = r.url();
+  if (/\/assets\/peerjs-network-[\w-]+\.js(?:\?|$)/.test(url)) peerChunkRequests.push(url);
+  if (url.startsWith(URL) || url.startsWith('data:')) return;
+  if (isPeerTransportUrl(url)) peerTransportRequests.push(url);
+  else remoteRequests.push(url);
+});
+page.on('websocket', (socket) => {
+  const url = socket.url();
+  if (url.startsWith(URL)) return;
+  if (isPeerTransportUrl(url)) peerTransportRequests.push(url);
+  else remoteSockets.push(url);
 });
 const failedResponses = [];
 page.on('response', (r) => {
@@ -687,7 +708,13 @@ await page.screenshot({ path: join(OUT, 'menu-after-corrupt.png') });
 await context.close();
 await browser.close();
 
-check('tanpa request eksternal', remoteRequests.length === 0, remoteRequests.slice(0, 3).join(', '));
+check('tanpa request eksternal di luar allowlist PeerJS', remoteRequests.length === 0, remoteRequests.slice(0, 3).join(', '));
+check(
+  'campaign offline tidak membuka signaling PeerJS/WebRTC',
+  peerTransportRequests.length === 0 && remoteSockets.length === 0,
+  [...peerTransportRequests, ...remoteSockets].slice(0, 3).join(', '),
+);
+check('campaign offline tidak memuat adapter PeerJS', peerChunkRequests.length === 0, peerChunkRequests.slice(0, 3).join(', '));
 check('tanpa response 4xx/5xx', failedResponses.length === 0, failedResponses.slice(0, 3).join(', '));
 check('tanpa console error', errors.length === 0, errors.slice(0, 3).join(' | '));
 

@@ -7,6 +7,7 @@ import { renderResultPage } from '../src/ui/screens/result.ts';
 import { renderMenuPage } from '../src/ui/screens/menu.ts';
 import { renderDungeonPage } from '../src/ui/screens/dungeon.ts';
 import { renderHeroesPage } from '../src/ui/screens/heroes.ts';
+import { renderOnlinePage } from '../src/ui/screens/online.ts';
 import { renderHand, renderReroll } from '../src/ui/cards/cards.ts';
 import { cardIconSrc, REROLL_ICON } from '../src/ui/cards/icons.ts';
 import { renderBoard } from '../src/ui/board/board.ts';
@@ -384,6 +385,125 @@ const reroll = renderReroll({
 });
 check('putar kartu: path SVG baru dirender langsung', reroll.includes('<svg viewBox="0 0 24 24"') && reroll.includes(REROLL_ICON));
 check('putar kartu: aria-label', reroll.includes('aria-label="PUTAR KARTU • GRATIS.'));
+
+const onlinePlayer = { heroName: 'Arunika', deckStatus: '10/10 kartu · 1/1 Joker' };
+const onlineHome = renderOnlinePage({ mode: 'home', status: 'Pilih mode pertandingan.' });
+check(
+  'online menu: matchmaking, buat ruang, dan join berkode',
+  onlineHome.includes('data-command="online-matchmaking"') &&
+    onlineHome.includes('data-command="online-create-room"') &&
+    onlineHome.includes('data-command="online-join-room"') &&
+    onlineHome.includes('pattern="[0-9]{5}"'),
+);
+const onlineQueue = renderOnlinePage({
+  mode: 'matchmaking',
+  status: 'Mencari lawan.',
+  connectionText: 'Menghubungkan…',
+  color: 'random',
+  player: onlinePlayer,
+  busy: true,
+});
+check(
+  'online matchmaking: pilihan warna dan antrean terlihat',
+  onlineQueue.includes('data-pick="w"') &&
+    onlineQueue.includes('data-pick="random"') &&
+    onlineQueue.includes('data-pick="b"') &&
+    onlineQueue.includes('Mencari lawan.') &&
+    onlineQueue.includes('data-command="online-ready" disabled'),
+);
+const onlineRoom = renderOnlinePage({
+  mode: 'room',
+  status: 'Ruang siap.',
+  connectionText: 'Terhubung ke lawan',
+  roomCode: '08317',
+  color: 'w',
+  player: onlinePlayer,
+});
+check(
+  'online room: kode mempertahankan lima digit termasuk nol depan',
+  onlineRoom.includes('aria-label="Kode ruang 0 8 3 1 7"') && onlineRoom.includes('>08317</strong>'),
+);
+const onlineBoard = {
+  board: captureBoard,
+  selected: null,
+  legalMoves: [],
+  lastMove: null,
+  captureFx: null,
+  focusSquare: [7, 0] as [number, number],
+  whiteInCheck: false,
+  blackInCheck: false,
+  enemyWardPieceId: null,
+  playerWardPieceId: null,
+  markedEnemyId: null,
+  staggerId: null,
+  snareId: null,
+  snareTurns: 0,
+  bossSnareId: null,
+  blockadeSquare: null,
+  blockadeTurns: 0,
+  heroBlockadeSquares: [],
+  heroBlockadeTurns: 0,
+  heroBlockadeName: '',
+  bossSealedSquare: null,
+  targeting: false,
+  disabled: false,
+};
+const onlineSlots = [
+  slot,
+  { ...slot, card: { ...slot.card, id: 'pawnstep', name: 'Langkah pion' } },
+  { ...slot, card: { ...slot.card, id: 'lancer', name: 'Jejak kuda' } },
+];
+const onlineRerollView = {
+  available: true,
+  label: 'PUTAR KARTU • GRATIS',
+  caption: 'Gratis • putaran 1 dari 2',
+  disabled: false,
+  reason: 'Ganti ketiga kartu gratis.',
+};
+const onlineBattle = renderOnlinePage({
+  mode: 'battle',
+  board: onlineBoard,
+  localHeroName: 'Arunika',
+  localColor: 'b',
+  opponentHeroName: 'Arunika',
+  opponentColor: 'w',
+  mana: 2,
+  energy: 4,
+  turn: 'Giliran Anda',
+  status: 'Giliran hitam.',
+  connectionText: 'Terhubung ke lawan',
+  roomCode: '08317',
+  slots: onlineSlots,
+  reroll: onlineRerollView,
+  promotion: { open: false, message: '' },
+  localPremove: { from: [1, 4], to: [3, 4] },
+  remoteSelection: { from: [6, 4], to: [4, 4] },
+  skillLabel: 'Skill hero',
+  ultimateLabel: 'Ultimate hero',
+  canExit: true,
+});
+const firstOnlineSquare = /data-command="square" data-row="(\d+)" data-col="(\d+)"/.exec(onlineBattle);
+const lastOnlineSquare = onlineBattle.lastIndexOf('data-command="square" data-row="0" data-col="0"');
+check(
+  'online battle: orientasi hitam dimulai dari h1',
+  onlineBattle.includes('aria-label="Papan catur, orientasi hitam"') &&
+    firstOnlineSquare?.[1] === '7' &&
+    firstOnlineSquare[2] === '7' &&
+    lastOnlineSquare > onlineBattle.indexOf('data-command="square" data-row="7" data-col="7"'),
+);
+check(
+  'online battle: pilihan lawan dan premove mendapat penanda',
+  onlineBattle.includes('remote-selection-from') &&
+    onlineBattle.includes('remote-selection-to') &&
+    onlineBattle.includes('premove-from') &&
+    onlineBattle.includes('premove-to') &&
+    onlineBattle.includes('data-command="online-clear-premove"'),
+);
+check(
+  'online battle: tiga kartu tampil di panel tangan',
+  onlineBattle.includes('<div class="online-card-hand" role="list">') &&
+    (onlineBattle.match(/<article class="skill-card\b/g) ?? []).length === 3,
+);
 
 console.log('PASS ' + passed + ' / FAIL ' + failures.length);
 for (const failure of failures) console.log('  FAIL: ' + failure);
