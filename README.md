@@ -62,3 +62,13 @@ campaign, or after the active player's move in PvP. Hero skill costs 2 EN and
 ultimate costs 5 EN; Joker base cost is 5 mana. Hero and effect modifiers can
 change the final cost shown by the UI. At most one zero-mana card can be played
 per turn. The original prototype guide uses a different card economy.
+
+## Local saves
+
+Campaign progress, coins, active hero, and deck persist in browser storage.
+Completed floors are stored as an ordered prefix; older three-boss saves are
+migrated without discarding coins or progress. Invalid or incomplete save data
+is normalized to a playable state.
+
+Reloading preserves campaign progress, not an active battle. Battle resume is
+still a deferred P1 feature. Online matches are not saved or resumed after reload.
