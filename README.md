@@ -41,3 +41,11 @@ The campaign contains 10 chapters with five floors each. Floors 1–4 are standa
 battles; floor 5 has the chapter boss and its unique skill. Clear floors in order.
 Defeating a chapter boss unlocks the next chapter. The world map places the ten
 chapter markers across six land regions.
+
+## Heroes and decks
+
+All six heroes are selectable in the current development build. Before a duel,
+choose exactly 10 distinct non-Joker cards and one Joker in the Hero deck editor.
+The catalogue contains 37 cards. Each hand contains three unique cards drawn
+only from the saved loadout; replacements and rerolls use the same pool.
+Jokers have draw weight 0.2 compared with 1 for ordinary cards.
