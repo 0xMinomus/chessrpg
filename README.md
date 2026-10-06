@@ -49,3 +49,16 @@ choose exactly 10 distinct non-Joker cards and one Joker in the Hero deck editor
 The catalogue contains 37 cards. Each hand contains three unique cards drawn
 only from the saved loadout; replacements and rerolls use the same pool.
 Jokers have draw weight 0.2 compared with 1 for ordinary cards.
+
+## Mana and EN
+
+| Resource | Pays for | Limit |
+|---|---|---:|
+| Mana | Cards | 6 |
+| EN | Hero skill and ultimate | 5 |
+
+Mana starts at 0 and increases by 1 after a completed white chess move in the
+campaign, or after the active player's move in PvP. Hero skill costs 2 EN and
+ultimate costs 5 EN; Joker base cost is 5 mana. Hero and effect modifiers can
+change the final cost shown by the UI. At most one zero-mana card can be played
+per turn. The original prototype guide uses a different card economy.
