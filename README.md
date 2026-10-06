@@ -93,3 +93,15 @@ when the local turn begins and is cancelled if the new position makes it illegal
 
 Both clients receive the same profiles and seed, then validate ordered actions
 locally. A player can resign and return to the lobby after the match ends.
+
+## Online connection limits
+
+Matchmaking uses the browser owning PeerJS ID `cc-arena-1` as its coordinator
+and message relay. Closing that browser disconnects sessions routed through it.
+Private rooms use IDs of the form `cc-room-<code>` and exchange game actions
+over a WebRTC data channel.
+
+There is no authoritative game backend or protection against modified clients.
+Signaling availability and NAT/firewall conditions can prevent a connection;
+the project does not provide its own TURN server. Reloading or disconnecting
+ends the online session. These network limits do not affect offline campaign play.
