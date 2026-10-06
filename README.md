@@ -105,3 +105,23 @@ There is no authoritative game backend or protection against modified clients.
 Signaling availability and NAT/firewall conditions can prevent a connection;
 the project does not provide its own TURN server. Reloading or disconnecting
 ends the online session. These network limits do not affect offline campaign play.
+
+## Focused checks
+
+| Command | Scope |
+|---|---|
+| `npm run check` | TypeScript |
+| `npm run smoke` | Campaign battle domain and use cases |
+| `npm run verify:pvp` | PvP determinism, actions, premoves, matchmaking, room codes |
+| `npm run verify:campaign` | Campaign progression |
+| `npm run verify:boss-skills` | Boss skill resolution |
+| `npm run verify:combat-fx` | Combat effect checks |
+| `npm run parity` | Chess rule parity |
+| `npm run render` | UI markup |
+| `npm run verify:portraits` | Portrait alignment against preview |
+| `npm run verify:layout` | Viewport layouts against preview |
+| `npm run verify:flow` | Offline gameplay against preview |
+
+Keep a preview server running for preview-based checks. `verify:browser` stops
+at the first failing command and does not include an online two-peer walkthrough.
+Testing matchmaking and private rooms separately requires internet access.
