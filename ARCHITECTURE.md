@@ -1,8 +1,8 @@
-# Arsitektur Crown & Catalyst
+# Arsitektur ChessRPG
 
 ## Tujuan
 
-Dokumen ini menetapkan arah teknis untuk aplikasi game statis Crown & Catalyst. Campaign dungeon tetap single-player dan dapat dimainkan offline. Atas permintaan pengguna, aplikasi juga menyediakan duel PvP 1v1 opsional melalui koneksi WebRTC langsung. Akun, matchmaking, layanan signaling/backend, dan relay TURN tetap di luar cakupan.
+Dokumen ini menetapkan arah teknis untuk aplikasi game statis ChessRPG. Campaign dungeon tetap single-player dan dapat dimainkan offline. Atas permintaan pengguna, aplikasi juga menyediakan duel PvP 1v1 opsional melalui koneksi WebRTC langsung. Akun, matchmaking, layanan signaling/backend, dan relay TURN tetap di luar cakupan.
 
 ## Kondisi dan keputusan utama
 

@@ -1,8 +1,8 @@
-# PRD Crown & Catalyst
+# PRD ChessRPG
 
 ## Ringkasan
 
-Crown & Catalyst mempertahankan campaign dungeon single-player yang dapat dimainkan offline. Mode PvP 1v1 opsional menghubungkan dua browser langsung melalui WebRTC. Pemain mengendalikan putih atau hitam dengan hero, deck, kartu, resource, dan aturan catur yang simetris. Aplikasi tidak membutuhkan akun atau backend.
+ChessRPG mempertahankan campaign dungeon single-player yang dapat dimainkan offline. Mode PvP 1v1 opsional menghubungkan dua browser langsung melalui WebRTC. Pemain mengendalikan putih atau hitam dengan hero, deck, kartu, resource, dan aturan catur yang simetris. Aplikasi tidak membutuhkan akun atau backend.
 
 ## Tujuan produk
 

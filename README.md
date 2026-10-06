@@ -1,6 +1,6 @@
-# Crown & Catalyst
+# ChessRPG
 
-Crown & Catalyst is a chess RPG with an offline single-player dungeon campaign and an optional direct 1v1 PvP mode. PvP uses WebRTC between two browsers; the app has no accounts or game backend.
+ChessRPG is a chess RPG with an offline single-player dungeon campaign and an optional direct 1v1 PvP mode. PvP uses WebRTC between two browsers; the app has no accounts or game backend.
 
 ## Run locally
 
@@ -51,3 +51,5 @@ Preview checks default to `http://localhost:4173/`; set `APP_URL` to use another
 - `public/assets/` contains the local game artwork.
 - `chess-rpg.html` and `chess-rpg-dungeon.html` are retained prototypes for comparison.
 - `ARCHITECTURE.md`, `PRD.md`, `PLAN.md`, and `GAMES.md` document the design and game rules.
+
+The current game name is **ChessRPG** (formerly Crown & Catalyst). The retained HTML prototypes and reference artwork keep their original names. Existing campaign/audio storage keys and the WebRTC channel name are unchanged, preserving saved progress, sound preferences, and peer compatibility.

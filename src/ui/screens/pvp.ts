@@ -252,7 +252,7 @@ export function renderPvpDuel(view: PvpDuelView): string {
 
   return (
     '<header class="topbar pvp-topbar"><div class="brand"><div class="brand-mark" aria-hidden="true">♔</div>' +
-    '<div class="brand-copy"><h1>Crown &amp; Catalyst</h1><p>Takhta taktis / mode 1vs1</p></div></div>' +
+    '<div class="brand-copy"><h1>ChessRPG</h1><p>Takhta taktis / mode 1vs1</p></div></div>' +
     '<div class="hud-box"><span class="hud-label">Giliran</span><span class="hud-value">' +
     escape(view.turnLabel) +
     '</span></div>' +
