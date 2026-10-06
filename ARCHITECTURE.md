@@ -1,4 +1,4 @@
-# Arsitektur Crown & Catalyst
+# Arsitektur ChessRPG
 
 ## Tujuan
 

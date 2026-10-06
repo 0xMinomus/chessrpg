@@ -77,10 +77,10 @@ function hubNav(active: ScreenName): string {
 
 function renderHubShell(view: AppShellView, content: string): string {
   return (
-    '<section class="hub-shell" aria-label="Menu utama Crown &amp; Catalyst">' +
+    '<section class="hub-shell" aria-label="Menu utama ChessRPG">' +
     '<header class="hub-topbar"><div class="hub-wordmark">' +
     '<span class="hub-mark" aria-hidden="true">♔</span>' +
-    '<div><strong>Crown &amp; Catalyst</strong><small>' +
+    '<div><strong>ChessRPG</strong><small>' +
     'Takhta taktis / mode dungeon' +
     '</small></div></div>' +
     '<div class="hub-wallet"><span>Koin</span><strong>' +

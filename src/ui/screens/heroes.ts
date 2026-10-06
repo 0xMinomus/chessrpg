@@ -368,7 +368,7 @@ export function renderHeroesPage(view: HeroesPageView): string {
   return (
     '<section class="hub-page heroes-page' +
     (isDeck ? ' deck-page' : '') +
-    '" aria-labelledby="hub-heroes-title"><div class="hub-page-heading hero-page-heading"><div><span class="eyebrow">Crown &amp; Catalyst / Persiapan</span><h2 id="hub-heroes-title">' +
+    '" aria-labelledby="hub-heroes-title"><div class="hub-page-heading hero-page-heading"><div><span class="eyebrow">ChessRPG / Persiapan</span><h2 id="hub-heroes-title">' +
     heading +
     '</h2><p>' +
     description +

@@ -115,7 +115,7 @@ export function renderBattlePage(view: BattlePageView): string {
     : '';
   return (
     '<header class="topbar"><div class="brand"><div class="brand-mark" aria-hidden="true">♔</div>' +
-    '<div class="brand-copy"><h1>Crown &amp; Catalyst</h1><p>Takhta taktis / mode dungeon</p></div></div>' +
+    '<div class="brand-copy"><h1>ChessRPG</h1><p>Takhta taktis / mode dungeon</p></div></div>' +
     '<div class="hud-box"><span class="hud-label">Lantai</span><span class="hud-value">' +
     chrome.floorLabel +
     '</span></div>' +

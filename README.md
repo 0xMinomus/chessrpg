@@ -1,6 +1,6 @@
-# Crown & Catalyst
+# ChessRPG
 
-Crown & Catalyst is a chess strategy game with cards, heroes, and dungeon bosses. The campaign runs offline; optional 1v1 PvP uses PeerJS signaling and WebRTC data channels.
+ChessRPG is a chess strategy game with cards, heroes, and dungeon bosses. The campaign runs offline; optional 1v1 PvP uses PeerJS signaling and WebRTC data channels.
 
 ## Run locally
 
@@ -138,3 +138,5 @@ Testing matchmaking and private rooms separately requires internet access.
 Use the retained HTML prototypes to compare the original behavior and visual
 style. Product changes belong in the current requirements and content/domain
 modules; prototype documentation should not silently override them.
+
+The current game name is **ChessRPG** (formerly Crown & Catalyst). The retained HTML prototypes and reference artwork keep their original names. Existing campaign/audio storage keys and online identifiers are unchanged, preserving saved progress, sound preferences, and peer compatibility.

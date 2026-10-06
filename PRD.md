@@ -1,8 +1,8 @@
-# PRD Crown & Catalyst: campaign offline dan duel PvP online
+# PRD ChessRPG: campaign offline dan duel PvP online
 
 ## Ringkasan
 
-Crown & Catalyst adalah game strategi catur, kartu, hero, dan dungeon. Campaign tetap berjalan offline tanpa server; mode PvP online pilihan menghubungkan dua pemain melalui PeerJS dan WebRTC.
+ChessRPG adalah game strategi catur, kartu, hero, dan dungeon. Campaign tetap berjalan offline tanpa server; mode PvP online pilihan menghubungkan dua pemain melalui PeerJS dan WebRTC.
 
 ## Tujuan produk
 
