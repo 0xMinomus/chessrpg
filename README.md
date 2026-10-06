@@ -125,3 +125,16 @@ ends the online session. These network limits do not affect offline campaign pla
 Keep a preview server running for preview-based checks. `verify:browser` stops
 at the first failing command and does not include an online two-peer walkthrough.
 Testing matchmaking and private rooms separately requires internet access.
+
+## Documentation map
+
+- [PRD](PRD.md): product behavior and acceptance criteria.
+- [Architecture](ARCHITECTURE.md): module ownership, dependencies, and state.
+- [Implementation plan](PLAN.md): completed phases, historical checks, and deferred work.
+- [Online 1v1](notes/online-1v1.md): current PeerJS flow, transport, and limits.
+- [Original game guide](GAMES.md): rules of `chess-rpg.html`, not the current
+  campaign card economy.
+
+Use the retained HTML prototypes to compare the original behavior and visual
+style. Product changes belong in the current requirements and content/domain
+modules; prototype documentation should not silently override them.
