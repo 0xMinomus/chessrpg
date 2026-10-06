@@ -24,16 +24,30 @@ npm run verify
 
 This runs TypeScript checks, campaign and PvP domain smoke tests, chess parity, UI render checks, a production build, and a scan of the generated files for remote network references.
 
-The browser checks are available with `npm run verify:browser` when Playwright and Chromium are available. They cover portrait alignment, viewport layout, and offline gameplay flow. The preview-based checks expect `http://localhost:4173/`. The online mode needs internet access to the PeerJS signaling service; its architecture and limits are documented in [Duel online 1v1](notes/online-1v1.md).
+The browser checks are available with `npm run verify:browser` when Playwright and Chromium are available. They cover portrait alignment, viewport layout, and offline gameplay flow. The preview-based checks expect `http://localhost:4173/`. The online mode needs internet access to the PeerJS signaling service; its architecture and limits are documented in [Duel online 1v1](docs/online-1v1.md).
 
 ## Project layout
+
+```text
+src/                         application source, grouped by responsibility
+public/assets/               artwork used by the shipped game
+scripts/                     verification and asset-generation tools
+docs/                        implementation documentation
+references/
+  cards.html                 standalone card-design catalog
+  artwork/                   source artwork for asset generation
+```
 
 - `src/content/` contains hero, boss, and card data.
 - `src/domain/` and `src/application/` contain game rules and use cases.
 - `src/ui/` and `src/styles/` contain the screens and presentation.
 - `public/assets/` contains the local game artwork.
 - `chess-rpg.html` and `chess-rpg-dungeon.html` are retained prototypes for comparison.
-- `ARCHITECTURE.md`, `PRD.md`, `PLAN.md`, `GAMES.md`, and `notes/` document design, game rules, and implementation notes.
+- `ARCHITECTURE.md`, `PRD.md`, `PLAN.md`, `GAMES.md`, and `docs/` document design, game rules, and implementation notes.
+
+The core documents and both prototype HTML files stay at the root. The root `hero-potraits-new.png` also stays in place because the retained dungeon prototype loads it with a relative path. Regenerate card icons with `node scripts/slice-card-icons.mjs`; its source atlas is in `references/artwork/`.
+
+Generated files, comparison screenshots, experiments, personal notes, and UI/home reference images remain local and are ignored. `AGENTS.md` and `MEMORY.md` also remain local. The card catalog, source atlas, and online documentation are committed.
 
 ## Campaign progression
 
@@ -131,7 +145,7 @@ Testing matchmaking and private rooms separately requires internet access.
 - [PRD](PRD.md): product behavior and acceptance criteria.
 - [Architecture](ARCHITECTURE.md): module ownership, dependencies, and state.
 - [Implementation plan](PLAN.md): completed phases, historical checks, and deferred work.
-- [Online 1v1](notes/online-1v1.md): current PeerJS flow, transport, and limits.
+- [Online 1v1](docs/online-1v1.md): current PeerJS flow, transport, and limits.
 - [Original game guide](GAMES.md): rules of `chess-rpg.html`, not the current
   campaign card economy.
 

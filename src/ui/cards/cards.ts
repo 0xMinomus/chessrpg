@@ -1,6 +1,6 @@
 // Tangan kartu: 3 slot + tombol putar ulang.
 //
-// Markup mengikuti katalog desain `cards.html`: kartu berbingkai kertas krem
+// Markup mengikuti katalog desain `references/cards.html`: kartu berbingkai kertas krem
 // dengan sudut terpotong, aksen warna per jenis (Serang/Bertahan/Mantra/
 // Konsumsi/Joker), ikon garis 64×64, blok judul + deskripsi, dan baris status.
 // Kartu tetap satu tombol utuh untuk tetikus, sentuh, dan keyboard.

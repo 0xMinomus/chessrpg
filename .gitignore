@@ -4,8 +4,15 @@ dist/
 .DS_Store
 .code-graph/
 .playwright-mcp/
-new-ui/
+references/ui/
 .env*
 !.env.example
 *.pem
 *.key
+.commandcode/
+/AGENTS.md
+/MEMORY.md
+/artifacts/
+/scripts/experiments/
+/references/beranda/
+/docs/Crown & Catalyst - Catatan Project.md

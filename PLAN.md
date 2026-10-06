@@ -106,7 +106,7 @@ Catatan: seluruh gate hijau dan dapat diulang.
 
 Bug yang ditemukan dan diperbaiki pada tahap ini: papan terpotong/tidak bisa diklik di landscape dan ponsel (container query tak terisi + rail bertumpuk), panel hero menimpa label EN/mana di rail sempit, favicon 404, teks pembatalan ultimate salah menyebut skill, catatan deck salah menyebut kartu gratis, navigasi panah memakai state roving alih-alih petak yang difokuskan, dan potret baris atlas atas ikut bergeser.
 
-Tambahan lanjutan (permintaan pengguna): seluruh teks yang ter-double-encode akibat penulisan ulang UTF-8 lewat PowerShell dipulihkan di `main.ts`, `render.ts`, dan `screens/battle.ts` (audit: `node scripts/mojibake-check.mjs`); deskripsi "Fokus cadangan" dikoreksi menjadi memotong mana; gaya kartu, ikon, dan palet diambil dari `cards.html` (katalog desain) ke `src/styles/cards.css`, `src/ui/cards/cards.ts`, dan `src/ui/cards/icons.ts`.
+Tambahan lanjutan (permintaan pengguna): seluruh teks yang ter-double-encode akibat penulisan ulang UTF-8 lewat PowerShell dipulihkan di `main.ts`, `render.ts`, dan `screens/battle.ts` (audit: `node scripts/mojibake-check.mjs`); deskripsi "Fokus cadangan" dikoreksi menjadi memotong mana; gaya kartu, ikon, dan palet diambil dari `references/cards.html` (katalog desain) ke `src/styles/cards.css`, `src/ui/cards/cards.ts`, dan `src/ui/cards/icons.ts`.
 
 Perbedaan yang disengaja: piece id battle memakai string dengan registri adapter ke id number mesin catur; polyfill preload Vite dimatikan agar tidak ada request jaringan saat gameplay; `target-cancel` adalah tombol batal eksplisit tambahan untuk target hero (prototipe hanya Escape).
 
@@ -146,7 +146,7 @@ Verifikasi perubahan: `npm run verify:browser` melewati typecheck, 95 domain, 26
 
 **Selesai bila:** kedua pemain dapat memulai pertandingan melalui antrean atau kode ruang, memainkan aksi yang tervalidasi dengan state yang sama, dan campaign tetap berjalan tanpa jaringan.
 
-Catatan implementasi: [[notes/online-1v1|Duel online 1v1]].
+Catatan implementasi: [[docs/online-1v1|Duel online 1v1]].
 
 ## Keputusan implementasi untuk agent
 
@@ -154,3 +154,13 @@ Catatan implementasi: [[notes/online-1v1|Duel online 1v1]].
 - Pertahankan perilaku dan konten saat memindahkan. Jika ditemukan bug yang tidak tercakup permintaan atau PRD, catat dan jangan diam-diam mengubah aturan.
 - Tandai checkbox hanya setelah kriteria fase benar-benar tercapai. Jika alat atau lingkungan menghalangi fase, lanjutkan pekerjaan independen dan laporkan blocker spesifik.
 - Jaga campaign tetap dapat dimainkan offline; kegagalan layanan PeerJS tidak boleh memblokir mode single-player.
+
+## Penataan file repository (2026-10-06)
+
+- [x] Pindahkan dokumentasi online terkini ke `docs/online-1v1.md`, katalog kartu ke `references/cards.html`, dan atlas sumber ke `references/artwork/`.
+- [x] Perbarui semua referensi path, pertahankan kedua prototipe beserta atlas portrait di root, dan kecualikan artefak/eksperimen/catatan pribadi dari commit.
+- [x] Hapus folder `.commandcode/` lokal sesuai permintaan pengguna.
+- [x] Integrasikan penataan pada baseline `origin/main` terbaru tanpa mengganti fitur PeerJS/online yang telah dipublikasikan.
+- [x] Verifikasi `npm run verify` PASS; generator menghasilkan 37 ikon identik SHA-256; smoke Chromium pada build statis menjalankan menu → Hero → Dungeon → duel 64 petak → e2–e4 tanpa page error.
+
+Isi kedua prototipe tetap identik setelah normalisasi LF/CRLF; portrait tetap identik SHA-256. File lokal `AGENTS.md`, `MEMORY.md`, screenshot, eksperimen, gambar referensi UI/beranda, dan catatan pribadi tidak ikut commit. Pemeriksaan ini tidak menguji ulang koneksi dua peer melalui internet.

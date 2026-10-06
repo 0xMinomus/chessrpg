@@ -1,12 +1,12 @@
 /* =====================================================================
-   Kartu skill — gaya disalin dari katalog desain `cards.html`.
+   Kartu skill — gaya disalin dari katalog desain `references/cards.html`.
    Bingkai kertas krem dengan sudut terpotong, aksen warna per jenis,
    ikon garis, blok judul/deskripsi, dan baris status.
    Selector kartu yang sama dipakai katalog dan battle screen; perbedaan
    hanya pada ukuran (di battle lebih besar agar mudah dibaca).
    ===================================================================== */
 
-/* Palet katalog (cards.html). Dideklarasikan di lingkup kartu supaya gaya
+/* Palet katalog (references/cards.html). Dideklarasikan di lingkup kartu supaya gaya
    kartu utuh sendiri dan tidak bergantung token app yang berbeda nama. */
 .skill-card {
   --coral: #f1788f;

@@ -303,7 +303,7 @@ check('deck: kartu dibayar dengan mana', deckPage.includes('02 MANA'));
 check('deck: Joker berbobot slot khusus dan nonaktif saat penuh', deckPage.includes('kind-joker') && deckPage.includes('data-card-id="edict"') && deckPage.includes('disabled'));
 check('deck: loadout terpilih bisa dilepas', deckPage.includes('aria-label="Lepas Perisai bidak dari deck"'));
 
-// 5. Kartu: markup mengikuti katalog cards.html (bingkai notched, ikon, biaya mana)
+// 5. Kartu: markup mengikuti katalog references/cards.html (bingkai notched, ikon, biaya mana)
 const slot = {
   card: {
     id: 'ward',

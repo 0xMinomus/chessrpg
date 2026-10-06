@@ -12,7 +12,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const SRC = join(ROOT, 'Neon Pixel Chess Ability Grid.png');
+const SRC = join(ROOT, 'references', 'artwork', 'Neon Pixel Chess Ability Grid.png');
 const OUT = join(ROOT, 'public', 'assets', 'card-icons');
 
 // Urutan ikon = urutan CARDS (satu sumber data). Nama berkas = nilai field icon.
