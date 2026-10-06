@@ -84,3 +84,12 @@ still a deferred P1 feature. Online matches are not saved or resumed after reloa
 The current online flow uses PeerJS signaling; manual SDP offer/answer exchange
 is no longer required. Signaling begins only when searching or creating/joining
 a room, not when playing the offline campaign.
+
+## Online board and premoves
+
+The board faces the local player's color. Opponent selections are shown live.
+During the opponent's turn, a player can queue a premove. It is checked again
+when the local turn begins and is cancelled if the new position makes it illegal.
+
+Both clients receive the same profiles and seed, then validate ordered actions
+locally. A player can resign and return to the lobby after the match ends.
