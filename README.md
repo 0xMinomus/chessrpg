@@ -34,3 +34,10 @@ The browser checks are available with `npm run verify:browser` when Playwright a
 - `public/assets/` contains the local game artwork.
 - `chess-rpg.html` and `chess-rpg-dungeon.html` are retained prototypes for comparison.
 - `ARCHITECTURE.md`, `PRD.md`, `PLAN.md`, `GAMES.md`, and `notes/` document design, game rules, and implementation notes.
+
+## Campaign progression
+
+The campaign contains 10 chapters with five floors each. Floors 1–4 are standard
+battles; floor 5 has the chapter boss and its unique skill. Clear floors in order.
+Defeating a chapter boss unlocks the next chapter. The world map places the ten
+chapter markers across six land regions.
