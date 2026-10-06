@@ -1,4 +1,4 @@
-﻿// Bootstrap aplikasi (Fase 4 integrasi): compose content + domain + application
+// Bootstrap aplikasi (Fase 4 integrasi): compose content + domain + application
 // + adapters ke UI modular. Handler di file ini HANYA meneruskan intent ke
 // command/use case dan merender snapshot state; tidak ada aturan catur,
 // pembayaran resource, atau efek kartu di sini.

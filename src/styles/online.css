@@ -154,13 +154,8 @@
   .online-setup-grid { grid-template-columns: minmax(0, 1fr); }
   .online-page-head { align-items: flex-start; flex-direction: column; gap: 8px; }
   .online-page-head .online-status { text-align: left; }
-  .online-battle { height: auto; min-height: 100%; overflow: visible; }
   .online-battle-head { grid-template-columns: minmax(0, 1fr) auto; }
   .online-battle-head .online-connection { grid-column: 1 / -1; grid-row: 2; }
-  .online-battle-grid { grid-template-columns: minmax(0, 1fr); }
-  .online-board-frame { width: min(100%, calc(100vw - 36px)); }
-  .online-hand-panel { overflow: visible; }
-  .online-card-hand { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (max-width: 480px) {
@@ -190,9 +185,62 @@
 .online-hand-panel .roll-availability { min-height: 44px; }
 
 @media (max-width: 900px) {
-  .online-battle { height: auto; min-height: calc(100dvh - 12px); overflow: visible; }
-  .online-battle-grid { grid-template-columns: minmax(0, 1fr); }
-  .online-board-frame { width: min(100%, calc(100vw - 36px)); }
-  .online-hand-panel { overflow: visible; }
-  .online-card-hand { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .online-battle {
+    height: calc(100dvh - 16px);
+    min-height: 0;
+    padding: 4px;
+    gap: 4px;
+    overflow: hidden;
+  }
+  .online-battle-head { gap: 6px; padding-bottom: 4px; }
+  .online-battle-head .online-connection {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-size: 10px;
+    line-height: 1.2;
+  }
+  .online-battle-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 6px;
+  }
+  .online-board-panel { gap: 3px; padding: 4px; }
+  .online-board-frame { width: min(100%, calc(100dvh - 525px)); }
+  .online-board-actions .online-action-button { min-height: 32px; padding: 3px 6px; }
+  .online-board-panel > .online-secondary { min-height: 32px; }
+  .online-hand-panel { gap: 4px; padding: 5px; overflow: hidden; }
+  .online-card-hand { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+  .online-card-hand .skill-card {
+    --card-min-height: 144px;
+    --card-art-height: 20px;
+    --card-copy-min: 30px;
+    --card-copy-pad: 4px;
+    --card-gap: 3px;
+    --card-pad: 4px;
+    --card-icon-size: 18px;
+    --card-title-size: 9px;
+    --card-desc-size: 8px;
+    --card-desc-lines: 2;
+    --card-kind-size: 8px;
+    --card-cost-size: 8px;
+    --card-state-size: 7px;
+    --card-top-min: 20px;
+    --card-state-min: 14px;
+  }
+  .online-card-hand .card-top { flex-direction: row; gap: 3px; padding: 2px 4px; }
+  .online-card-hand .card-cost { padding: 3px 4px; }
+  .online-hand-panel .roll-availability {
+    height: auto;
+    min-height: 36px;
+    flex: 0 0 36px;
+    flex-direction: row;
+    gap: 6px;
+    margin: 0;
+    padding: 3px 6px;
+    border-width: 2px;
+    font-size: 9px;
+  }
+  .online-hand-panel .roll-availability svg { width: 16px; height: 16px; }
+  .online-hand-panel .roll-caption { font-size: 8px; line-height: 1.1; }
 }

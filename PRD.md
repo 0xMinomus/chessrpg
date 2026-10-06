@@ -47,7 +47,7 @@ Pemain kasual yang menyukai catur dan strategi. Mereka dapat bermain campaign lo
 
 ### Pertarungan
 
-- **FR-06:** Pertahankan aturan catur legal: langkah, skak, skakmat, kebuntuan, rokade, en passant, dan promosi. Pemain memilih promosi pion putih menjadi ratu, benteng, gajah, atau kuda.
+- **FR-06:** Pertahankan aturan catur legal: langkah, skak, skakmat, kebuntuan, rokade, en passant, dan promosi. Campaign mempromosikan pion putih menjadi ratu, benteng, gajah, atau kuda; PvP mendukung promosi untuk kedua warna.
 - **FR-07:** AI boss hanya memilih langkah legal. Perilaku dan aturan khusus boss berjalan setelah giliran putih sesuai prototipe.
 - **FR-08:** Tangan berisi tiga kartu acak tanpa duplikat dalam tangan. Tiga Joker tetap langka dengan bobot tarik 0,2 dibanding kartu biasa berbobot 1.
 - **FR-09:** Kartu membayar mana. Mana dimulai pada 0, bertambah 1 per langkah catur putih yang selesai, dan maksimal 6. Biaya kartu ditampilkan sebagai mana. Biaya dasar Joker adalah 5 mana.
@@ -62,11 +62,12 @@ Pemain kasual yang menyukai catur dan strategi. Mereka dapat bermain campaign lo
 
 ### Pertandingan PvP online
 
-- **FR-26:** Pemain dapat mencari lawan melalui antrean terbuka atau membuat ruang berkode tepat lima digit, termasuk kode yang diawali nol. Pemain memilih putih, hitam, atau acak.
+- **FR-26:** Online menawarkan dua jalur: matchmaking dengan pilihan putih, hitam, atau acak; dan ruang lima digit (termasuk nol di depan) yang dapat dibuat atau dimasuki. Di ruang privat, kedua pemain memilih warna dan menyatakan siap; duel dimulai setelah keduanya siap.
 - **FR-27:** Duel memakai hero aktif dan loadout 10 kartu non-Joker + 1 Joker. Kedua klien menerima profil dan seed yang sama, lalu menarik tangan secara deterministik.
 - **FR-28:** Kedua warna memakai aturan catur, resource, kartu, efek hero, promosi, dan menyerah yang simetris. Penerima memvalidasi ulang setiap aksi berurutan sebelum memperbarui state.
-- **FR-29:** Papan menampilkan pilihan bidak lawan dan premove. Premove diperiksa kembali setelah lawan bergerak; langkah yang tidak lagi legal dibatalkan.
+- **FR-29:** Papan selalu menghadap warna lokal. Pemain melihat asal dan tujuan yang dipilih lawan secara langsung. Premove dapat dibuat saat giliran lawan, lalu divalidasi ulang saat giliran lokal tiba; langkah yang tidak lagi legal dibatalkan.
 - **FR-30:** Pemain dapat menyerah dan kembali ke lobi setelah pertandingan berakhir. Koneksi putus atau reload mengakhiri duel; state pertandingan online tidak dipulihkan.
+- **FR-31:** Ketiga kartu online ditata rapat bersama papan agar bisa dipilih tanpa scroll terpisah pada viewport desktop dan ponsel.
 
 ### Antarmuka dan aksesibilitas
 
@@ -105,11 +106,11 @@ Biaya target tahap ini: skill hero 2 EN, ultimate hero 5 EN, dan Joker 5 mana se
 5. Tampilan tetap mengikuti prototipe aktif dan dapat digunakan dengan mouse, keyboard, dan layar sentuh.
 6. `chess-rpg.html` dan `chess-rpg-dungeon.html` tetap tersedia sebagai referensi selama migrasi.
 7. Hero roster dan deck builder memakai data konten yang ada; pemain dapat memilih 10 kartu biasa + 1 Joker, menyimpan pilihan setelah reload, dan hanya melihat kartu loadout itu saat duel.
-
 8. Campaign berisi 50 lantai berurutan; boss kelima membuka chapter berikutnya, semua marker berada di darat, dan tidak ada marker di air.
 9. Dua browser dapat tersambung lewat antrean dan kode ruang, memilih warna, memulai duel, lalu melihat state papan yang sama setelah aksi.
 10. Premove yang legal saat antrean dibuat dijalankan setelah giliran tiba atau dibatalkan bila perubahan papan membuatnya tidak legal.
 11. Campaign offline tidak mengirim request jaringan; pencarian lawan atau ruang hanya memakai signaling setelah dipilih pemain.
+12. Di kedua browser, layar duel menampilkan tiga kartu tanpa scroll terpisah, membalik papan untuk pemain hitam, dan memperlihatkan pilihan langkah lawan.
 
 
 ## Ukuran keberhasilan tahap

@@ -58,4 +58,5 @@ PeerJS dimuat melalui dynamic import saat pemain memulai pencarian atau membuat/
 ## Riwayat
 
 - Implementasi online PvP 1v1: domain simetris, antrean matchmaking, ruang privat, adapter PeerJS/WebRTC, aksi berurutan, serta UI responsif; campaign tetap offline.
-- Verifikasi: `npm run verify` lulus. Uji dua browser mencakup matchmaking, ruang privat, gerak, premove, kartu target, dan menyerah; layout diuji di 320 dan 390 px. Reload campaign hanya meminta aset same-origin dan tidak memuat chunk PeerJS.
+- Verifikasi: `npm run verify` lulus setelah integrasi. Dua browser menyelesaikan matchmaking dan ruang privat, pilihan warna, gerak tersinkron, indikator pilihan lawan, premove, serta aksi kartu. Duel tidak memerlukan scroll vertikal pada 320×780 maupun 390×844; reload campaign hanya meminta aset same-origin dan tidak memuat chunk PeerJS.
+- Keputusan integrasi: jalur lama yang meminta salin-tempel SDP offer/answer digantikan PeerJS; dipertahankan hanya matchmaking dan ruang berkode lima digit.

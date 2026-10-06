@@ -7,7 +7,7 @@ Dokumen ini menetapkan arah teknis untuk aplikasi campaign single-player yang te
 ## Kondisi dan keputusan utama
 
 - `chess-rpg.html` adalah prototipe asli dan arsip yang harus tetap utuh.
-- `chess-rpg-dungeon.html` adalah prototipe aktif yang menjadi acuan tampilan dan perilaku untuk aplikasi single-player.
+- `chess-rpg-dungeon.html` adalah prototipe aktif dan acuan tampilan/perilaku campaign single-player; mode PvP baru mempertahankan gaya visual dan memakai aturan/data konten bersama.
 - Prototipe aktif berisi HTML, CSS, data konten, state, aturan, AI, penyimpanan, dan render dalam satu file. Implementasi berikutnya dipisahkan bertahap tanpa mengubah perilaku game yang telah disetujui.
 - Target awal adalah web app statis yang dapat berjalan lokal. Gunakan Vite dan TypeScript dengan DOM vanilla. Pertahankan pendekatan DOM langsung selama kebutuhan UI masih tercukupi; tambahkan framework hanya jika pekerjaan konkret menunjukkan manfaat yang jelas.
 - Game core tidak bergantung pada browser, DOM, audio, atau `localStorage`. UI dan adapter browser berkomunikasi dengan core melalui command dan hasil state.
@@ -57,6 +57,7 @@ src/
     peerjs-network.ts
   ui/
     screens/
+      online.ts
     board/
     cards/
     hero/
@@ -99,11 +100,11 @@ Sesuaikan pemecahan file dengan ukuran modul saat implementasi; daftar ini batas
 
 Aturan berikut mengikuti permintaan terbaru dan prototipe dungeon aktif:
 
-- **Mana** membayar kartu. Mana bertambah 1 setelah setiap langkah catur putih yang benar-benar dilakukan dan kapasitasnya 6.
-- **EN** membayar skill serta ultimate hero. Skill berbiaya 2 EN, ultimate 5 EN, dan kapasitas EN putih 5.
+- **Mana** membayar kartu. Dalam campaign, mana bertambah 1 setelah langkah catur putih yang selesai; di PvP, pemain aktif mendapat 1 mana setelah langkahnya selesai. Batas mana masing-masing sisi 6.
+- **EN** membayar skill serta ultimate hero. Skill berbiaya 2 EN, ultimate 5 EN, dan batas EN masing-masing sisi 5.
 - Hero menentukan EN awal dan dapat mengubah efek resource sesuai data hero. Kartu juga dapat menghasilkan atau mengubah EN sebagai efek.
 - Tangan terdiri dari 3 kartu yang ditarik dari loadout pemain (10 kartu non-Joker + 1 Joker). Satu kartu berbiaya 0 mana dapat dimainkan per giliran. Kartu Joker tetap langka dan biaya dasarnya 5 mana; biaya hero yang berlaku ditambahkan melalui aturan biaya terpusat.
-- Permainan mempertahankan catur legal, termasuk rokade, en passant, keselamatan raja, dan pilihan promosi pion putih menjadi ratu, benteng, gajah, atau kuda.
+- Permainan mempertahankan catur legal, termasuk rokade, en passant, keselamatan raja, dan pilihan promosi pion menjadi ratu, benteng, gajah, atau kuda. Campaign mempromosikan pion putih; PvP mendukung kedua warna.
 - Semua efek yang memindahkan, menghapus, membangkitkan, atau melindungi bidak tetap melewati validasi keselamatan raja.
 
 Jika biaya atau aturan berubah melalui permintaan pengguna, perbarui sumber data dan dokumen terkait dalam satu perubahan yang konsisten.

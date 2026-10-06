@@ -1,4 +1,4 @@
-﻿// Render root per layar + pesan status teks untuk teknologi bantu.
+// Render root per layar + pesan status teks untuk teknologi bantu.
 // Status selalu berupa teks (bukan hanya warna/animasi) via #live-message.
 
 import { renderMenuPage } from './screens/menu.ts';
@@ -80,7 +80,9 @@ function renderHubShell(view: AppShellView, content: string): string {
     '<section class="hub-shell" aria-label="Menu utama Crown &amp; Catalyst">' +
     '<header class="hub-topbar"><div class="hub-wordmark">' +
     '<span class="hub-mark" aria-hidden="true">♔</span>' +
-    '<div><strong>Crown &amp; Catalyst</strong><small>Takhta taktis / mode dungeon</small></div></div>' +
+    '<div><strong>Crown &amp; Catalyst</strong><small>' +
+    'Takhta taktis / mode dungeon' +
+    '</small></div></div>' +
     '<div class="hub-wallet"><span>Koin</span><strong>' +
     view.coins +
     '</strong></div></header>' +
