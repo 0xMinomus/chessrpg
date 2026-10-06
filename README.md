@@ -72,3 +72,15 @@ is normalized to a playable state.
 
 Reloading preserves campaign progress, not an active battle. Battle resume is
 still a deferred P1 feature. Online matches are not saved or resumed after reload.
+
+## Start an online duel
+
+1. Open **Online** with your selected hero and complete saved deck.
+2. Join matchmaking, or create/join a private room using its five-digit code.
+   Keep leading zeroes when sharing or entering a room code.
+3. Choose white, black, or random. In a private room, both players must be ready
+   before the match starts.
+
+The current online flow uses PeerJS signaling; manual SDP offer/answer exchange
+is no longer required. Signaling begins only when searching or creating/joining
+a room, not when playing the offline campaign.
